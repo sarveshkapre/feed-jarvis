@@ -1,0 +1,26 @@
+.PHONY: setup dev test lint typecheck build check release
+
+setup:
+	npm install
+
+dev:
+	npm run dev
+
+test:
+	npm test
+
+lint:
+	npm run lint
+
+typecheck:
+	npm run typecheck
+
+build:
+	npm run build
+
+check:
+	npm run check
+
+release:
+	@echo "See docs/RELEASE.md"
+
