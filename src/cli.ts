@@ -1,13 +1,15 @@
 #!/usr/bin/env node
 
-import { readFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
+import { fetchFeed } from "./lib/feedFetch.js";
 import {
   DEFAULT_PERSONAS,
-  type FeedItem,
-  generatePosts,
   getPersona,
-} from "./lib/posts.js";
+  loadPersonasFile,
+  mergePersonas,
+} from "./lib/personas.js";
+import { type FeedItem, generatePosts } from "./lib/posts.js";
 
 type PackageJson = { name?: string; version?: string };
 const require = createRequire(import.meta.url);
@@ -20,18 +22,33 @@ Usage:
   feed-jarvis <command> [options]
 
 Commands:
+  fetch      Fetch RSS/Atom and output events JSON
   generate   Generate posts from an input feed
   personas   List built-in personas
+
+Fetch options:
+  --url <url>               RSS/Atom feed URL (required)
+  --allow-host <host>       Allowed host (repeatable; required)
+  --out <path|->            Output events JSON path (default: stdout)
+  --max-items <number>      Max events to emit (default: 20)
+  --timeout-ms <number>     Fetch timeout (default: 10000)
+  --max-bytes <number>      Max feed bytes (default: 1000000)
+  --cache-ttl <seconds>     Cache TTL seconds (default: 3600)
+  --cache-dir <path>        Cache directory (default: OS cache dir)
+  --no-cache                Disable caching
 
 Generate options:
   --input <path|->        Path to events JSON, or '-' for stdin (required)
   --persona <name>        Persona name (required)
+  --personas <path>       Optional personas JSON file (array of {name, prefix})
   --max-chars <number>    Max characters per post (default: 280)
   --format <text|json>    Output format (default: text)
 
 Examples:
   feed-jarvis personas
-  feed-jarvis generate --input events.json --persona Analyst
+  feed-jarvis personas --personas personas.json
+  feed-jarvis fetch --url https://example.com/rss.xml --allow-host example.com > events.json
+  feed-jarvis generate --input events.json --persona Analyst --personas personas.json
   cat events.json | feed-jarvis generate --input - --persona Builder --format json
 
 Input format:
@@ -83,8 +100,27 @@ async function main() {
   }
 
   if (cmd === "personas") {
-    console.log("Built-in personas:");
-    for (const persona of DEFAULT_PERSONAS) {
+    const args = parseArgs(rest);
+    if (args.flags.has("--help")) {
+      printHelp();
+      process.exit(0);
+    }
+    if (args.positionals.length > 0) {
+      dieUsage(`Unexpected argument(s): ${args.positionals.join(" ")}`);
+    }
+
+    const personasPath = getOptionalStringFlag(args.flags, "--personas");
+    const filePersonas = personasPath
+      ? await loadPersonasOrDie(personasPath)
+      : [];
+    const personas = mergePersonas(DEFAULT_PERSONAS, filePersonas);
+
+    console.log(
+      personasPath
+        ? `Personas (built-in + ${personasPath}):`
+        : "Built-in personas:",
+    );
+    for (const persona of personas) {
       console.log(`- ${persona.name} (prefix: ${persona.prefix})`);
     }
     console.log("");
@@ -94,12 +130,62 @@ async function main() {
     process.exit(0);
   }
 
+  if (cmd === "fetch") {
+    const args = parseArgs(rest);
+    if (args.flags.has("--help")) {
+      printHelp();
+      process.exit(0);
+    }
+    if (args.positionals.length > 0) {
+      dieUsage(`Unexpected argument(s): ${args.positionals.join(" ")}`);
+    }
+
+    const url = getRequiredFlag(args.flags, "--url");
+    const allowHosts = getStringArrayFlag(args.flags, "--allow-host");
+    const outPath = getOptionalStringFlag(args.flags, "--out");
+    const maxItems = getNumberFlag(args.flags, "--max-items", 20, { min: 1 });
+    const timeoutMs = getNumberFlag(args.flags, "--timeout-ms", 10_000, {
+      min: 1,
+    });
+    const maxBytes = getNumberFlag(args.flags, "--max-bytes", 1_000_000, {
+      min: 1,
+    });
+    const cacheTtlSeconds = getNumberFlag(args.flags, "--cache-ttl", 3600, {
+      min: 0,
+    });
+    const cacheDir = getOptionalStringFlag(args.flags, "--cache-dir");
+    const cache = !args.flags.has("--no-cache");
+
+    let result: Awaited<ReturnType<typeof fetchFeed>>;
+    try {
+      result = await fetchFeed(url, {
+        allowHosts,
+        cache,
+        cacheDir,
+        cacheTtlMs: cacheTtlSeconds * 1000,
+        maxBytes,
+        maxItems,
+        timeoutMs,
+      });
+    } catch (err) {
+      die(err instanceof Error ? err.message : String(err));
+    }
+
+    const output = `${JSON.stringify(result.items, null, 2)}\n`;
+    if (!outPath || outPath === "-") {
+      process.stdout.write(output);
+      return;
+    }
+    await writeFile(outPath, output, "utf8");
+    return;
+  }
+
   if (cmd !== "generate") {
     dieUsage(`Unknown command: ${cmd}`);
   }
 
   const args = parseArgs(rest);
-  if (args.flags.has("--help") || args.flags.has("-h")) {
+  if (args.flags.has("--help")) {
     printHelp();
     process.exit(0);
   }
@@ -109,8 +195,9 @@ async function main() {
 
   const inputPath = getRequiredFlag(args.flags, "--input");
   const personaName = getRequiredFlag(args.flags, "--persona");
-  const maxChars = getNumberFlag(args.flags, "--max-chars", 280);
+  const maxChars = getNumberFlag(args.flags, "--max-chars", 280, { min: 1 });
   const format = getStringFlag(args.flags, "--format", "text");
+  const personasPath = getOptionalStringFlag(args.flags, "--personas");
   if (format !== "text" && format !== "json") {
     dieUsage(`Invalid --format: ${format} (expected 'text' or 'json')`);
   }
@@ -119,7 +206,11 @@ async function main() {
     inputPath === "-" ? await readStdin() : await readFile(inputPath, "utf8");
   const items = parseFeedItems(raw);
 
-  const persona = getPersona(personaName);
+  const filePersonas = personasPath
+    ? await loadPersonasOrDie(personasPath)
+    : [];
+  const personas = mergePersonas(DEFAULT_PERSONAS, filePersonas);
+  const persona = getPersona(personaName, personas);
   const posts = generatePosts(items, persona, maxChars);
 
   if (format === "json") {
@@ -133,12 +224,14 @@ async function main() {
 await main();
 
 type ParsedArgs = {
-  flags: Map<string, string | true>;
+  flags: Map<string, FlagValue>;
   positionals: string[];
 };
 
+type FlagValue = true | string | string[];
+
 function parseArgs(argv: string[]): ParsedArgs {
-  const flags = new Map<string, string | true>();
+  const flags = new Map<string, FlagValue>();
   const positionals: string[] = [];
 
   for (let i = 0; i < argv.length; i++) {
@@ -150,7 +243,7 @@ function parseArgs(argv: string[]): ParsedArgs {
     if (!arg) continue;
 
     if (arg === "-h") {
-      flags.set("--help", true);
+      setFlagValue(flags, "--help", true);
       continue;
     }
 
@@ -163,55 +256,77 @@ function parseArgs(argv: string[]): ParsedArgs {
     if (eqIndex !== -1) {
       const name = arg.slice(0, eqIndex);
       const value = arg.slice(eqIndex + 1);
-      flags.set(name, value);
+      setFlagValue(flags, name, value);
       continue;
     }
 
     const next = argv[i + 1];
     if (!next || next.startsWith("-")) {
-      flags.set(arg, true);
+      setFlagValue(flags, arg, true);
       continue;
     }
 
-    flags.set(arg, next);
+    setFlagValue(flags, arg, next);
     i++;
   }
 
   return { flags, positionals };
 }
 
-function getRequiredFlag(
-  flags: Map<string, string | true>,
-  name: string,
-): string {
+function getRequiredFlag(flags: Map<string, FlagValue>, name: string): string {
   const value = flags.get(name);
-  if (!value || value === true) dieUsage(`Missing required flag: ${name}`);
-  return value;
+  const resolved = resolveStringFlag(value);
+  if (!resolved) dieUsage(`Missing required flag: ${name}`);
+  return resolved;
 }
 
 function getStringFlag(
-  flags: Map<string, string | true>,
+  flags: Map<string, FlagValue>,
   name: string,
   defaultValue: string,
 ): string {
   const value = flags.get(name);
-  if (!value || value === true) return defaultValue;
-  return value;
+  const resolved = resolveStringFlag(value);
+  return resolved ?? defaultValue;
+}
+
+function getOptionalStringFlag(
+  flags: Map<string, FlagValue>,
+  name: string,
+): string | undefined {
+  return resolveStringFlag(flags.get(name));
 }
 
 function getNumberFlag(
-  flags: Map<string, string | true>,
+  flags: Map<string, FlagValue>,
   name: string,
   defaultValue: number,
+  constraints: { min: number },
 ): number {
-  const raw = flags.get(name);
-  if (!raw || raw === true) return defaultValue;
+  const raw = resolveStringFlag(flags.get(name));
+  if (!raw) return defaultValue;
 
   const parsed = Number(raw);
-  if (!Number.isFinite(parsed) || parsed <= 0) {
-    dieUsage(`Invalid ${name}: ${raw} (expected a positive number)`);
+  if (!Number.isFinite(parsed) || parsed < constraints.min) {
+    dieUsage(
+      `Invalid ${name}: ${raw} (expected a number >= ${constraints.min})`,
+    );
   }
   return Math.floor(parsed);
+}
+
+function getStringArrayFlag(
+  flags: Map<string, FlagValue>,
+  name: string,
+): string[] {
+  const raw = flags.get(name);
+  if (!raw || raw === true) return [];
+
+  const values = Array.isArray(raw) ? raw : [raw];
+  return values
+    .flatMap((v) => v.split(","))
+    .map((v) => v.trim())
+    .filter((v) => v.length > 0);
 }
 
 function parseFeedItems(raw: string): FeedItem[] {
@@ -245,4 +360,50 @@ function parseFeedItems(raw: string): FeedItem[] {
   }
 
   return items;
+}
+
+async function loadPersonasOrDie(path: string) {
+  try {
+    return await loadPersonasFile(path);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    die(`Invalid personas file '${path}': ${message}`);
+  }
+}
+
+function setFlagValue(
+  flags: Map<string, FlagValue>,
+  name: string,
+  value: true | string,
+) {
+  const existing = flags.get(name);
+
+  if (existing === undefined) {
+    flags.set(name, value);
+    return;
+  }
+
+  if (value === true) {
+    flags.set(name, true);
+    return;
+  }
+
+  if (existing === true) {
+    flags.set(name, value);
+    return;
+  }
+
+  if (Array.isArray(existing)) {
+    existing.push(value);
+    flags.set(name, existing);
+    return;
+  }
+
+  flags.set(name, [existing, value]);
+}
+
+function resolveStringFlag(value: FlagValue | undefined): string | undefined {
+  if (!value || value === true) return undefined;
+  if (Array.isArray(value)) return value.at(-1);
+  return value;
 }

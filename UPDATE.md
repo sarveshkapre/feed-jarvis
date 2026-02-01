@@ -3,15 +3,14 @@
 ## 2026-02-01
 - Shipped: `feed-jarvis personas`, `--version`, richer `--help`.
 - Shipped: `generate --input -` (stdin), `--format json`, and `--max-chars`.
+- Shipped: `--personas personas.json` to load persona definitions from a file (overrides built-ins).
+- Shipped: `fetch --url ... --allow-host ...` to convert RSS/Atom feeds into events JSON (cached, size/time-limited).
 - Hardening: guaranteed max-length posts even with extremely long URLs; clearer input validation errors.
 
 ## Verify
 - `make check`
 
-## PR
-- Commit: `f148ffa`
-- Branch: `feat/cli-ux`
-- No git remote is configured yet. Next steps:
+## Push
+- No git remote is configured yet. To publish:
   - `git remote add origin <your-repo-url>`
-  - `git push -u origin feat/cli-ux`
-  - `gh pr create --fill`
+  - `git push -u origin main`

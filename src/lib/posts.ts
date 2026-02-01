@@ -1,24 +1,9 @@
+import type { Persona } from "./personas.js";
+
 export type FeedItem = {
   title: string;
   url: string;
 };
-
-export type Persona = {
-  name: string;
-  prefix: string;
-};
-
-export const DEFAULT_PERSONAS: Persona[] = [
-  { name: "Analyst", prefix: "Analysis:" },
-  { name: "Builder", prefix: "Build note:" },
-];
-
-export function getPersona(name: string): Persona {
-  const found = DEFAULT_PERSONAS.find(
-    (p) => p.name.toLowerCase() === name.toLowerCase(),
-  );
-  return found ?? { name, prefix: `${name}:` };
-}
 
 export function generatePost(
   item: FeedItem,

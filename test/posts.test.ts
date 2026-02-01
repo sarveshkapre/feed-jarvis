@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { generatePost, getPersona } from "../src/lib/posts.js";
+import { getPersona } from "../src/lib/personas.js";
+import { generatePost } from "../src/lib/posts.js";
 
 describe("generatePost", () => {
   it("includes the url and stays within 280 chars", () => {

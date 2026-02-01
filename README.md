@@ -10,10 +10,20 @@ echo '[{"title":"Hello world","url":"https://example.com"}]' > events.json
 npm run dev -- generate --input events.json --persona "Analyst"
 ```
 
+Fetch from an RSS/Atom feed (requires explicit allowlist):
+
+```bash
+npm run dev -- fetch --url https://example.com/rss.xml --allow-host example.com > events.json
+npm run dev -- generate --input events.json --persona Analyst
+```
+
 ## What it does (MVP)
 - Reads a JSON list of items (`title`, `url`)
 - Generates ≤280-char posts for a named persona
 - Outputs newline-delimited posts to stdout
+ - Can fetch RSS/Atom into the JSON events format (explicit allowlist + caching)
+
+Tip: load/override personas from a file via `--personas personas.json` (array of `{name, prefix}`).
 
 ## Docs
 - `PROJECT.md` (commands), `PLAN.md`, `CHANGELOG.md`
