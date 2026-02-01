@@ -24,6 +24,7 @@ npm run dev -- generate --input events.json --persona Analyst
  - Can fetch RSS/Atom into the JSON events format (explicit allowlist + caching)
 
 Tip: load/override personas from a file via `--personas personas.json` (array of `{name, prefix}`).
+Tip: write posts to a file with `--out posts.txt` or `--format jsonl` for one JSON string per line.
 
 ## Docs
 - `PROJECT.md` (commands), `PLAN.md`, `CHANGELOG.md`

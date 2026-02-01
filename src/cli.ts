@@ -43,14 +43,15 @@ Generate options:
   --persona <name>        Persona name (required)
   --personas <path>       Optional personas JSON file (array of {name, prefix})
   --max-chars <number>    Max characters per post (default: 280)
-  --format <text|json>    Output format (default: text)
+  --format <text|json|jsonl> Output format (default: text)
+  --out <path|->          Output path for posts (default: stdout)
 
 Examples:
   feed-jarvis personas
   feed-jarvis personas --personas personas.json
   feed-jarvis fetch --url https://example.com/rss.xml --allow-host example.com > events.json
   feed-jarvis fetch --url https://a.com/rss.xml --url https://b.com/atom.xml --allow-host a.com --allow-host b.com > events.json
-  feed-jarvis generate --input events.json --persona Analyst --personas personas.json
+  feed-jarvis generate --input events.json --persona Analyst --personas personas.json --out posts.txt
   cat events.json | feed-jarvis generate --input - --persona Builder --format json
 
 Input format:
@@ -210,8 +211,11 @@ async function main() {
   const maxChars = getNumberFlag(args.flags, "--max-chars", 280, { min: 1 });
   const format = getStringFlag(args.flags, "--format", "text");
   const personasPath = getOptionalStringFlag(args.flags, "--personas");
-  if (format !== "text" && format !== "json") {
-    dieUsage(`Invalid --format: ${format} (expected 'text' or 'json')`);
+  const outPath = getOptionalStringFlag(args.flags, "--out");
+  if (format !== "text" && format !== "json" && format !== "jsonl") {
+    dieUsage(
+      `Invalid --format: ${format} (expected 'text', 'json', or 'jsonl')`,
+    );
   }
 
   const raw =
@@ -225,12 +229,13 @@ async function main() {
   const persona = getPersona(personaName, personas);
   const posts = generatePosts(items, persona, maxChars);
 
-  if (format === "json") {
-    process.stdout.write(`${JSON.stringify(posts, null, 2)}\n`);
+  const output = formatPosts(posts, format);
+  if (!outPath || outPath === "-") {
+    process.stdout.write(output);
     return;
   }
-
-  for (const post of posts) console.log(post);
+  await writeFile(outPath, output, "utf8");
+  return;
 }
 
 await main();
@@ -381,6 +386,16 @@ async function loadPersonasOrDie(path: string) {
     const message = err instanceof Error ? err.message : String(err);
     die(`Invalid personas file '${path}': ${message}`);
   }
+}
+
+function formatPosts(posts: string[], format: string): string {
+  if (format === "json") {
+    return `${JSON.stringify(posts, null, 2)}\n`;
+  }
+  if (format === "jsonl") {
+    return `${posts.map((post) => JSON.stringify(post)).join("\n")}\n`;
+  }
+  return `${posts.join("\n")}\n`;
 }
 
 function dedupeByUrl(items: FeedItem[]): FeedItem[] {
