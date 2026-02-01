@@ -5,6 +5,7 @@
 - Shipped: `generate --input -` (stdin), `--format json`, and `--max-chars`.
 - Shipped: `--personas personas.json` to load persona definitions from a file (overrides built-ins).
 - Shipped: `fetch --url ... --allow-host ...` to convert RSS/Atom feeds into events JSON (cached, size/time-limited).
+- Improved: `fetch` supports repeated `--url`, dedupes by event URL (disable with `--no-dedupe`), and enforces allowlist across redirects.
 - Hardening: guaranteed max-length posts even with extremely long URLs; clearer input validation errors.
 
 ## Verify

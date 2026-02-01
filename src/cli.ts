@@ -27,7 +27,7 @@ Commands:
   personas   List built-in personas
 
 Fetch options:
-  --url <url>               RSS/Atom feed URL (required)
+  --url <url>               RSS/Atom feed URL (repeatable; required)
   --allow-host <host>       Allowed host (repeatable; required)
   --out <path|->            Output events JSON path (default: stdout)
   --max-items <number>      Max events to emit (default: 20)
@@ -36,6 +36,7 @@ Fetch options:
   --cache-ttl <seconds>     Cache TTL seconds (default: 3600)
   --cache-dir <path>        Cache directory (default: OS cache dir)
   --no-cache                Disable caching
+  --no-dedupe               Do not dedupe by event url
 
 Generate options:
   --input <path|->        Path to events JSON, or '-' for stdin (required)
@@ -48,6 +49,7 @@ Examples:
   feed-jarvis personas
   feed-jarvis personas --personas personas.json
   feed-jarvis fetch --url https://example.com/rss.xml --allow-host example.com > events.json
+  feed-jarvis fetch --url https://a.com/rss.xml --url https://b.com/atom.xml --allow-host a.com --allow-host b.com > events.json
   feed-jarvis generate --input events.json --persona Analyst --personas personas.json
   cat events.json | feed-jarvis generate --input - --persona Builder --format json
 
@@ -140,7 +142,8 @@ async function main() {
       dieUsage(`Unexpected argument(s): ${args.positionals.join(" ")}`);
     }
 
-    const url = getRequiredFlag(args.flags, "--url");
+    const urls = getStringArrayFlag(args.flags, "--url");
+    if (urls.length === 0) dieUsage("Missing required flag: --url");
     const allowHosts = getStringArrayFlag(args.flags, "--allow-host");
     const outPath = getOptionalStringFlag(args.flags, "--out");
     const maxItems = getNumberFlag(args.flags, "--max-items", 20, { min: 1 });
@@ -155,23 +158,32 @@ async function main() {
     });
     const cacheDir = getOptionalStringFlag(args.flags, "--cache-dir");
     const cache = !args.flags.has("--no-cache");
+    const dedupe = !args.flags.has("--no-dedupe");
 
-    let result: Awaited<ReturnType<typeof fetchFeed>>;
+    let results: Awaited<ReturnType<typeof fetchFeed>>[] = [];
     try {
-      result = await fetchFeed(url, {
-        allowHosts,
-        cache,
-        cacheDir,
-        cacheTtlMs: cacheTtlSeconds * 1000,
-        maxBytes,
-        maxItems,
-        timeoutMs,
-      });
+      results = await Promise.all(
+        urls.map((url) =>
+          fetchFeed(url, {
+            allowHosts,
+            cache,
+            cacheDir,
+            cacheTtlMs: cacheTtlSeconds * 1000,
+            maxBytes,
+            maxItems,
+            timeoutMs,
+          }),
+        ),
+      );
     } catch (err) {
       die(err instanceof Error ? err.message : String(err));
     }
 
-    const output = `${JSON.stringify(result.items, null, 2)}\n`;
+    const items = results.flatMap((r) => r.items);
+    const finalItems = dedupe
+      ? dedupeByUrl(items).slice(0, maxItems)
+      : items.slice(0, maxItems);
+    const output = `${JSON.stringify(finalItems, null, 2)}\n`;
     if (!outPath || outPath === "-") {
       process.stdout.write(output);
       return;
@@ -369,6 +381,19 @@ async function loadPersonasOrDie(path: string) {
     const message = err instanceof Error ? err.message : String(err);
     die(`Invalid personas file '${path}': ${message}`);
   }
+}
+
+function dedupeByUrl(items: FeedItem[]): FeedItem[] {
+  const seen = new Set<string>();
+  const out: FeedItem[] = [];
+  for (const item of items) {
+    const key = item.url.trim();
+    if (key.length === 0) continue;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(item);
+  }
+  return out;
 }
 
 function setFlagValue(

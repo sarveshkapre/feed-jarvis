@@ -14,6 +14,7 @@ export type FetchFeedOptions = {
   maxItems: number;
   timeoutMs: number;
   now?: () => number;
+  fetchFn?: typeof fetch;
 };
 
 export type FetchFeedResult = {
@@ -26,6 +27,7 @@ export async function fetchFeed(
   options: FetchFeedOptions,
 ): Promise<FetchFeedResult> {
   const now = options.now ?? (() => Date.now());
+  const fetchFn = options.fetchFn ?? fetch;
   const parsedUrl = new URL(url);
   if (parsedUrl.protocol !== "https:" && parsedUrl.protocol !== "http:") {
     throw new Error(`Unsupported URL protocol: ${parsedUrl.protocol}`);
@@ -46,7 +48,13 @@ export async function fetchFeed(
     }
   }
 
-  const xml = await fetchXml(url, options.maxBytes, options.timeoutMs);
+  const xml = await fetchXml(
+    url,
+    options.allowHosts,
+    options.maxBytes,
+    options.timeoutMs,
+    fetchFn,
+  );
 
   if (options.cache) {
     await writeCache(cachePath, {
@@ -137,59 +145,81 @@ function getDefaultCacheDir(): string {
 
 async function fetchXml(
   url: string,
+  allowHosts: string[],
   maxBytes: number,
   timeoutMs: number,
+  fetchFn: typeof fetch,
 ): Promise<string> {
-  const res = await fetch(url, {
-    signal: AbortSignal.timeout(timeoutMs),
-    headers: {
-      "user-agent": "feed-jarvis/0.0.0",
-      accept:
-        "application/rss+xml, application/atom+xml, application/xml, text/xml;q=0.9, */*;q=0.1",
-    },
-  });
-
-  if (!res.ok) {
-    throw new Error(`Fetch failed: ${res.status} ${res.statusText}`);
-  }
-
-  const lengthHeader = res.headers.get("content-length");
-  if (lengthHeader) {
-    const length = Number(lengthHeader);
-    if (Number.isFinite(length) && length > maxBytes) {
-      throw new Error(`Feed too large: ${length} bytes (max: ${maxBytes})`);
+  let currentUrl = new URL(url);
+  for (let redirectCount = 0; redirectCount <= 5; redirectCount++) {
+    if (currentUrl.protocol !== "https:" && currentUrl.protocol !== "http:") {
+      throw new Error(`Unsupported URL protocol: ${currentUrl.protocol}`);
     }
-  }
+    enforceAllowlist(currentUrl, allowHosts);
 
-  if (!res.body) {
-    const text = await res.text();
-    if (Buffer.byteLength(text, "utf8") > maxBytes) {
-      throw new Error(`Feed too large (max: ${maxBytes} bytes)`);
+    const res = await fetchFn(currentUrl.toString(), {
+      redirect: "manual",
+      signal: AbortSignal.timeout(timeoutMs),
+      headers: {
+        "user-agent": "feed-jarvis/0.0.0",
+        accept:
+          "application/rss+xml, application/atom+xml, application/xml, text/xml;q=0.9, */*;q=0.1",
+      },
+    });
+
+    if (res.status >= 300 && res.status < 400) {
+      const location = res.headers.get("location");
+      if (!location) {
+        throw new Error(`Redirect (${res.status}) without Location header`);
+      }
+      currentUrl = new URL(location, currentUrl);
+      continue;
     }
-    return text;
-  }
 
-  const reader = res.body.getReader();
-  const chunks: Uint8Array[] = [];
-  let received = 0;
-
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    if (!value) continue;
-    received += value.byteLength;
-    if (received > maxBytes) {
-      throw new Error(`Feed too large (max: ${maxBytes} bytes)`);
+    if (!res.ok) {
+      throw new Error(`Fetch failed: ${res.status} ${res.statusText}`);
     }
-    chunks.push(value);
+
+    const lengthHeader = res.headers.get("content-length");
+    if (lengthHeader) {
+      const length = Number(lengthHeader);
+      if (Number.isFinite(length) && length > maxBytes) {
+        throw new Error(`Feed too large: ${length} bytes (max: ${maxBytes})`);
+      }
+    }
+
+    if (!res.body) {
+      const text = await res.text();
+      if (Buffer.byteLength(text, "utf8") > maxBytes) {
+        throw new Error(`Feed too large (max: ${maxBytes} bytes)`);
+      }
+      return text;
+    }
+
+    const reader = res.body.getReader();
+    const chunks: Uint8Array[] = [];
+    let received = 0;
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (!value) continue;
+      received += value.byteLength;
+      if (received > maxBytes) {
+        throw new Error(`Feed too large (max: ${maxBytes} bytes)`);
+      }
+      chunks.push(value);
+    }
+
+    const combined = new Uint8Array(received);
+    let offset = 0;
+    for (const chunk of chunks) {
+      combined.set(chunk, offset);
+      offset += chunk.byteLength;
+    }
+
+    return new TextDecoder().decode(combined);
   }
 
-  const combined = new Uint8Array(received);
-  let offset = 0;
-  for (const chunk of chunks) {
-    combined.set(chunk, offset);
-    offset += chunk.byteLength;
-  }
-
-  return new TextDecoder().decode(combined);
+  throw new Error("Too many redirects");
 }
