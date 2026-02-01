@@ -128,4 +128,47 @@ describe("fetchFeed", () => {
     expect(first.source).toBe("network");
     expect(second.source).toBe("cache");
   });
+
+  it("falls back to stale cache when enabled", async () => {
+    const xml = `<?xml version="1.0"?>
+<rss version="2.0"><channel>
+  <item><title>A</title><link>https://good.example/a</link></item>
+</channel></rss>`;
+
+    const fetchFn: typeof fetch = async () =>
+      new Response(xml, { status: 200, headers: { etag: "W/123" } });
+
+    const now = () => 1_000_000;
+    await fetchFeed("https://good.example/feed.xml", {
+      allowHosts: ["good.example"],
+      cache: true,
+      cacheTtlMs: 1,
+      maxBytes: 1_000_000,
+      maxItems: 10,
+      timeoutMs: 1000,
+      fetchFn,
+      now,
+      staleIfError: true,
+    });
+
+    const failingFetch: typeof fetch = async () =>
+      new Response(null, { status: 500, statusText: "boom" });
+
+    const result = await fetchFeed("https://good.example/feed.xml", {
+      allowHosts: ["good.example"],
+      cache: true,
+      cacheTtlMs: 1,
+      maxBytes: 1_000_000,
+      maxItems: 10,
+      timeoutMs: 1000,
+      fetchFn: failingFetch,
+      now: () => now() + 10_000,
+      staleIfError: true,
+    });
+
+    expect(result.source).toBe("cache");
+    expect(result.items).toEqual([
+      { title: "A", url: "https://good.example/a" },
+    ]);
+  });
 });

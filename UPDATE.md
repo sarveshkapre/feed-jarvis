@@ -8,6 +8,7 @@
 - Improved: `fetch` supports repeated `--url`, dedupes by event URL (disable with `--no-dedupe`), and enforces allowlist across redirects.
 - Improved: conditional requests with `ETag`/`Last-Modified` when caching.
 - Improved: `fetch --stats` prints a fetch summary to stderr.
+- Improved: `fetch --stale-if-error` serves stale cache on failures.
 - Improved: `generate` supports `--out posts.txt` and `--format jsonl`.
 - Hardening: guaranteed max-length posts even with extremely long URLs; clearer input validation errors.
 

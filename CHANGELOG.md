@@ -6,6 +6,7 @@
 - CLI: `fetch` supports multiple `--url` values, url-based dedupe (default on), and allowlist-enforced redirects.
 - Fetch: honors `ETag`/`Last-Modified` for conditional requests when caching.
 - Fetch: `--stats` prints fetch summary to stderr.
+- Fetch: `--stale-if-error` serves stale cache when the network fails.
 - CLI: `generate` supports `--out` and `--format jsonl`.
 - CLI: `generate` supports `--input -`, `--format json`, and `--max-chars`.
 - CLI: `--personas` loads persona definitions from a JSON file (overrides built-ins).

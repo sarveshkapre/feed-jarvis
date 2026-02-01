@@ -15,6 +15,7 @@ export type FetchFeedOptions = {
   timeoutMs: number;
   now?: () => number;
   fetchFn?: typeof fetch;
+  staleIfError?: boolean;
 };
 
 export type FetchFeedResult = {
@@ -53,14 +54,30 @@ export async function fetchFeed(
     };
   }
 
-  const fetchResult = await fetchXml(
-    url,
-    options.allowHosts,
-    options.maxBytes,
-    options.timeoutMs,
-    fetchFn,
-    cached,
-  );
+  let fetchResult: {
+    xml: string;
+    etag?: string;
+    lastModified?: string;
+    notModified?: boolean;
+  };
+  try {
+    fetchResult = await fetchXml(
+      url,
+      options.allowHosts,
+      options.maxBytes,
+      options.timeoutMs,
+      fetchFn,
+      cached,
+    );
+  } catch (err) {
+    if (options.staleIfError && cached) {
+      return {
+        items: parseFeedXml(cached.xml, options.maxItems),
+        source: "cache",
+      };
+    }
+    throw err;
+  }
 
   if (options.cache) {
     await writeCache(cachePath, {

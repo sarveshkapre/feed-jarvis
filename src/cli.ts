@@ -38,6 +38,7 @@ Fetch options:
   --no-cache                Disable caching
   --no-dedupe               Do not dedupe by event url
   --stats                   Print fetch stats to stderr
+  --stale-if-error          Use stale cache on fetch errors
 
 Generate options:
   --input <path|->        Path to events JSON, or '-' for stdin (required)
@@ -162,6 +163,7 @@ async function main() {
     const cache = !args.flags.has("--no-cache");
     const dedupe = !args.flags.has("--no-dedupe");
     const stats = args.flags.has("--stats");
+    const staleIfError = args.flags.has("--stale-if-error");
 
     let results: Awaited<ReturnType<typeof fetchFeed>>[] = [];
     try {
@@ -175,6 +177,7 @@ async function main() {
             maxBytes,
             maxItems,
             timeoutMs,
+            staleIfError,
           }),
         ),
       );

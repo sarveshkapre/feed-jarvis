@@ -15,6 +15,7 @@ Fetch from an RSS/Atom feed (requires explicit allowlist):
 ```bash
 npm run dev -- fetch --url https://example.com/rss.xml --allow-host example.com > events.json
 npm run dev -- fetch --url https://example.com/rss.xml --allow-host example.com --stats > events.json
+npm run dev -- fetch --url https://example.com/rss.xml --allow-host example.com --stale-if-error > events.json
 npm run dev -- generate --input events.json --persona Analyst
 ```
 
