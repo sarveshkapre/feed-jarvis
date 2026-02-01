@@ -67,4 +67,63 @@ describe("fetchFeed", () => {
       { title: "A", url: "https://good.example/a" },
     ]);
   });
+
+  it("uses conditional requests when cache metadata exists", async () => {
+    const xml = `<?xml version="1.0"?>
+<rss version="2.0"><channel>
+  <item><title>A</title><link>https://good.example/a</link></item>
+</channel></rss>`;
+
+    const responses: Array<Response | (() => Response)> = [
+      () =>
+        new Response(xml, {
+          status: 200,
+          headers: {
+            etag: "W/123",
+            "last-modified": "Wed, 01 Jan 2025 00:00:00 GMT",
+          },
+        }),
+      new Response(null, { status: 304 }),
+    ];
+
+    let seenIfNoneMatch = "";
+    let seenIfModifiedSince = "";
+
+    const fetchFn: typeof fetch = async (_input, init) => {
+      const headers = init?.headers as Record<string, string> | undefined;
+      if (headers) {
+        seenIfNoneMatch = headers["if-none-match"] ?? "";
+        seenIfModifiedSince = headers["if-modified-since"] ?? "";
+      }
+      const value = responses.shift();
+      if (!value) throw new Error("No more mocked responses");
+      return typeof value === "function" ? value() : value;
+    };
+
+    const now = () => 1_000_000;
+    await fetchFeed("https://good.example/feed.xml", {
+      allowHosts: ["good.example"],
+      cache: true,
+      cacheTtlMs: 0,
+      maxBytes: 1_000_000,
+      maxItems: 10,
+      timeoutMs: 1000,
+      fetchFn,
+      now,
+    });
+
+    await fetchFeed("https://good.example/feed.xml", {
+      allowHosts: ["good.example"],
+      cache: true,
+      cacheTtlMs: 0,
+      maxBytes: 1_000_000,
+      maxItems: 10,
+      timeoutMs: 1000,
+      fetchFn,
+      now,
+    });
+
+    expect(seenIfNoneMatch).toBe("W/123");
+    expect(seenIfModifiedSince).toBe("Wed, 01 Jan 2025 00:00:00 GMT");
+  });
 });

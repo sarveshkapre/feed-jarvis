@@ -38,34 +38,31 @@ export async function fetchFeed(
   const cacheKey = createHash("sha256").update(url).digest("hex");
   const cachePath = path.join(cacheDir, `${cacheKey}.json`);
 
-  if (options.cache) {
-    const cached = await readCache(cachePath, now(), options.cacheTtlMs);
-    if (cached) {
-      return {
-        items: parseFeedXml(cached.xml, options.maxItems),
-        source: "cache",
-      };
-    }
-  }
+  const cached = options.cache
+    ? await readCache(cachePath, now(), options.cacheTtlMs, true)
+    : null;
 
-  const xml = await fetchXml(
+  const fetchResult = await fetchXml(
     url,
     options.allowHosts,
     options.maxBytes,
     options.timeoutMs,
     fetchFn,
+    cached,
   );
 
   if (options.cache) {
     await writeCache(cachePath, {
       fetchedAtMs: now(),
       url,
-      xml,
+      xml: fetchResult.xml,
+      etag: fetchResult.etag,
+      lastModified: fetchResult.lastModified,
     });
   }
 
   return {
-    items: parseFeedXml(xml, options.maxItems),
+    items: parseFeedXml(fetchResult.xml, options.maxItems),
     source: "network",
   };
 }
@@ -97,12 +94,15 @@ type CacheEntry = {
   fetchedAtMs: number;
   url: string;
   xml: string;
+  etag?: string;
+  lastModified?: string;
 };
 
 async function readCache(
   cachePath: string,
   nowMs: number,
   cacheTtlMs: number,
+  ignoreTtl = false,
 ): Promise<CacheEntry | null> {
   try {
     const raw = await readFile(cachePath, "utf8");
@@ -111,9 +111,14 @@ async function readCache(
     if (typeof parsed.fetchedAtMs !== "number") return null;
     if (typeof parsed.url !== "string") return null;
     if (typeof parsed.xml !== "string") return null;
+    if (parsed.etag && typeof parsed.etag !== "string") return null;
+    if (parsed.lastModified && typeof parsed.lastModified !== "string")
+      return null;
 
-    if (cacheTtlMs <= 0) return null;
-    if (nowMs - parsed.fetchedAtMs > cacheTtlMs) return null;
+    if (!ignoreTtl) {
+      if (cacheTtlMs <= 0) return null;
+      if (nowMs - parsed.fetchedAtMs > cacheTtlMs) return null;
+    }
 
     return parsed;
   } catch {
@@ -149,7 +154,8 @@ async function fetchXml(
   maxBytes: number,
   timeoutMs: number,
   fetchFn: typeof fetch,
-): Promise<string> {
+  cacheEntry?: CacheEntry | null,
+): Promise<{ xml: string; etag?: string; lastModified?: string }> {
   let currentUrl = new URL(url);
   for (let redirectCount = 0; redirectCount <= 5; redirectCount++) {
     if (currentUrl.protocol !== "https:" && currentUrl.protocol !== "http:") {
@@ -157,15 +163,31 @@ async function fetchXml(
     }
     enforceAllowlist(currentUrl, allowHosts);
 
+    const headers: Record<string, string> = {
+      "user-agent": "feed-jarvis/0.0.0",
+      accept:
+        "application/rss+xml, application/atom+xml, application/xml, text/xml;q=0.9, */*;q=0.1",
+    };
+    if (cacheEntry?.etag) headers["if-none-match"] = cacheEntry.etag;
+    if (cacheEntry?.lastModified)
+      headers["if-modified-since"] = cacheEntry.lastModified;
+
     const res = await fetchFn(currentUrl.toString(), {
       redirect: "manual",
       signal: AbortSignal.timeout(timeoutMs),
-      headers: {
-        "user-agent": "feed-jarvis/0.0.0",
-        accept:
-          "application/rss+xml, application/atom+xml, application/xml, text/xml;q=0.9, */*;q=0.1",
-      },
+      headers,
     });
+
+    if (res.status === 304) {
+      if (!cacheEntry) {
+        throw new Error("Received 304 without a cached response");
+      }
+      return {
+        xml: cacheEntry.xml,
+        etag: cacheEntry.etag,
+        lastModified: cacheEntry.lastModified,
+      };
+    }
 
     if (res.status >= 300 && res.status < 400) {
       const location = res.headers.get("location");
@@ -180,6 +202,9 @@ async function fetchXml(
       throw new Error(`Fetch failed: ${res.status} ${res.statusText}`);
     }
 
+    const etag = res.headers.get("etag") ?? undefined;
+    const lastModified = res.headers.get("last-modified") ?? undefined;
+
     const lengthHeader = res.headers.get("content-length");
     if (lengthHeader) {
       const length = Number(lengthHeader);
@@ -193,7 +218,7 @@ async function fetchXml(
       if (Buffer.byteLength(text, "utf8") > maxBytes) {
         throw new Error(`Feed too large (max: ${maxBytes} bytes)`);
       }
-      return text;
+      return { xml: text, etag, lastModified };
     }
 
     const reader = res.body.getReader();
@@ -218,7 +243,7 @@ async function fetchXml(
       offset += chunk.byteLength;
     }
 
-    return new TextDecoder().decode(combined);
+    return { xml: new TextDecoder().decode(combined), etag, lastModified };
   }
 
   throw new Error("Too many redirects");
