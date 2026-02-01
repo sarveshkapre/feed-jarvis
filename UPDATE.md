@@ -9,6 +9,9 @@
 - `make check`
 
 ## PR
-- If GitHub CLI is authenticated: `gh pr create --fill`
-- Otherwise: push a branch and open a PR in GitHub UI.
-
+- Commit: `f148ffa`
+- Branch: `feat/cli-ux`
+- No git remote is configured yet. Next steps:
+  - `git remote add origin <your-repo-url>`
+  - `git push -u origin feat/cli-ux`
+  - `gh pr create --fill`
