@@ -37,6 +37,7 @@ Fetch options:
   --cache-dir <path>        Cache directory (default: OS cache dir)
   --no-cache                Disable caching
   --no-dedupe               Do not dedupe by event url
+  --stats                   Print fetch stats to stderr
 
 Generate options:
   --input <path|->        Path to events JSON, or '-' for stdin (required)
@@ -160,6 +161,7 @@ async function main() {
     const cacheDir = getOptionalStringFlag(args.flags, "--cache-dir");
     const cache = !args.flags.has("--no-cache");
     const dedupe = !args.flags.has("--no-dedupe");
+    const stats = args.flags.has("--stats");
 
     let results: Awaited<ReturnType<typeof fetchFeed>>[] = [];
     try {
@@ -185,6 +187,22 @@ async function main() {
       ? dedupeByUrl(items).slice(0, maxItems)
       : items.slice(0, maxItems);
     const output = `${JSON.stringify(finalItems, null, 2)}\n`;
+    if (stats) {
+      const cacheCount = results.filter((r) => r.source === "cache").length;
+      const networkCount = results.filter((r) => r.source === "network").length;
+      const dedupedCount = dedupe ? items.length - finalItems.length : 0;
+      console.error(
+        [
+          "Feed Jarvis fetch stats:",
+          `- feeds: ${results.length} (${cacheCount} cache, ${networkCount} network)`,
+          `- items: ${items.length}`,
+          `- emitted: ${finalItems.length}`,
+          dedupe ? `- deduped: ${dedupedCount}` : undefined,
+        ]
+          .filter(Boolean)
+          .join("\n"),
+      );
+    }
     if (!outPath || outPath === "-") {
       process.stdout.write(output);
       return;

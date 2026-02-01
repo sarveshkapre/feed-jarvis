@@ -101,7 +101,7 @@ describe("fetchFeed", () => {
     };
 
     const now = () => 1_000_000;
-    await fetchFeed("https://good.example/feed.xml", {
+    const first = await fetchFeed("https://good.example/feed.xml", {
       allowHosts: ["good.example"],
       cache: true,
       cacheTtlMs: 0,
@@ -112,7 +112,7 @@ describe("fetchFeed", () => {
       now,
     });
 
-    await fetchFeed("https://good.example/feed.xml", {
+    const second = await fetchFeed("https://good.example/feed.xml", {
       allowHosts: ["good.example"],
       cache: true,
       cacheTtlMs: 0,
@@ -125,5 +125,7 @@ describe("fetchFeed", () => {
 
     expect(seenIfNoneMatch).toBe("W/123");
     expect(seenIfModifiedSince).toBe("Wed, 01 Jan 2025 00:00:00 GMT");
+    expect(first.source).toBe("network");
+    expect(second.source).toBe("cache");
   });
 });

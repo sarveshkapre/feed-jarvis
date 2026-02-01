@@ -42,6 +42,17 @@ export async function fetchFeed(
     ? await readCache(cachePath, now(), options.cacheTtlMs, true)
     : null;
 
+  if (
+    cached &&
+    options.cacheTtlMs > 0 &&
+    now() - cached.fetchedAtMs <= options.cacheTtlMs
+  ) {
+    return {
+      items: parseFeedXml(cached.xml, options.maxItems),
+      source: "cache",
+    };
+  }
+
   const fetchResult = await fetchXml(
     url,
     options.allowHosts,
@@ -63,7 +74,7 @@ export async function fetchFeed(
 
   return {
     items: parseFeedXml(fetchResult.xml, options.maxItems),
-    source: "network",
+    source: fetchResult.notModified ? "cache" : "network",
   };
 }
 
@@ -155,7 +166,12 @@ async function fetchXml(
   timeoutMs: number,
   fetchFn: typeof fetch,
   cacheEntry?: CacheEntry | null,
-): Promise<{ xml: string; etag?: string; lastModified?: string }> {
+): Promise<{
+  xml: string;
+  etag?: string;
+  lastModified?: string;
+  notModified?: boolean;
+}> {
   let currentUrl = new URL(url);
   for (let redirectCount = 0; redirectCount <= 5; redirectCount++) {
     if (currentUrl.protocol !== "https:" && currentUrl.protocol !== "http:") {
@@ -186,6 +202,7 @@ async function fetchXml(
         xml: cacheEntry.xml,
         etag: cacheEntry.etag,
         lastModified: cacheEntry.lastModified,
+        notModified: true,
       };
     }
 
