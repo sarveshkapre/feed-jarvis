@@ -2,6 +2,8 @@ const state = {
   items: [],
   posts: [],
   personas: [],
+  channel: "x",
+  template: "straight",
 };
 
 const elements = {
@@ -24,6 +26,8 @@ const elements = {
   customPersonaName: document.getElementById("customPersonaName"),
   customPersonaPrefix: document.getElementById("customPersonaPrefix"),
   personaCards: document.getElementById("personaCards"),
+  channelButtons: Array.from(document.querySelectorAll("#channelToggle button")),
+  templateSelect: document.getElementById("templateSelect"),
   maxChars: document.getElementById("maxChars"),
   generateBtn: document.getElementById("generateBtn"),
   postsStatus: document.getElementById("postsStatus"),
@@ -32,6 +36,13 @@ const elements = {
   copyAllBtn: document.getElementById("copyAllBtn"),
   downloadTxtBtn: document.getElementById("downloadTxtBtn"),
   downloadJsonBtn: document.getElementById("downloadJsonBtn"),
+  downloadCsvBtn: document.getElementById("downloadCsvBtn"),
+};
+
+const channelDefaults = {
+  x: 280,
+  linkedin: 700,
+  newsletter: 900,
 };
 
 function setStatus(element, message, tone = "info") {
@@ -100,12 +111,14 @@ function updatePostsPreview() {
     elements.copyAllBtn.disabled = true;
     elements.downloadTxtBtn.disabled = true;
     elements.downloadJsonBtn.disabled = true;
+    elements.downloadCsvBtn.disabled = true;
     return;
   }
   elements.postsEmpty.style.display = "none";
   elements.copyAllBtn.disabled = false;
   elements.downloadTxtBtn.disabled = false;
   elements.downloadJsonBtn.disabled = false;
+  elements.downloadCsvBtn.disabled = false;
 
   state.posts.forEach((post, index) => {
     const wrapper = document.createElement("div");
@@ -160,6 +173,25 @@ function downloadFile(filename, content) {
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
+}
+
+function setChannel(channel) {
+  if (!channelDefaults[channel]) return;
+  state.channel = channel;
+  elements.channelButtons.forEach((button) => {
+    button.classList.toggle("active", button.dataset.channel === channel);
+  });
+  elements.maxChars.value = String(channelDefaults[channel]);
+}
+
+function toCsv(posts, channel) {
+  const header = "channel,post";
+  const rows = posts.map((post) => {
+    const safeChannel = String(channel).replace(/"/g, '""');
+    const safePost = String(post).replace(/"/g, '""');
+    return `"${safeChannel}","${safePost}"`;
+  });
+  return `${[header, ...rows].join("\\n")}\\n`;
 }
 
 async function loadPersonas() {
@@ -264,6 +296,8 @@ async function generatePosts() {
   const payload = {
     items: state.items,
     maxChars,
+    channel: state.channel,
+    template: elements.templateSelect.value,
     personaName: useCustom ? undefined : elements.personaSelect.value,
     personaCustom: useCustom
       ? {
@@ -317,12 +351,25 @@ function wireEvents() {
   });
 
   elements.downloadTxtBtn.addEventListener("click", () => {
-    downloadFile("feed-jarvis-posts.txt", state.posts.join("\n"));
+    downloadFile(
+      `feed-jarvis-${state.channel}-posts.txt`,
+      state.posts.join("\n"),
+    );
   });
 
   elements.downloadJsonBtn.addEventListener("click", () => {
     const jsonl = state.posts.map((post) => JSON.stringify(post)).join("\n");
-    downloadFile("feed-jarvis-posts.jsonl", `${jsonl}\n`);
+    downloadFile(
+      `feed-jarvis-${state.channel}-posts.jsonl`,
+      `${jsonl}\n`,
+    );
+  });
+
+  elements.downloadCsvBtn.addEventListener("click", () => {
+    downloadFile(
+      `feed-jarvis-${state.channel}-posts.csv`,
+      toCsv(state.posts, state.channel),
+    );
   });
 
   document.addEventListener("keydown", (event) => {
@@ -336,7 +383,14 @@ function wireEvents() {
       loadItemsFromJson();
     }
   });
+
+  elements.channelButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      setChannel(button.dataset.channel);
+    });
+  });
 }
 
 wireEvents();
 loadPersonas();
+setChannel("x");

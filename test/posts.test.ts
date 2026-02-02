@@ -32,4 +32,17 @@ describe("generatePost", () => {
     expect(post.includes("example.com")).toBe(true);
     expect(post.includes("…")).toBe(true);
   });
+
+  it("supports channel formatting with labeled urls", () => {
+    const persona = getPersona("Analyst");
+    const post = generatePost(
+      { title: "New release notes", url: "https://example.com/release" },
+      persona,
+      280,
+      { channel: "linkedin" },
+    );
+
+    expect(post.includes("Read more:")).toBe(true);
+    expect(post.includes("\n")).toBe(true);
+  });
 });

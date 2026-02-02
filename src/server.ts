@@ -4,7 +4,12 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { fetchFeed } from "./lib/feedFetch.js";
 import { DEFAULT_PERSONAS, getPersona, type Persona } from "./lib/personas.js";
-import { generatePosts, type FeedItem } from "./lib/posts.js";
+import {
+  generatePosts,
+  type FeedItem,
+  type PostChannel,
+  type PostTemplate,
+} from "./lib/posts.js";
 
 const PORT = Number(process.env.PORT) || 4321;
 const MAX_BODY_BYTES = 1_000_000;
@@ -187,10 +192,26 @@ async function handleGenerate(body: unknown) {
   const maxCharsRaw = Number(Reflect.get(body, "maxChars"));
   const maxChars = Number.isFinite(maxCharsRaw) && maxCharsRaw > 0 ? Math.floor(maxCharsRaw) : 280;
   const persona = resolvePersona(body as Record<string, unknown>);
+  const channel = resolveChannel(Reflect.get(body, "channel"));
+  const template = resolveTemplate(Reflect.get(body, "template"));
 
   return {
-    posts: generatePosts(items, persona, maxChars),
+    posts: generatePosts(items, persona, maxChars, { channel, template }),
   };
+}
+
+function resolveChannel(value: unknown): PostChannel {
+  if (value === "x" || value === "linkedin" || value === "newsletter") {
+    return value;
+  }
+  return "x";
+}
+
+function resolveTemplate(value: unknown): PostTemplate {
+  if (value === "straight" || value === "takeaway" || value === "cta") {
+    return value;
+  }
+  return "straight";
 }
 
 async function serveStatic(req: import("node:http").IncomingMessage, res: import("node:http").ServerResponse) {

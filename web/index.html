@@ -36,6 +36,7 @@
           <span class="badge">Local-first</span>
           <span class="badge">RSS + JSON</span>
           <span class="badge">Persona presets</span>
+          <span class="badge">Multi-channel</span>
           <span class="badge">Draft-ready output</span>
         </div>
       </section>
@@ -134,6 +135,24 @@
             </div>
           </div>
           <div class="controls">
+            <label>
+              Channel
+              <span>Choose the destination. We set a sensible max length.</span>
+            </label>
+            <div class="toggle" id="channelToggle">
+              <button type="button" class="active" data-channel="x">X</button>
+              <button type="button" data-channel="linkedin">LinkedIn</button>
+              <button type="button" data-channel="newsletter">Newsletter</button>
+            </div>
+            <label for="templateSelect">
+              Style
+              <span>Pick a framing cue for the draft.</span>
+            </label>
+            <select id="templateSelect">
+              <option value="straight">Straight</option>
+              <option value="takeaway">Takeaway</option>
+              <option value="cta">Call to action</option>
+            </select>
             <div class="inline-row">
               <label for="maxChars">Max characters</label>
               <input id="maxChars" type="number" min="1" value="280" />
@@ -143,6 +162,7 @@
               <button class="secondary" id="copyAllBtn" disabled>Copy all</button>
               <button class="ghost" id="downloadTxtBtn" disabled>Download .txt</button>
               <button class="ghost" id="downloadJsonBtn" disabled>Download .jsonl</button>
+              <button class="ghost" id="downloadCsvBtn" disabled>Download .csv</button>
             </div>
             <div class="status" id="postsStatus" role="status" aria-live="polite"></div>
           </div>

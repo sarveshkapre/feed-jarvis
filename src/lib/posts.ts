@@ -5,20 +5,37 @@ export type FeedItem = {
   url: string;
 };
 
+export type PostChannel = "x" | "linkedin" | "newsletter";
+export type PostTemplate = "straight" | "takeaway" | "cta";
+
+export type PostOptions = {
+  channel?: PostChannel;
+  template?: PostTemplate;
+};
+
 export function generatePost(
   item: FeedItem,
   persona: Persona,
   maxChars = 280,
+  options: PostOptions = {},
 ): string {
-  const base = `${persona.prefix} ${item.title}`.trim();
-
+  const base = formatBase(item.title, persona, options.template);
   const url = item.url.trim();
-  let suffix = url ? ` ${url}` : "";
+  let suffix = "";
 
-  if (suffix.length > maxChars) {
-    const allowedUrlChars = Math.max(0, maxChars - 1);
-    suffix =
-      allowedUrlChars > 0 ? ` ${truncateMiddle(url, allowedUrlChars)}` : "";
+  if (url) {
+    const { separator, label, joiner } = getUrlFormat(options.channel);
+    const labelText = label ? `${label}${joiner}` : "";
+    const prefix = `${separator}${labelText}`;
+    const full = `${prefix}${url}`;
+    if (full.length <= maxChars) {
+      suffix = full;
+    } else {
+      const allowedUrlChars = Math.max(0, maxChars - prefix.length);
+      if (allowedUrlChars > 0) {
+        suffix = `${prefix}${truncateMiddle(url, allowedUrlChars)}`;
+      }
+    }
   }
 
   const available = Math.max(0, maxChars - suffix.length);
@@ -38,8 +55,51 @@ export function generatePosts(
   items: FeedItem[],
   persona: Persona,
   maxChars = 280,
+  options: PostOptions = {},
 ): string[] {
-  return items.map((item) => generatePost(item, persona, maxChars));
+  return items.map((item) => generatePost(item, persona, maxChars, options));
+}
+
+function formatBase(
+  title: string,
+  persona: Persona,
+  template?: PostTemplate,
+): string {
+  const trimmedTitle = title.trim();
+  const prefix = persona.prefix.trim();
+  const frame = getTemplateFrame(template);
+
+  const framed = frame
+    ? frame.replace("{title}", trimmedTitle || "Update")
+    : trimmedTitle;
+
+  return `${prefix} ${framed}`.trim();
+}
+
+function getTemplateFrame(template?: PostTemplate): string | undefined {
+  switch (template) {
+    case "takeaway":
+      return "Takeaway: {title}";
+    case "cta":
+      return "{title} — Get the details";
+    default:
+      return undefined;
+  }
+}
+
+function getUrlFormat(channel?: PostChannel): {
+  separator: string;
+  label: string;
+  joiner: string;
+} {
+  switch (channel) {
+    case "linkedin":
+      return { separator: "\n", label: "Read more:", joiner: " " };
+    case "newsletter":
+      return { separator: "\n", label: "Source:", joiner: " " };
+    default:
+      return { separator: " ", label: "", joiner: "" };
+  }
 }
 
 function truncateMiddle(text: string, maxChars: number): string {
