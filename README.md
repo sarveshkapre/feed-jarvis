@@ -1,6 +1,6 @@
 # Feed Jarvis (`feed-jarvis`)
 
-Persona-based agents that generate short posts from “latest events” inputs (local-first, no auth).
+Local-first CLI that turns RSS/Atom or JSON event feeds into persona-branded, tweet-length posts.
 
 ## Quickstart
 

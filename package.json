@@ -1,7 +1,7 @@
 {
   "name": "feed-jarvis",
   "version": "0.0.0",
-  "description": "Persona-based post generator from structured event feeds (local-first).",
+  "description": "Local-first CLI that turns RSS/Atom or JSON event feeds into persona-branded, tweet-length posts.",
   "license": "MIT",
   "type": "module",
   "bin": {
