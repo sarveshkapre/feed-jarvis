@@ -1,8 +1,17 @@
-# Feed Jarvis (`feed-jarvis`)
+# Feed Jarvis Studio (`feed-jarvis`)
 
-Local-first CLI that turns RSS/Atom or JSON event feeds into persona-branded, tweet-length posts.
+Local-first studio + CLI that turns RSS/JSON feeds into on-brand social drafts.
 
-## Quickstart
+## Studio quickstart
+
+```bash
+make setup
+npm run dev:web
+```
+
+Open `http://localhost:4321` and walk through the three-step flow: load items, choose a persona, export drafts.
+
+## CLI quickstart
 
 ```bash
 make setup
@@ -19,11 +28,11 @@ npm run dev -- fetch --url https://example.com/rss.xml --allow-host example.com 
 npm run dev -- generate --input events.json --persona Analyst
 ```
 
-## What it does (MVP)
-- Reads a JSON list of items (`title`, `url`)
-- Generates ≤280-char posts for a named persona
-- Outputs newline-delimited posts to stdout
- - Can fetch RSS/Atom into the JSON events format (explicit allowlist + caching)
+## What it does
+- Studio: three-step workspace to fetch items, pick a persona, and edit/export drafts.
+- Local-first: feeds and drafts never leave your machine.
+- Personas: consistent voice with editable prefixes.
+- Outputs: text, JSON, or JSONL drafts ready for your scheduler.
 
 Tip: load/override personas from a file via `--personas personas.json` (array of `{name, prefix}`).
 Tip: write posts to a file with `--out posts.txt` or `--format jsonl` for one JSON string per line.

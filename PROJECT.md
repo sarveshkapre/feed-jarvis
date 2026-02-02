@@ -6,6 +6,7 @@
 ## Workflows
 - Setup: `make setup`
 - Dev: `make dev`
+- Studio Dev: `npm run dev:web`
 - Test: `make test`
 - Lint: `make lint`
 - Typecheck: `make typecheck`

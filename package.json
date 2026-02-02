@@ -1,7 +1,7 @@
 {
   "name": "feed-jarvis",
   "version": "0.0.0",
-  "description": "Local-first CLI that turns RSS/Atom or JSON event feeds into persona-branded, tweet-length posts.",
+  "description": "Local-first studio + CLI for turning RSS/JSON feeds into on-brand social drafts.",
   "license": "MIT",
   "type": "module",
   "bin": {
@@ -9,6 +9,7 @@
   },
   "scripts": {
     "dev": "tsx src/cli.ts",
+    "dev:web": "tsx src/server.ts",
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "biome check .",
