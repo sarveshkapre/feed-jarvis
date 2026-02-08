@@ -26,7 +26,9 @@ const elements = {
   customPersonaName: document.getElementById("customPersonaName"),
   customPersonaPrefix: document.getElementById("customPersonaPrefix"),
   personaCards: document.getElementById("personaCards"),
-  channelButtons: Array.from(document.querySelectorAll("#channelToggle button")),
+  channelButtons: Array.from(
+    document.querySelectorAll("#channelToggle button"),
+  ),
   templateSelect: document.getElementById("templateSelect"),
   maxChars: document.getElementById("maxChars"),
   generateBtn: document.getElementById("generateBtn"),
@@ -61,7 +63,8 @@ function setButtonLoading(button, isLoading, text) {
   if (!button) return;
   button.disabled = isLoading;
   if (text) {
-    button.dataset.originalText = button.dataset.originalText || button.textContent;
+    button.dataset.originalText =
+      button.dataset.originalText || button.textContent;
     button.textContent = isLoading ? text : button.dataset.originalText;
   }
 }
@@ -159,7 +162,12 @@ function copyText(text) {
   if (!text) return;
   navigator.clipboard.writeText(text).then(
     () => setStatus(elements.postsStatus, "Copied to clipboard."),
-    () => setStatus(elements.postsStatus, "Copy failed. Select the text manually.", "error"),
+    () =>
+      setStatus(
+        elements.postsStatus,
+        "Copy failed. Select the text manually.",
+        "error",
+      ),
   );
 }
 
@@ -200,8 +208,12 @@ async function loadPersonas() {
     if (!res.ok) throw new Error("Failed to load personas");
     const data = await res.json();
     state.personas = data.personas || [];
-  } catch (err) {
-    setStatus(elements.itemsStatus, "Unable to load personas. Refresh to retry.", "error");
+  } catch (_err) {
+    setStatus(
+      elements.itemsStatus,
+      "Unable to load personas. Refresh to retry.",
+      "error",
+    );
     return;
   }
 
@@ -213,7 +225,9 @@ async function loadPersonas() {
     elements.personaSelect.appendChild(option);
   });
 
-  const defaultPersona = state.personas.find((persona) => persona.name === "Analyst");
+  const defaultPersona = state.personas.find(
+    (persona) => persona.name === "Analyst",
+  );
   if (defaultPersona) {
     elements.personaSelect.value = defaultPersona.name;
   }
@@ -252,7 +266,11 @@ async function fetchItems() {
       `Loaded ${state.items.length} items from ${data.summary?.sources ?? urls.length} feed(s).`,
     );
   } catch (err) {
-    setStatus(elements.itemsStatus, err.message || "Feed fetch failed.", "error");
+    setStatus(
+      elements.itemsStatus,
+      err.message || "Feed fetch failed.",
+      "error",
+    );
   } finally {
     setButtonLoading(elements.fetchBtn, false);
   }
@@ -321,7 +339,11 @@ async function generatePosts() {
     updatePostsPreview();
     setStatus(elements.postsStatus, `Generated ${state.posts.length} drafts.`);
   } catch (err) {
-    setStatus(elements.postsStatus, err.message || "Generation failed.", "error");
+    setStatus(
+      elements.postsStatus,
+      err.message || "Generation failed.",
+      "error",
+    );
   } finally {
     setButtonLoading(elements.generateBtn, false);
   }
@@ -330,7 +352,9 @@ async function generatePosts() {
 function wireEvents() {
   elements.sourceButtons.forEach((button) => {
     button.addEventListener("click", () => {
-      elements.sourceButtons.forEach((btn) => btn.classList.remove("active"));
+      elements.sourceButtons.forEach((btn) => {
+        btn.classList.remove("active");
+      });
       button.classList.add("active");
       const source = button.dataset.source;
       elements.feedPanel.hidden = source !== "feed";
@@ -359,10 +383,7 @@ function wireEvents() {
 
   elements.downloadJsonBtn.addEventListener("click", () => {
     const jsonl = state.posts.map((post) => JSON.stringify(post)).join("\n");
-    downloadFile(
-      `feed-jarvis-${state.channel}-posts.jsonl`,
-      `${jsonl}\n`,
-    );
+    downloadFile(`feed-jarvis-${state.channel}-posts.jsonl`, `${jsonl}\n`);
   });
 
   elements.downloadCsvBtn.addEventListener("click", () => {
@@ -374,7 +395,8 @@ function wireEvents() {
 
   document.addEventListener("keydown", (event) => {
     if (!(event.ctrlKey || event.metaKey) || event.key !== "Enter") return;
-    const activeSource = document.querySelector(".toggle button.active")?.dataset.source;
+    const activeSource = document.querySelector(".toggle button.active")
+      ?.dataset.source;
     if (activeSource === "feed") {
       fetchItems();
       return;

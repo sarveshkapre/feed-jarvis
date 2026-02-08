@@ -1,12 +1,12 @@
-import { createServer } from "node:http";
 import { readFile, stat } from "node:fs/promises";
+import { createServer } from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { fetchFeed } from "./lib/feedFetch.js";
 import { DEFAULT_PERSONAS, getPersona, type Persona } from "./lib/personas.js";
 import {
-  generatePosts,
   type FeedItem,
+  generatePosts,
   type PostChannel,
   type PostTemplate,
 } from "./lib/posts.js";
@@ -32,7 +32,11 @@ const mimeTypes: Record<string, string> = {
   ".woff2": "font/woff2",
 };
 
-function sendJson(res: import("node:http").ServerResponse, status: number, payload: unknown) {
+function sendJson(
+  res: import("node:http").ServerResponse,
+  status: number,
+  payload: unknown,
+) {
   res.writeHead(status, {
     "content-type": "application/json; charset=utf-8",
     "cache-control": "no-store",
@@ -40,7 +44,9 @@ function sendJson(res: import("node:http").ServerResponse, status: number, paylo
   res.end(`${JSON.stringify(payload)}\n`);
 }
 
-async function readJsonBody(req: import("node:http").IncomingMessage): Promise<unknown> {
+async function readJsonBody(
+  req: import("node:http").IncomingMessage,
+): Promise<unknown> {
   return new Promise((resolve, reject) => {
     let bytes = 0;
     const chunks: Buffer[] = [];
@@ -60,7 +66,7 @@ async function readJsonBody(req: import("node:http").IncomingMessage): Promise<u
       try {
         const raw = Buffer.concat(chunks).toString("utf8");
         resolve(JSON.parse(raw));
-      } catch (err) {
+      } catch (_err) {
         reject(new Error("Invalid JSON body."));
       }
     });
@@ -122,13 +128,18 @@ async function handleFetchFeed(body: unknown) {
   if (!body || typeof body !== "object") {
     throw new Error("Missing request body.");
   }
-  const urls = normalizeUrls(Reflect.get(body, "urls") ?? Reflect.get(body, "url"));
+  const urls = normalizeUrls(
+    Reflect.get(body, "urls") ?? Reflect.get(body, "url"),
+  );
   if (urls.length === 0) {
     throw new Error("Provide at least one feed URL.");
   }
 
   const maxItemsRaw = Number(Reflect.get(body, "maxItems"));
-  const maxItems = Number.isFinite(maxItemsRaw) && maxItemsRaw > 0 ? Math.floor(maxItemsRaw) : DEFAULT_MAX_ITEMS;
+  const maxItems =
+    Number.isFinite(maxItemsRaw) && maxItemsRaw > 0
+      ? Math.floor(maxItemsRaw)
+      : DEFAULT_MAX_ITEMS;
   const dedupe = Reflect.get(body, "dedupe") !== false;
 
   const allowHosts = Array.from(
@@ -154,8 +165,12 @@ async function handleFetchFeed(body: unknown) {
   );
 
   const items = results.flatMap((result) => result.items);
-  const finalItems = dedupe ? dedupeByUrl(items).slice(0, maxItems) : items.slice(0, maxItems);
-  const cacheCount = results.filter((result) => result.source === "cache").length;
+  const finalItems = dedupe
+    ? dedupeByUrl(items).slice(0, maxItems)
+    : items.slice(0, maxItems);
+  const cacheCount = results.filter(
+    (result) => result.source === "cache",
+  ).length;
 
   return {
     items: finalItems,
@@ -171,15 +186,24 @@ async function handleFetchFeed(body: unknown) {
 function resolvePersona(body: Record<string, unknown>): Persona {
   const custom = Reflect.get(body, "personaCustom");
   if (custom && typeof custom === "object") {
-    const name = typeof Reflect.get(custom, "name") === "string" ? String(Reflect.get(custom, "name")).trim() : "";
-    const prefix = typeof Reflect.get(custom, "prefix") === "string" ? String(Reflect.get(custom, "prefix")).trim() : "";
+    const name =
+      typeof Reflect.get(custom, "name") === "string"
+        ? String(Reflect.get(custom, "name")).trim()
+        : "";
+    const prefix =
+      typeof Reflect.get(custom, "prefix") === "string"
+        ? String(Reflect.get(custom, "prefix")).trim()
+        : "";
     return {
       name: name || "Custom",
       prefix: prefix || `${name || "Custom"}:`,
     };
   }
 
-  const personaName = typeof Reflect.get(body, "personaName") === "string" ? String(Reflect.get(body, "personaName")).trim() : "Analyst";
+  const personaName =
+    typeof Reflect.get(body, "personaName") === "string"
+      ? String(Reflect.get(body, "personaName")).trim()
+      : "Analyst";
   return getPersona(personaName, DEFAULT_PERSONAS);
 }
 
@@ -190,7 +214,10 @@ async function handleGenerate(body: unknown) {
 
   const items = ensureFeedItems(Reflect.get(body, "items"));
   const maxCharsRaw = Number(Reflect.get(body, "maxChars"));
-  const maxChars = Number.isFinite(maxCharsRaw) && maxCharsRaw > 0 ? Math.floor(maxCharsRaw) : 280;
+  const maxChars =
+    Number.isFinite(maxCharsRaw) && maxCharsRaw > 0
+      ? Math.floor(maxCharsRaw)
+      : 280;
   const persona = resolvePersona(body as Record<string, unknown>);
   const channel = resolveChannel(Reflect.get(body, "channel"));
   const template = resolveTemplate(Reflect.get(body, "template"));
@@ -214,8 +241,14 @@ function resolveTemplate(value: unknown): PostTemplate {
   return "straight";
 }
 
-async function serveStatic(req: import("node:http").IncomingMessage, res: import("node:http").ServerResponse) {
-  const requestUrl = new URL(req.url ?? "/", `http://${req.headers.host ?? "localhost"}`);
+async function serveStatic(
+  req: import("node:http").IncomingMessage,
+  res: import("node:http").ServerResponse,
+) {
+  const requestUrl = new URL(
+    req.url ?? "/",
+    `http://${req.headers.host ?? "localhost"}`,
+  );
   let pathname = requestUrl.pathname;
   if (pathname === "/") pathname = "/index.html";
   if (pathname === "/about") pathname = "/about.html";
@@ -248,7 +281,10 @@ async function serveStatic(req: import("node:http").IncomingMessage, res: import
 }
 
 const server = createServer(async (req, res) => {
-  const requestUrl = new URL(req.url ?? "/", `http://${req.headers.host ?? "localhost"}`);
+  const requestUrl = new URL(
+    req.url ?? "/",
+    `http://${req.headers.host ?? "localhost"}`,
+  );
   const method = req.method ?? "GET";
 
   if (requestUrl.pathname === "/api/personas" && method === "GET") {
