@@ -11,6 +11,19 @@ npm run dev:web
 
 Open `http://localhost:4321` and walk through the three-step flow: load items, choose a persona, export multi-channel drafts.
 
+Run a local smoke verification:
+
+```bash
+npm run smoke:web
+```
+
+Studio feed safety defaults:
+
+```bash
+# Optional: allow localhost/private-network feeds for trusted local testing
+FEED_JARVIS_ALLOW_PRIVATE_HOSTS=true npm run dev:web
+```
+
 ## CLI quickstart
 
 ```bash
@@ -31,6 +44,7 @@ npm run dev -- generate --input events.json --persona Analyst
 ## What it does
 - Studio: three-step workspace to fetch items, pick a persona, and edit/export drafts.
 - Local-first: feeds and drafts never leave your machine.
+- Studio persistence: remembers your input mode and form settings across refreshes.
 - Personas: consistent voice with editable prefixes.
 - Outputs: text, JSON, JSONL, or CSV drafts ready for your scheduler.
 

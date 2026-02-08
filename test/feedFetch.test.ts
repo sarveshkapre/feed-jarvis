@@ -15,6 +15,45 @@ function makeFetch(
 }
 
 describe("fetchFeed", () => {
+  it("blocks localhost feeds when private hosts are disabled", async () => {
+    await expect(
+      fetchFeed("http://localhost/feed.xml", {
+        allowHosts: ["localhost"],
+        allowPrivateHosts: false,
+        cache: false,
+        cacheTtlMs: 0,
+        maxBytes: 1_000_000,
+        maxItems: 10,
+        timeoutMs: 1000,
+        now: () => 0,
+      }),
+    ).rejects.toThrow(/Refusing private host/i);
+  });
+
+  it("allows localhost feeds when explicitly enabled", async () => {
+    const xml = `<?xml version="1.0"?>
+<rss version="2.0"><channel>
+  <item><title>A</title><link>http://localhost/a</link></item>
+</channel></rss>`;
+
+    const fetchFn = makeFetch([new Response(xml, { status: 200 })]);
+
+    const result = await fetchFeed("http://localhost/feed.xml", {
+      allowHosts: ["localhost"],
+      allowPrivateHosts: true,
+      cache: false,
+      cacheTtlMs: 0,
+      maxBytes: 1_000_000,
+      maxItems: 10,
+      timeoutMs: 1000,
+      fetchFn,
+      now: () => 0,
+    });
+
+    expect(result.source).toBe("network");
+    expect(result.items).toEqual([{ title: "A", url: "http://localhost/a" }]);
+  });
+
   it("enforces allowlist across redirects", async () => {
     const fetchFn = makeFetch([
       new Response(null, {

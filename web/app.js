@@ -1,13 +1,16 @@
+const STUDIO_SESSION_KEY = "feed-jarvis-studio:v1";
+
 const state = {
   items: [],
   posts: [],
   personas: [],
   channel: "x",
   template: "straight",
+  restoredPersonaName: "",
 };
 
 const elements = {
-  sourceButtons: Array.from(document.querySelectorAll(".toggle button")),
+  sourceButtons: Array.from(document.querySelectorAll("button[data-source]")),
   feedPanel: document.querySelector("[data-panel='feed']"),
   jsonPanel: document.querySelector("[data-panel='json']"),
   feedUrls: document.getElementById("feedUrls"),
@@ -76,6 +79,123 @@ function normalizeUrls(raw) {
     .filter((entry) => entry.length > 0);
 }
 
+function getActiveSource() {
+  const activeButton = elements.sourceButtons.find((button) =>
+    button.classList.contains("active"),
+  );
+  return activeButton?.dataset.source === "json" ? "json" : "feed";
+}
+
+function setSource(source, { persist = true } = {}) {
+  const nextSource = source === "json" ? "json" : "feed";
+  elements.sourceButtons.forEach((button) => {
+    button.classList.toggle("active", button.dataset.source === nextSource);
+  });
+  elements.feedPanel.hidden = nextSource !== "feed";
+  elements.jsonPanel.hidden = nextSource !== "json";
+
+  if (persist) {
+    persistSessionSnapshot();
+  }
+}
+
+function setChannel(channel, { syncMaxChars = true, persist = true } = {}) {
+  if (!channelDefaults[channel]) return;
+  state.channel = channel;
+  elements.channelButtons.forEach((button) => {
+    button.classList.toggle("active", button.dataset.channel === channel);
+  });
+  if (syncMaxChars) {
+    elements.maxChars.value = String(channelDefaults[channel]);
+  }
+
+  if (persist) {
+    persistSessionSnapshot();
+  }
+}
+
+function readSessionSnapshot() {
+  try {
+    const raw = window.localStorage.getItem(STUDIO_SESSION_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object") return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function persistSessionSnapshot() {
+  const snapshot = {
+    source: getActiveSource(),
+    feedUrls: elements.feedUrls.value,
+    maxItems: elements.maxItems.value,
+    dedupe: elements.dedupe.checked,
+    jsonItems: elements.jsonItems.value,
+    personaName: elements.personaSelect.value,
+    useCustomPersona: elements.customPersonaToggle.checked,
+    customPersonaName: elements.customPersonaName.value,
+    customPersonaPrefix: elements.customPersonaPrefix.value,
+    channel: state.channel,
+    template: elements.templateSelect.value,
+    maxChars: elements.maxChars.value,
+  };
+
+  try {
+    window.localStorage.setItem(STUDIO_SESSION_KEY, JSON.stringify(snapshot));
+  } catch {
+    // Ignore quota/privacy mode errors.
+  }
+}
+
+function restoreSessionSnapshot() {
+  const snapshot = readSessionSnapshot();
+  if (!snapshot) {
+    setSource("feed", { persist: false });
+    setChannel("x", { persist: false });
+    return;
+  }
+
+  if (typeof snapshot.feedUrls === "string") {
+    elements.feedUrls.value = snapshot.feedUrls;
+  }
+  if (typeof snapshot.maxItems === "string") {
+    elements.maxItems.value = snapshot.maxItems;
+  }
+  if (typeof snapshot.dedupe === "boolean") {
+    elements.dedupe.checked = snapshot.dedupe;
+  }
+  if (typeof snapshot.jsonItems === "string") {
+    elements.jsonItems.value = snapshot.jsonItems;
+  }
+  if (typeof snapshot.template === "string") {
+    elements.templateSelect.value = snapshot.template;
+  }
+
+  setSource(snapshot.source, { persist: false });
+  setChannel(snapshot.channel, { persist: false });
+
+  if (typeof snapshot.maxChars === "string" && snapshot.maxChars.trim()) {
+    elements.maxChars.value = snapshot.maxChars;
+  }
+
+  if (typeof snapshot.personaName === "string") {
+    state.restoredPersonaName = snapshot.personaName;
+  }
+  if (typeof snapshot.useCustomPersona === "boolean") {
+    elements.customPersonaToggle.checked = snapshot.useCustomPersona;
+  }
+  if (typeof snapshot.customPersonaName === "string") {
+    elements.customPersonaName.value = snapshot.customPersonaName;
+  }
+  if (typeof snapshot.customPersonaPrefix === "string") {
+    elements.customPersonaPrefix.value = snapshot.customPersonaPrefix;
+  }
+
+  elements.customPersonaFields.hidden = !elements.customPersonaToggle.checked;
+}
+
 function updateItemsPreview() {
   elements.itemsList.innerHTML = "";
   if (state.items.length === 0) {
@@ -102,7 +222,15 @@ function updatePersonaCards() {
   for (const persona of featured) {
     const card = document.createElement("div");
     card.className = "persona-card";
-    card.innerHTML = `<strong>${persona.name}</strong><span>${persona.prefix}</span>`;
+
+    const name = document.createElement("strong");
+    name.textContent = persona.name;
+
+    const prefix = document.createElement("span");
+    prefix.textContent = persona.prefix;
+
+    card.appendChild(name);
+    card.appendChild(prefix);
     elements.personaCards.appendChild(card);
   }
 }
@@ -183,15 +311,6 @@ function downloadFile(filename, content) {
   URL.revokeObjectURL(url);
 }
 
-function setChannel(channel) {
-  if (!channelDefaults[channel]) return;
-  state.channel = channel;
-  elements.channelButtons.forEach((button) => {
-    button.classList.toggle("active", button.dataset.channel === channel);
-  });
-  elements.maxChars.value = String(channelDefaults[channel]);
-}
-
 function toCsv(posts, channel) {
   const header = "channel,post";
   const rows = posts.map((post) => {
@@ -225,13 +344,22 @@ async function loadPersonas() {
     elements.personaSelect.appendChild(option);
   });
 
-  const defaultPersona = state.personas.find(
-    (persona) => persona.name === "Analyst",
+  const restored = state.personas.find(
+    (persona) => persona.name === state.restoredPersonaName,
   );
-  if (defaultPersona) {
-    elements.personaSelect.value = defaultPersona.name;
+  if (restored) {
+    elements.personaSelect.value = restored.name;
+  } else {
+    const defaultPersona = state.personas.find(
+      (persona) => persona.name === "Analyst",
+    );
+    if (defaultPersona) {
+      elements.personaSelect.value = defaultPersona.name;
+    }
   }
+
   updatePersonaCards();
+  persistSessionSnapshot();
 }
 
 async function fetchItems() {
@@ -352,18 +480,13 @@ async function generatePosts() {
 function wireEvents() {
   elements.sourceButtons.forEach((button) => {
     button.addEventListener("click", () => {
-      elements.sourceButtons.forEach((btn) => {
-        btn.classList.remove("active");
-      });
-      button.classList.add("active");
-      const source = button.dataset.source;
-      elements.feedPanel.hidden = source !== "feed";
-      elements.jsonPanel.hidden = source !== "json";
+      setSource(button.dataset.source);
     });
   });
 
   elements.customPersonaToggle.addEventListener("change", () => {
     elements.customPersonaFields.hidden = !elements.customPersonaToggle.checked;
+    persistSessionSnapshot();
   });
 
   elements.fetchBtn.addEventListener("click", fetchItems);
@@ -395,8 +518,7 @@ function wireEvents() {
 
   document.addEventListener("keydown", (event) => {
     if (!(event.ctrlKey || event.metaKey) || event.key !== "Enter") return;
-    const activeSource = document.querySelector(".toggle button.active")
-      ?.dataset.source;
+    const activeSource = getActiveSource();
     if (activeSource === "feed") {
       fetchItems();
       return;
@@ -411,8 +533,27 @@ function wireEvents() {
       setChannel(button.dataset.channel);
     });
   });
+
+  [
+    elements.feedUrls,
+    elements.maxItems,
+    elements.dedupe,
+    elements.jsonItems,
+    elements.personaSelect,
+    elements.customPersonaName,
+    elements.customPersonaPrefix,
+    elements.templateSelect,
+    elements.maxChars,
+  ].forEach((element) => {
+    const eventName =
+      element.type === "checkbox" || element.tagName === "SELECT"
+        ? "change"
+        : "input";
+    element.addEventListener(eventName, persistSessionSnapshot);
+  });
 }
 
+restoreSessionSnapshot();
 wireEvents();
 loadPersonas();
-setChannel("x");
+persistSessionSnapshot();

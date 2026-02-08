@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
+import { isIP } from "node:net";
 import os from "node:os";
 import path from "node:path";
 import type { FeedItem } from "./posts.js";
@@ -13,6 +14,7 @@ export type FetchFeedOptions = {
   maxBytes: number;
   maxItems: number;
   timeoutMs: number;
+  allowPrivateHosts?: boolean;
   now?: () => number;
   fetchFn?: typeof fetch;
   staleIfError?: boolean;
@@ -29,9 +31,13 @@ export async function fetchFeed(
 ): Promise<FetchFeedResult> {
   const now = options.now ?? (() => Date.now());
   const fetchFn = options.fetchFn ?? fetch;
+  const allowPrivateHosts = options.allowPrivateHosts ?? true;
   const parsedUrl = new URL(url);
   if (parsedUrl.protocol !== "https:" && parsedUrl.protocol !== "http:") {
     throw new Error(`Unsupported URL protocol: ${parsedUrl.protocol}`);
+  }
+  if (!allowPrivateHosts) {
+    enforcePublicHost(parsedUrl);
   }
   enforceAllowlist(parsedUrl, options.allowHosts);
 
@@ -64,6 +70,7 @@ export async function fetchFeed(
     fetchResult = await fetchXml(
       url,
       options.allowHosts,
+      allowPrivateHosts,
       options.maxBytes,
       options.timeoutMs,
       fetchFn,
@@ -179,6 +186,7 @@ function getDefaultCacheDir(): string {
 async function fetchXml(
   url: string,
   allowHosts: string[],
+  allowPrivateHosts: boolean,
   maxBytes: number,
   timeoutMs: number,
   fetchFn: typeof fetch,
@@ -193,6 +201,9 @@ async function fetchXml(
   for (let redirectCount = 0; redirectCount <= 5; redirectCount++) {
     if (currentUrl.protocol !== "https:" && currentUrl.protocol !== "http:") {
       throw new Error(`Unsupported URL protocol: ${currentUrl.protocol}`);
+    }
+    if (!allowPrivateHosts) {
+      enforcePublicHost(currentUrl);
     }
     enforceAllowlist(currentUrl, allowHosts);
 
@@ -281,4 +292,67 @@ async function fetchXml(
   }
 
   throw new Error("Too many redirects");
+}
+
+function enforcePublicHost(url: URL): void {
+  const host = url.hostname.toLowerCase();
+
+  if (host === "localhost" || host.endsWith(".localhost")) {
+    throw new Error(
+      `Refusing private host: ${url.hostname}. Set allowPrivateHosts=true for trusted local feeds.`,
+    );
+  }
+  if (host.endsWith(".local")) {
+    throw new Error(
+      `Refusing local-network host: ${url.hostname}. Set allowPrivateHosts=true for trusted local feeds.`,
+    );
+  }
+
+  const ipVersion = isIP(host);
+  if (ipVersion === 4 && isPrivateIpv4(host)) {
+    throw new Error(
+      `Refusing private IP host: ${url.hostname}. Set allowPrivateHosts=true for trusted local feeds.`,
+    );
+  }
+  if (ipVersion === 6 && isPrivateIpv6(host)) {
+    throw new Error(
+      `Refusing private IP host: ${url.hostname}. Set allowPrivateHosts=true for trusted local feeds.`,
+    );
+  }
+}
+
+function isPrivateIpv4(host: string): boolean {
+  const parts = host.split(".").map((value) => Number(value));
+  if (parts.length !== 4 || parts.some((value) => !Number.isInteger(value))) {
+    return false;
+  }
+
+  const [a, b] = parts;
+  if (a === undefined || b === undefined) return false;
+
+  if (a === 10) return true;
+  if (a === 127) return true;
+  if (a === 0) return true;
+  if (a === 169 && b === 254) return true;
+  if (a === 172 && b >= 16 && b <= 31) return true;
+  if (a === 192 && b === 168) return true;
+  if (a === 100 && b >= 64 && b <= 127) return true;
+  if (a === 198 && (b === 18 || b === 19)) return true;
+  if (a >= 224) return true;
+
+  return false;
+}
+
+function isPrivateIpv6(host: string): boolean {
+  const normalized = host.toLowerCase();
+  if (normalized === "::1" || normalized === "::") return true;
+  if (normalized.startsWith("fc") || normalized.startsWith("fd")) return true;
+  if (/^fe[89ab]/.test(normalized)) return true;
+
+  const mappedV4 = normalized.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/);
+  if (mappedV4?.[1]) {
+    return isPrivateIpv4(mappedV4[1]);
+  }
+
+  return false;
 }

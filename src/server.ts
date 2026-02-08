@@ -1,5 +1,5 @@
 import { readFile, stat } from "node:fs/promises";
-import { createServer } from "node:http";
+import { createServer, type Server } from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { fetchFeed } from "./lib/feedFetch.js";
@@ -17,6 +17,7 @@ const DEFAULT_MAX_ITEMS = 20;
 const DEFAULT_CACHE_TTL_MS = 15 * 60 * 1000;
 const DEFAULT_TIMEOUT_MS = 12_000;
 const DEFAULT_MAX_BYTES = 1_000_000;
+const DEFAULT_ALLOW_PRIVATE_HOSTS = false;
 
 const webRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -30,6 +31,17 @@ const mimeTypes: Record<string, string> = {
   ".json": "application/json; charset=utf-8",
   ".svg": "image/svg+xml",
   ".woff2": "font/woff2",
+};
+
+export type StudioServerOptions = {
+  allowPrivateHosts?: boolean;
+  fetchFn?: typeof fetch;
+  port?: number;
+};
+
+type RuntimeOptions = {
+  allowPrivateHosts: boolean;
+  fetchFn?: typeof fetch;
 };
 
 function sendJson(
@@ -124,7 +136,7 @@ function ensureFeedItems(raw: unknown): FeedItem[] {
   });
 }
 
-async function handleFetchFeed(body: unknown) {
+async function handleFetchFeed(body: unknown, options: RuntimeOptions) {
   if (!body || typeof body !== "object") {
     throw new Error("Missing request body.");
   }
@@ -155,8 +167,10 @@ async function handleFetchFeed(body: unknown) {
     urls.map((url) =>
       fetchFeed(url, {
         allowHosts,
+        allowPrivateHosts: options.allowPrivateHosts,
         cache: true,
         cacheTtlMs: DEFAULT_CACHE_TTL_MS,
+        fetchFn: options.fetchFn,
         maxBytes: DEFAULT_MAX_BYTES,
         maxItems,
         timeoutMs: DEFAULT_TIMEOUT_MS,
@@ -280,50 +294,95 @@ async function serveStatic(
   }
 }
 
-const server = createServer(async (req, res) => {
-  const requestUrl = new URL(
-    req.url ?? "/",
-    `http://${req.headers.host ?? "localhost"}`,
+function readBooleanEnv(name: string, defaultValue: boolean): boolean {
+  const raw = process.env[name];
+  if (!raw) return defaultValue;
+
+  const normalized = raw.trim().toLowerCase();
+  if (["1", "true", "yes", "on"].includes(normalized)) {
+    return true;
+  }
+  if (["0", "false", "no", "off"].includes(normalized)) {
+    return false;
+  }
+
+  return defaultValue;
+}
+
+function resolveAllowPrivateHosts(configured?: boolean): boolean {
+  if (typeof configured === "boolean") return configured;
+  return readBooleanEnv(
+    "FEED_JARVIS_ALLOW_PRIVATE_HOSTS",
+    DEFAULT_ALLOW_PRIVATE_HOSTS,
   );
-  const method = req.method ?? "GET";
+}
 
-  if (requestUrl.pathname === "/api/personas" && method === "GET") {
-    sendJson(res, 200, { personas: DEFAULT_PERSONAS });
-    return;
-  }
+export function createStudioServer(options: StudioServerOptions = {}): Server {
+  const runtimeOptions: RuntimeOptions = {
+    allowPrivateHosts: resolveAllowPrivateHosts(options.allowPrivateHosts),
+    fetchFn: options.fetchFn,
+  };
 
-  if (requestUrl.pathname === "/api/fetch" && method === "POST") {
-    try {
-      const body = await readJsonBody(req);
-      const payload = await handleFetchFeed(body);
-      sendJson(res, 200, payload);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Request failed.";
-      sendJson(res, 400, { error: message });
+  return createServer(async (req, res) => {
+    const requestUrl = new URL(
+      req.url ?? "/",
+      `http://${req.headers.host ?? "localhost"}`,
+    );
+    const method = req.method ?? "GET";
+
+    if (requestUrl.pathname === "/api/personas" && method === "GET") {
+      sendJson(res, 200, { personas: DEFAULT_PERSONAS });
+      return;
     }
-    return;
-  }
 
-  if (requestUrl.pathname === "/api/generate" && method === "POST") {
-    try {
-      const body = await readJsonBody(req);
-      const payload = await handleGenerate(body);
-      sendJson(res, 200, payload);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Request failed.";
-      sendJson(res, 400, { error: message });
+    if (requestUrl.pathname === "/api/fetch" && method === "POST") {
+      try {
+        const body = await readJsonBody(req);
+        const payload = await handleFetchFeed(body, runtimeOptions);
+        sendJson(res, 200, payload);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Request failed.";
+        sendJson(res, 400, { error: message });
+      }
+      return;
     }
-    return;
-  }
 
-  if (requestUrl.pathname.startsWith("/api/")) {
-    sendJson(res, 404, { error: "Not found" });
-    return;
-  }
+    if (requestUrl.pathname === "/api/generate" && method === "POST") {
+      try {
+        const body = await readJsonBody(req);
+        const payload = await handleGenerate(body);
+        sendJson(res, 200, payload);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Request failed.";
+        sendJson(res, 400, { error: message });
+      }
+      return;
+    }
 
-  await serveStatic(req, res);
-});
+    if (requestUrl.pathname.startsWith("/api/")) {
+      sendJson(res, 404, { error: "Not found" });
+      return;
+    }
 
-server.listen(PORT, () => {
-  console.log(`Feed Jarvis Studio running on http://localhost:${PORT}`);
-});
+    await serveStatic(req, res);
+  });
+}
+
+export function startStudioServer(options: StudioServerOptions = {}): Server {
+  const port = options.port ?? PORT;
+  const server = createStudioServer(options);
+  server.listen(port, () => {
+    console.log(`Feed Jarvis Studio running on http://localhost:${port}`);
+  });
+  return server;
+}
+
+function isMainModule(moduleUrl: string): boolean {
+  const entry = process.argv[1];
+  if (!entry) return false;
+  return path.resolve(entry) === fileURLToPath(moduleUrl);
+}
+
+if (isMainModule(import.meta.url)) {
+  startStudioServer();
+}

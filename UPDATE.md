@@ -1,5 +1,14 @@
 # UPDATE
 
+## 2026-02-08
+- Fixed: restored CI by applying required Biome lint/format changes.
+- Added: server integration tests for `/api/personas`, `/api/fetch`, `/api/generate`, and unknown API route handling.
+- Hardened: Studio `/api/fetch` now blocks localhost/private-network hosts by default to reduce SSRF risk in shared environments.
+- Added: explicit Studio override for trusted local feeds via `FEED_JARVIS_ALLOW_PRIVATE_HOSTS=true`.
+- Improved: Studio remembers source mode and core form settings using `localStorage`.
+- Hardened: persona cards now render with safe DOM APIs (no `innerHTML` templating).
+- Added: `npm run smoke:web` deterministic smoke check for Studio static + API flow.
+
 ## 2026-02-01
 - Shipped: `feed-jarvis personas`, `--version`, richer `--help`.
 - Shipped: `generate --input -` (stdin), `--format json`, and `--max-chars`.
