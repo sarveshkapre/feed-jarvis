@@ -7,9 +7,6 @@
 - Gaps found during codebase exploration
 
 ## Candidate Features To Do
-- [ ] P0 (Selected): Fix failing "Dependabot Updates" GitHub Actions runs by granting required `GITHUB_TOKEN` permissions at the repo level and pinning our workflows to least-privilege `permissions:` blocks.
-- [ ] P0 (Selected): Add `npm run smoke:web` to CI to catch Studio regressions beyond unit/integration tests.
-- [ ] P1 (Selected): Extend private-network fetch protection with DNS resolution checks (current guard covers literal hostnames/IPs); add tests that cover hostname -> private IP resolution.
 - [ ] P2: Add browser-level E2E coverage for Studio critical flow (fetch -> generate -> export) in CI.
 - [ ] P2: Studio UI: harden error handling to safely render unknown thrown values and non-JSON API errors.
 - [ ] P2: Studio: add basic feed item filtering (include/exclude keywords + "min title length") before generation/export.
@@ -17,6 +14,9 @@
 - [ ] P3: Implement optional LLM-backed generation behind an explicit `--llm` opt-in flag (roadmap item).
 
 ## Implemented
+- [x] 2026-02-09 P0: Fixed failing "Dependabot Updates" GitHub Actions runs by granting required default `GITHUB_TOKEN` workflow permissions at the repo level and pinning `ci.yml` to least-privilege permissions. Evidence: `.github/workflows/ci.yml`, repo Actions workflow setting; verification: `gh api /repos/sarveshkapre/feed-jarvis/actions/permissions/workflow`.
+- [x] 2026-02-09 P0: Added `npm run smoke:web` to CI to catch Studio regressions beyond unit/integration tests. Evidence: `.github/workflows/ci.yml`; verification: `npm run smoke:web`.
+- [x] 2026-02-09 P1: Extended private-network fetch protection with DNS resolution checks (blocks hostnames resolving to private/local IP ranges). Evidence: `src/lib/feedFetch.ts`, `test/feedFetch.test.ts`; verification: `make check`.
 - [x] 2026-02-08 P0: Restored CI green by fixing Biome lint/format violations. Evidence: `src/server.ts`, `web/app.js`, `web/styles.css`; verification: `make check`.
 - [x] 2026-02-08 P0: Added server integration tests for key Studio APIs. Evidence: `test/server.test.ts`; verification: `npm test` (includes 5 server tests).
 - [x] 2026-02-08 P1: Hardened Studio feed ingestion by blocking localhost/private-network hosts by default with explicit override. Evidence: `src/lib/feedFetch.ts`, `src/server.ts`; verification: `test/feedFetch.test.ts`, `test/server.test.ts`.
