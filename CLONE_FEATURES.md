@@ -7,9 +7,14 @@
 - Gaps found during codebase exploration
 
 ## Candidate Features To Do
-- [ ] P1: Implement optional LLM-backed generation behind an explicit `--llm` opt-in flag (roadmap item).
-- [ ] P1: Extend private-network fetch protection with DNS resolution checks (current guard covers literal hostnames/IPs).
+- [ ] P0 (Selected): Fix failing "Dependabot Updates" GitHub Actions runs by granting required `GITHUB_TOKEN` permissions at the repo level and pinning our workflows to least-privilege `permissions:` blocks.
+- [ ] P0 (Selected): Add `npm run smoke:web` to CI to catch Studio regressions beyond unit/integration tests.
+- [ ] P1 (Selected): Extend private-network fetch protection with DNS resolution checks (current guard covers literal hostnames/IPs); add tests that cover hostname -> private IP resolution.
 - [ ] P2: Add browser-level E2E coverage for Studio critical flow (fetch -> generate -> export) in CI.
+- [ ] P2: Studio UI: harden error handling to safely render unknown thrown values and non-JSON API errors.
+- [ ] P2: Studio: add basic feed item filtering (include/exclude keywords + "min title length") before generation/export.
+- [ ] P3: Studio: import/export personas (JSON) from the UI (local-only).
+- [ ] P3: Implement optional LLM-backed generation behind an explicit `--llm` opt-in flag (roadmap item).
 
 ## Implemented
 - [x] 2026-02-08 P0: Restored CI green by fixing Biome lint/format violations. Evidence: `src/server.ts`, `web/app.js`, `web/styles.css`; verification: `make check`.
@@ -25,6 +30,12 @@
 - Local `make check` output matched historical failing GitHub Actions runs exactly, so Biome drift was the root CI failure.
 - Studio fetch security needed a stricter default than CLI: server-side requests can be triggered from browser clients, so private-host blocking now defaults to on for Studio.
 - Disk cache can affect integration tests if URLs are reused; tests should prefer unique URLs or isolated cache settings.
+- Market scan (untrusted web): reader/automation tools emphasize (1) rules/filters (keywords, duplicates), (2) summaries/highlights, and (3) downstream automation/export to schedulers.
+- References (untrusted web):
+  - https://www.inoreader.com/blog/2026/01/save-time-with-automations.html
+  - https://feedly.com/new-features/posts/feedly-ai-and-summarization
+  - https://zapier.com/apps/buffer/integrations/rss
+  - https://support.buffer.com/article/613-automating-rss-feeds-using-feedly-and-zapier
 
 ## Notes
 - This file is maintained by the autonomous clone loop.
