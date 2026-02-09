@@ -66,6 +66,8 @@
 - 2026-02-09 | `gh run watch 21839142786 --exit-status` | `Run ci (21839142786) ... completed with 'success'` | pass
 - 2026-02-09 | `gh run watch 21839139024 --exit-status` | `✓ main codeql · 21839139024` | pass
 - 2026-02-09 | `gh run watch 21839142802 --exit-status` | `✓ main codeql · 21839142802` | pass
+- 2026-02-09 | `gh run watch 21839254074 --exit-status` | `✓ main ci · 21839254074` | pass
+- 2026-02-09 | `gh run watch 21839254032 --exit-status` | `✓ main codeql · 21839254032` | pass
 
 ## Historical Summary
 - Keep compact summaries of older entries here when file compaction runs.
