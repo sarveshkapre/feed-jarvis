@@ -7,9 +7,10 @@
 - Gaps found during codebase exploration
 
 ## Candidate Features To Do
+- [ ] P1: Studio: add basic feed item filtering (include/exclude keywords + "min title length") before generation/export (persist + unit tests).
+- [ ] P1: Studio UI: harden error handling to safely render unknown thrown values and non-JSON API errors (show actionable status + codes).
+- [ ] P2: Studio UI: fix the "GitHub" header link to point at this repository.
 - [ ] P2: Add browser-level E2E coverage for Studio critical flow (fetch -> generate -> export) in CI.
-- [ ] P2: Studio UI: harden error handling to safely render unknown thrown values and non-JSON API errors.
-- [ ] P2: Studio: add basic feed item filtering (include/exclude keywords + "min title length") before generation/export.
 - [ ] P3: Studio: import/export personas (JSON) from the UI (local-only).
 - [ ] P3: Implement optional LLM-backed generation behind an explicit `--llm` opt-in flag (roadmap item).
 
