@@ -6,6 +6,8 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -14,4 +16,4 @@ jobs:
           cache: "npm"
       - run: npm ci
       - run: make check
-
+      - run: npm run smoke:web
