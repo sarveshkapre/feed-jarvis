@@ -1,5 +1,10 @@
 # UPDATE
 
+## 2026-02-09
+- Hardened: when Studio private-host blocking is enabled, hostname feeds are now rejected if their DNS resolves to private/local IP ranges (mitigates DNS-based SSRF bypasses).
+- CI: run `npm run smoke:web` in GitHub Actions for quick end-to-end API + static validation.
+- CI: fixed failing "Dependabot Updates" runs by granting required default `GITHUB_TOKEN` workflow permissions at the repo level and pinning `ci.yml` to least-privilege permissions.
+
 ## 2026-02-08
 - Fixed: restored CI by applying required Biome lint/format changes.
 - Added: server integration tests for `/api/personas`, `/api/fetch`, `/api/generate`, and unknown API route handling.

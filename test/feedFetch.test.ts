@@ -30,6 +30,56 @@ describe("fetchFeed", () => {
     ).rejects.toThrow(/Refusing private host/i);
   });
 
+  it("blocks hostnames that resolve to private addresses when private hosts are disabled", async () => {
+    const dnsLookupFn = async () => [
+      { address: "127.0.0.1", family: 4 as const },
+    ];
+
+    await expect(
+      fetchFeed("https://good.example/feed.xml", {
+        allowHosts: ["good.example"],
+        allowPrivateHosts: false,
+        dnsLookupFn,
+        cache: false,
+        cacheTtlMs: 0,
+        maxBytes: 1_000_000,
+        maxItems: 10,
+        timeoutMs: 1000,
+        now: () => 0,
+      }),
+    ).rejects.toThrow(/resolves to a private ipv4/i);
+  });
+
+  it("allows hostnames that resolve to public addresses when private hosts are disabled", async () => {
+    const xml = `<?xml version="1.0"?>
+<rss version="2.0"><channel>
+  <item><title>A</title><link>https://good.example/a</link></item>
+</channel></rss>`;
+
+    const dnsLookupFn = async () => [
+      { address: "93.184.216.34", family: 4 as const },
+    ];
+    const fetchFn = makeFetch([new Response(xml, { status: 200 })]);
+
+    const result = await fetchFeed("https://good.example/feed.xml", {
+      allowHosts: ["good.example"],
+      allowPrivateHosts: false,
+      dnsLookupFn,
+      cache: false,
+      cacheTtlMs: 0,
+      maxBytes: 1_000_000,
+      maxItems: 10,
+      timeoutMs: 1000,
+      fetchFn,
+      now: () => 0,
+    });
+
+    expect(result.source).toBe("network");
+    expect(result.items).toEqual([
+      { title: "A", url: "https://good.example/a" },
+    ]);
+  });
+
   it("allows localhost feeds when explicitly enabled", async () => {
     const xml = `<?xml version="1.0"?>
 <rss version="2.0"><channel>

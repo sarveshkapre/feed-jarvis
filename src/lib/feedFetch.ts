@@ -1,10 +1,14 @@
 import { createHash } from "node:crypto";
+import { lookup as dnsLookup } from "node:dns/promises";
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { isIP } from "node:net";
 import os from "node:os";
 import path from "node:path";
 import type { FeedItem } from "./posts.js";
 import { parseFeedXml } from "./rss.js";
+
+type DnsLookupEntry = { address: string; family: 4 | 6 };
+type DnsLookupFn = (hostname: string) => Promise<DnsLookupEntry[]>;
 
 export type FetchFeedOptions = {
   allowHosts: string[];
@@ -15,6 +19,7 @@ export type FetchFeedOptions = {
   maxItems: number;
   timeoutMs: number;
   allowPrivateHosts?: boolean;
+  dnsLookupFn?: DnsLookupFn;
   now?: () => number;
   fetchFn?: typeof fetch;
   staleIfError?: boolean;
@@ -32,14 +37,15 @@ export async function fetchFeed(
   const now = options.now ?? (() => Date.now());
   const fetchFn = options.fetchFn ?? fetch;
   const allowPrivateHosts = options.allowPrivateHosts ?? true;
+  const dnsLookupFn = options.dnsLookupFn ?? defaultDnsLookupFn;
   const parsedUrl = new URL(url);
   if (parsedUrl.protocol !== "https:" && parsedUrl.protocol !== "http:") {
     throw new Error(`Unsupported URL protocol: ${parsedUrl.protocol}`);
   }
-  if (!allowPrivateHosts) {
-    enforcePublicHost(parsedUrl);
-  }
   enforceAllowlist(parsedUrl, options.allowHosts);
+  if (!allowPrivateHosts) {
+    await enforcePublicHost(parsedUrl, dnsLookupFn);
+  }
 
   const cacheDir = options.cacheDir ?? getDefaultCacheDir();
   const cacheKey = createHash("sha256").update(url).digest("hex");
@@ -71,6 +77,7 @@ export async function fetchFeed(
       url,
       options.allowHosts,
       allowPrivateHosts,
+      dnsLookupFn,
       options.maxBytes,
       options.timeoutMs,
       fetchFn,
@@ -187,6 +194,7 @@ async function fetchXml(
   url: string,
   allowHosts: string[],
   allowPrivateHosts: boolean,
+  dnsLookupFn: DnsLookupFn,
   maxBytes: number,
   timeoutMs: number,
   fetchFn: typeof fetch,
@@ -202,10 +210,10 @@ async function fetchXml(
     if (currentUrl.protocol !== "https:" && currentUrl.protocol !== "http:") {
       throw new Error(`Unsupported URL protocol: ${currentUrl.protocol}`);
     }
-    if (!allowPrivateHosts) {
-      enforcePublicHost(currentUrl);
-    }
     enforceAllowlist(currentUrl, allowHosts);
+    if (!allowPrivateHosts) {
+      await enforcePublicHost(currentUrl, dnsLookupFn);
+    }
 
     const headers: Record<string, string> = {
       "user-agent": "feed-jarvis/0.0.0",
@@ -294,7 +302,19 @@ async function fetchXml(
   throw new Error("Too many redirects");
 }
 
-function enforcePublicHost(url: URL): void {
+const defaultDnsLookupFn: DnsLookupFn = async (hostname) => {
+  const results = await dnsLookup(hostname, { all: true, verbatim: true });
+  return results
+    .filter((entry): entry is { address: string; family: 4 | 6 } => {
+      return (
+        typeof entry?.address === "string" &&
+        (entry.family === 4 || entry.family === 6)
+      );
+    })
+    .map((entry) => ({ address: entry.address, family: entry.family }));
+};
+
+async function enforcePublicHost(url: URL, dnsLookupFn: DnsLookupFn) {
   const host = url.hostname.toLowerCase();
 
   if (host === "localhost" || host.endsWith(".localhost")) {
@@ -318,6 +338,35 @@ function enforcePublicHost(url: URL): void {
     throw new Error(
       `Refusing private IP host: ${url.hostname}. Set allowPrivateHosts=true for trusted local feeds.`,
     );
+  }
+
+  if (ipVersion !== 0) return;
+
+  let resolved: DnsLookupEntry[];
+  try {
+    resolved = await dnsLookupFn(host);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    throw new Error(`Unable to resolve host: ${url.hostname} (${message})`);
+  }
+
+  if (!Array.isArray(resolved) || resolved.length === 0) {
+    throw new Error(`Unable to resolve host: ${url.hostname}`);
+  }
+
+  for (const entry of resolved) {
+    const addr = entry.address?.toLowerCase?.() ?? "";
+    const family = entry.family;
+    if (family === 4 && isPrivateIpv4(addr)) {
+      throw new Error(
+        `Refusing hostname that resolves to a private IPv4 address: ${url.hostname}. Set allowPrivateHosts=true for trusted local feeds.`,
+      );
+    }
+    if (family === 6 && isPrivateIpv6(addr)) {
+      throw new Error(
+        `Refusing hostname that resolves to a private IPv6 address: ${url.hostname}. Set allowPrivateHosts=true for trusted local feeds.`,
+      );
+    }
   }
 }
 

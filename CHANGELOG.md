@@ -7,6 +7,7 @@
 - Fetch: honors `ETag`/`Last-Modified` for conditional requests when caching.
 - Fetch: `--stats` prints fetch summary to stderr.
 - Fetch: `--stale-if-error` serves stale cache when the network fails.
+- Fetch: when private hosts are disabled, block hostnames that resolve via DNS to private/local IP ranges.
 - CLI: `generate` supports `--out` and `--format jsonl`.
 - CLI: `generate` supports `--input -`, `--format json`, and `--max-chars`.
 - CLI: `--personas` loads persona definitions from a JSON file (overrides built-ins).
@@ -17,6 +18,7 @@
 - Studio UI: remove `innerHTML` persona rendering path to avoid DOM injection risk.
 - Testing: add server integration tests for personas, generate, fetch guardrails, and API 404 handling.
 - DevEx: add `npm run smoke:web` for deterministic local Studio API smoke validation.
+- CI: run `npm run smoke:web` in GitHub Actions.
 
 ## 0.0.0
 - Initial scaffold.
