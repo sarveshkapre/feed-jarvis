@@ -7,6 +7,8 @@ const state = {
   items: [],
   filteredItems: [],
   posts: [],
+  generatedItems: [],
+  generatedMeta: null,
   personasBase: [],
   personasOverrides: [],
   personas: [],
@@ -395,6 +397,33 @@ function updatePostsPreview() {
     const wrapper = document.createElement("div");
     wrapper.className = "post-card";
 
+    const item = state.generatedItems[index];
+    if (item && typeof item === "object") {
+      const source = document.createElement("div");
+      source.className = "post-source";
+
+      const title = document.createElement("div");
+      title.className = "post-source-title";
+      title.textContent = typeof item.title === "string" ? item.title : "";
+
+      const rawUrl = typeof item.url === "string" ? item.url : "";
+      const parsed = rawUrl ? safeHttpUrl(rawUrl) : null;
+      if (parsed) {
+        const link = document.createElement("a");
+        link.className = "post-source-link";
+        link.href = parsed.toString();
+        link.target = "_blank";
+        link.rel = "noreferrer noopener";
+        link.textContent = parsed.hostname;
+        source.appendChild(title);
+        source.appendChild(link);
+      } else {
+        source.appendChild(title);
+      }
+
+      wrapper.appendChild(source);
+    }
+
     const textarea = document.createElement("textarea");
     textarea.value = post;
     textarea.dataset.index = String(index);
@@ -451,14 +480,81 @@ function downloadFile(filename, content) {
   URL.revokeObjectURL(url);
 }
 
-function toCsv(posts, channel) {
-  const header = "channel,post";
-  const rows = posts.map((post) => {
-    const safeChannel = String(channel).replace(/"/g, '""');
-    const safePost = String(post).replace(/"/g, '""');
-    return `"${safeChannel}","${safePost}"`;
+function safeHttpUrl(raw) {
+  try {
+    const parsed = new URL(raw);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:")
+      return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function resetDrafts() {
+  state.posts = [];
+  state.generatedItems = [];
+  state.generatedMeta = null;
+  updatePostsPreview();
+  setStatus(elements.postsStatus, "");
+}
+
+function escapeCsv(value) {
+  const text = String(value ?? "");
+  return `"${text.replace(/"/g, '""')}"`;
+}
+
+function buildDraftRows() {
+  if (!state.generatedMeta) return [];
+  const max = Math.min(state.posts.length, state.generatedItems.length);
+  const rows = [];
+
+  for (let i = 0; i < max; i++) {
+    const item = state.generatedItems[i] ?? {};
+    rows.push({
+      channel: state.generatedMeta.channel,
+      template: state.generatedMeta.template,
+      personaName: state.generatedMeta.persona?.name ?? "",
+      personaPrefix: state.generatedMeta.persona?.prefix ?? "",
+      title: item.title ?? "",
+      url: item.url ?? "",
+      post: state.posts[i] ?? "",
+    });
+  }
+
+  return rows;
+}
+
+function toDraftsJsonl() {
+  const rows = buildDraftRows();
+  return `${rows.map((row) => JSON.stringify(row)).join("\n")}\n`;
+}
+
+function toDraftsCsv() {
+  const rows = buildDraftRows();
+  const header = [
+    "channel",
+    "template",
+    "persona_name",
+    "persona_prefix",
+    "title",
+    "url",
+    "post",
+  ].join(",");
+
+  const lines = rows.map((row) => {
+    return [
+      escapeCsv(row.channel),
+      escapeCsv(row.template),
+      escapeCsv(row.personaName),
+      escapeCsv(row.personaPrefix),
+      escapeCsv(row.title),
+      escapeCsv(row.url),
+      escapeCsv(row.post),
+    ].join(",");
   });
-  return `${[header, ...rows].join("\\n")}\\n`;
+
+  return `${[header, ...lines].join("\n")}\n`;
 }
 
 function mergePersonas(base, overrides) {
@@ -642,6 +738,7 @@ async function fetchItems() {
       data && typeof data === "object" ? Reflect.get(data, "items") : [];
     state.items = Array.isArray(items) ? items : [];
     refreshFilteredItems();
+    resetDrafts();
 
     const summary =
       data && typeof data === "object" ? Reflect.get(data, "summary") : null;
@@ -684,6 +781,7 @@ function loadItemsFromJson() {
     if (items.length === 0) throw new Error("No valid items found.");
     state.items = items;
     refreshFilteredItems();
+    resetDrafts();
     setStatus(elements.jsonStatus, `Loaded ${items.length} items.`);
   } catch (err) {
     setStatus(
@@ -709,6 +807,7 @@ async function generatePosts() {
     return;
   }
 
+  const generationItems = state.filteredItems.slice();
   const maxChars = Math.max(1, Number(elements.maxChars.value) || 280);
   const useCustom = elements.customPersonaToggle.checked;
   const selectedName = elements.personaSelect.value;
@@ -718,17 +817,20 @@ async function generatePosts() {
     name: selectedName || "Custom",
     prefix: `${selectedName || "Custom"}:`,
   };
+  const personaUsed = useCustom
+    ? {
+        name: elements.customPersonaName.value.trim() || "Custom",
+        prefix: elements.customPersonaPrefix.value.trim() || "Custom:",
+      }
+    : selectedPersona;
+  const template = elements.templateSelect.value;
+
   const payload = {
-    items: state.filteredItems,
+    items: generationItems,
     maxChars,
     channel: state.channel,
-    template: elements.templateSelect.value,
-    personaCustom: useCustom
-      ? {
-          name: elements.customPersonaName.value.trim() || "Custom",
-          prefix: elements.customPersonaPrefix.value.trim() || "Custom:",
-        }
-      : selectedPersona,
+    template,
+    personaCustom: personaUsed,
   };
 
   setButtonLoading(elements.generateBtn, true, "Generating...");
@@ -750,6 +852,13 @@ async function generatePosts() {
     const posts =
       data && typeof data === "object" ? Reflect.get(data, "posts") : [];
     state.posts = Array.isArray(posts) ? posts : [];
+    state.generatedItems = generationItems;
+    state.generatedMeta = {
+      channel: state.channel,
+      template,
+      persona: personaUsed,
+      maxChars,
+    };
     updatePostsPreview();
     setStatus(elements.postsStatus, `Generated ${state.posts.length} drafts.`);
   } catch (err) {
@@ -838,15 +947,19 @@ function wireEvents() {
   });
 
   elements.downloadJsonBtn.addEventListener("click", () => {
-    const jsonl = state.posts.map((post) => JSON.stringify(post)).join("\n");
-    downloadFile(`feed-jarvis-${state.channel}-posts.jsonl`, `${jsonl}\n`);
+    if (!state.generatedMeta) {
+      setStatus(elements.postsStatus, "Generate drafts to export.", "error");
+      return;
+    }
+    downloadFile(`feed-jarvis-${state.channel}-drafts.jsonl`, toDraftsJsonl());
   });
 
   elements.downloadCsvBtn.addEventListener("click", () => {
-    downloadFile(
-      `feed-jarvis-${state.channel}-posts.csv`,
-      toCsv(state.posts, state.channel),
-    );
+    if (!state.generatedMeta) {
+      setStatus(elements.postsStatus, "Generate drafts to export.", "error");
+      return;
+    }
+    downloadFile(`feed-jarvis-${state.channel}-drafts.csv`, toDraftsCsv());
   });
 
   document.addEventListener("keydown", (event) => {

@@ -7,8 +7,6 @@
 - Gaps found during codebase exploration
 
 ## Candidate Features To Do
-- [ ] P1 (selected): Studio: import/export personas (JSON) from the UI (local-only), persisted in `localStorage`, and applied during generation/export.
-- [ ] P1 (selected): Studio: enrich exports (CSV + JSONL) with source metadata (title/url) plus persona/channel/template; snapshot generation inputs so edits/export stay aligned.
 - [ ] P2: Studio: show fetch summary details (cache/network/deduped) in the UI after loading items.
 - [ ] P2: Add browser-level E2E coverage for Studio critical flow (fetch -> generate -> export) in CI (Playwright).
 - [ ] P3: Studio: save/load named feed sets (local-only presets) for faster repeat workflows.
@@ -17,6 +15,8 @@
 - [ ] P3: Implement optional LLM-backed generation behind an explicit `--llm` opt-in flag (roadmap item).
 
 ## Implemented
+- [x] 2026-02-09 P1: Studio: import/export personas (JSON) from the UI (local-only), persisted in `localStorage`, and applied during generation. Evidence: `web/index.html`, `web/app.js`, `test/server.test.ts`; verification: `make check`, `npm run smoke:web`.
+- [x] 2026-02-09 P1: Studio: enrich exports (CSV + JSONL) with source metadata (title/url) plus persona/channel/template; snapshot generation inputs for aligned export; show source title/link above drafts. Evidence: `web/index.html`, `web/app.js`, `web/styles.css`, `README.md`, `CHANGELOG.md`; verification: `make check`, `npm run smoke:web`.
 - [x] 2026-02-09 P1: Studio: added basic item filters (include/exclude keywords + minimum title length) and applied them before generation/export; persisted in `localStorage`; added unit coverage for the filter logic. Evidence: `web/index.html`, `web/app.js`, `web/filters.js`, `test/filters.test.ts`; verification: `make check`, `npm run smoke:web`.
 - [x] 2026-02-09 P1: Studio UI: hardened API error handling for unknown thrown values and non-JSON responses so statuses remain actionable. Evidence: `web/app.js`; verification: `make check`, `npm run smoke:web`.
 - [x] 2026-02-09 P2: Studio UI: fixed header "GitHub" links to point at this repository. Evidence: `web/index.html`, `web/about.html`; verification: `npm run lint`.

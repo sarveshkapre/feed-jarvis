@@ -459,6 +459,23 @@ button[disabled] {
   gap: 10px;
 }
 
+.post-source {
+  display: grid;
+  gap: 4px;
+}
+
+.post-source-title {
+  font-weight: 600;
+  font-size: 0.92rem;
+  color: var(--ink);
+}
+
+.post-source-link {
+  font-size: 0.82rem;
+  color: var(--muted);
+  width: fit-content;
+}
+
 .post-card textarea {
   min-height: 90px;
 }

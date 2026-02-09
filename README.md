@@ -46,8 +46,8 @@ npm run dev -- generate --input events.json --persona Analyst
 - Local-first: feeds and drafts never leave your machine.
 - Studio persistence: remembers your input mode and form settings across refreshes.
 - Studio filters: optionally include/exclude keywords and enforce a minimum title length before generation/export.
-- Personas: consistent voice with editable prefixes.
-- Outputs: text, JSON, JSONL, or CSV drafts ready for your scheduler.
+- Personas: consistent voice with editable prefixes (Studio supports local-only persona import/export).
+- Outputs: Studio exports `.txt`, `.jsonl`, and `.csv` drafts (JSONL/CSV include source metadata); CLI supports text/JSON/JSONL.
 
 Tip: load/override personas from a file via `--personas personas.json` (array of `{name, prefix}`).
 Tip: write posts to a file with `--out posts.txt` or `--format jsonl` for one JSON string per line.
