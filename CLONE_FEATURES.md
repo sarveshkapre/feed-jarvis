@@ -7,14 +7,14 @@
 - Gaps found during codebase exploration
 
 ## Candidate Features To Do
-- [ ] P1: Studio: add basic feed item filtering (include/exclude keywords + "min title length") before generation/export (persist + unit tests).
-- [ ] P1: Studio UI: harden error handling to safely render unknown thrown values and non-JSON API errors (show actionable status + codes).
-- [ ] P2: Studio UI: fix the "GitHub" header link to point at this repository.
 - [ ] P2: Add browser-level E2E coverage for Studio critical flow (fetch -> generate -> export) in CI.
 - [ ] P3: Studio: import/export personas (JSON) from the UI (local-only).
 - [ ] P3: Implement optional LLM-backed generation behind an explicit `--llm` opt-in flag (roadmap item).
 
 ## Implemented
+- [x] 2026-02-09 P1: Studio: added basic item filters (include/exclude keywords + minimum title length) and applied them before generation/export; persisted in `localStorage`; added unit coverage for the filter logic. Evidence: `web/index.html`, `web/app.js`, `web/filters.js`, `test/filters.test.ts`; verification: `make check`, `npm run smoke:web`.
+- [x] 2026-02-09 P1: Studio UI: hardened API error handling for unknown thrown values and non-JSON responses so statuses remain actionable. Evidence: `web/app.js`; verification: `make check`, `npm run smoke:web`.
+- [x] 2026-02-09 P2: Studio UI: fixed header "GitHub" links to point at this repository. Evidence: `web/index.html`, `web/about.html`; verification: `npm run lint`.
 - [x] 2026-02-09 P0: Fixed failing "Dependabot Updates" GitHub Actions runs by granting required default `GITHUB_TOKEN` workflow permissions at the repo level and pinning `ci.yml` to least-privilege permissions. Evidence: `.github/workflows/ci.yml`, repo Actions workflow setting; verification: `gh api /repos/sarveshkapre/feed-jarvis/actions/permissions/workflow`.
 - [x] 2026-02-09 P0: Added `npm run smoke:web` to CI to catch Studio regressions beyond unit/integration tests. Evidence: `.github/workflows/ci.yml`; verification: `npm run smoke:web`.
 - [x] 2026-02-09 P1: Extended private-network fetch protection with DNS resolution checks (blocks hostnames resolving to private/local IP ranges). Evidence: `src/lib/feedFetch.ts`, `test/feedFetch.test.ts`; verification: `make check`.
@@ -35,8 +35,11 @@
 - References (untrusted web):
   - https://www.inoreader.com/blog/2026/01/save-time-with-automations.html
   - https://feedly.com/new-features/posts/feedly-ai-and-summarization
+  - https://feedly.helpscoutdocs.com/article/345-mute-filters
   - https://zapier.com/apps/buffer/integrations/rss
   - https://support.buffer.com/article/613-automating-rss-feeds-using-feedly-and-zapier
+  - https://www.make.com/en/integrations/rss
+  - https://rss.app/blog/how-to-filter-rss-feeds
 
 ## Notes
 - This file is maintained by the autonomous clone loop.

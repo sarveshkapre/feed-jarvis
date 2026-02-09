@@ -15,6 +15,9 @@
 - Studio server: expose `createStudioServer`/`startStudioServer` for integration tests and smoke tooling.
 - Studio fetch safety: block localhost/private-network feeds by default (`FEED_JARVIS_ALLOW_PRIVATE_HOSTS=true` to override intentionally).
 - Studio UI: persist source/mode/persona/channel/form state to `localStorage`.
+- Studio UI: add item filters (include/exclude keywords + minimum title length) before generation/export.
+- Studio UI: harden API error handling for non-JSON responses and unknown thrown values.
+- Studio UI: fix the header "GitHub" link to point at this repository.
 - Studio UI: remove `innerHTML` persona rendering path to avoid DOM injection risk.
 - Testing: add server integration tests for personas, generate, fetch guardrails, and API 404 handling.
 - DevEx: add `npm run smoke:web` for deterministic local Studio API smoke validation.
