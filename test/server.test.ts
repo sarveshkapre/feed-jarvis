@@ -153,6 +153,83 @@ describe("studio server", () => {
     });
   });
 
+  it("returns fetch summary details", async () => {
+    const nonce = `summary-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    const feedA = `http://localhost/${nonce}-a.xml`;
+    const feedB = `http://localhost/${nonce}-b.xml`;
+    const feedDup1 = `http://localhost/${nonce}-dup1.xml`;
+    const feedDup2 = `http://localhost/${nonce}-dup2.xml`;
+
+    const xmlFor = (href: string) => {
+      if (href.includes("dup")) {
+        return `<?xml version="1.0"?>
+<rss version="2.0"><channel>
+  <item><title>Same</title><link>http://localhost/same</link></item>
+</channel></rss>`;
+      }
+      if (href.includes("-a.xml")) {
+        return `<?xml version="1.0"?>
+<rss version="2.0"><channel>
+  <item><title>A</title><link>http://localhost/a</link></item>
+</channel></rss>`;
+      }
+      return `<?xml version="1.0"?>
+<rss version="2.0"><channel>
+  <item><title>B</title><link>http://localhost/b</link></item>
+</channel></rss>`;
+    };
+
+    const fetchFn: typeof fetch = async (href) => {
+      return new Response(xmlFor(String(href)), {
+        status: 200,
+        headers: { "content-type": "application/rss+xml" },
+      });
+    };
+
+    await withServer({ allowPrivateHosts: true, fetchFn }, async (baseUrl) => {
+      const limitedRes = await fetch(`${baseUrl}/api/fetch`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          urls: [feedA, feedB],
+          maxItems: 1,
+          dedupe: true,
+        }),
+      });
+
+      expect(limitedRes.status).toBe(200);
+      const limitedPayload = await limitedRes.json();
+      expect(Array.isArray(limitedPayload.items)).toBe(true);
+      expect(limitedPayload.items).toHaveLength(1);
+      expect(limitedPayload.summary).toMatchObject({
+        sources: 2,
+        dedupe: true,
+        deduped: 0,
+        limited: 1,
+      });
+
+      const dedupeRes = await fetch(`${baseUrl}/api/fetch`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          urls: [feedDup1, feedDup2],
+          maxItems: 5,
+          dedupe: true,
+        }),
+      });
+
+      expect(dedupeRes.status).toBe(200);
+      const dedupePayload = await dedupeRes.json();
+      expect(dedupePayload.items).toHaveLength(1);
+      expect(dedupePayload.summary).toMatchObject({
+        sources: 2,
+        dedupe: true,
+        deduped: 1,
+        limited: 0,
+      });
+    });
+  });
+
   it("returns JSON 404 for unknown api routes", async () => {
     await withServer({}, async (baseUrl) => {
       const res = await fetch(`${baseUrl}/api/not-found`);

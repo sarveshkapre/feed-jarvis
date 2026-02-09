@@ -179,9 +179,8 @@ async function handleFetchFeed(body: unknown, options: RuntimeOptions) {
   );
 
   const items = results.flatMap((result) => result.items);
-  const finalItems = dedupe
-    ? dedupeByUrl(items).slice(0, maxItems)
-    : items.slice(0, maxItems);
+  const dedupedItems = dedupe ? dedupeByUrl(items) : items;
+  const finalItems = dedupedItems.slice(0, maxItems);
   const cacheCount = results.filter(
     (result) => result.source === "cache",
   ).length;
@@ -192,7 +191,9 @@ async function handleFetchFeed(body: unknown, options: RuntimeOptions) {
       sources: results.length,
       cache: cacheCount,
       network: results.length - cacheCount,
-      deduped: items.length - finalItems.length,
+      dedupe: dedupe,
+      deduped: dedupe ? items.length - dedupedItems.length : 0,
+      limited: dedupedItems.length - finalItems.length,
     },
   };
 }
