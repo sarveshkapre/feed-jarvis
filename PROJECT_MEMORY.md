@@ -16,6 +16,8 @@
 - 2026-02-09 | Fix Studio header "GitHub" links to point at this repository | Broken nav link hurts basic product polish and makes it harder for users to find docs/source | `web/index.html`, `web/about.html`; `npm run lint` | 9cc2008 | high | trusted
 - 2026-02-09 | Add Studio item filters (include/exclude keywords + minimum title length), persist them, and apply before generation/export | Filtering/muting is baseline UX for feed triage; improves signal quality before drafting | `test/filters.test.ts`, `web/filters.js`; `make check`, `npm run smoke:web` | 0732de5 | high | trusted
 - 2026-02-09 | Harden Studio API error handling for non-JSON responses and unknown thrown values | Prevent confusing status messages when the server/proxy returns unexpected payloads | `web/app.js`; `make check`, `npm run smoke:web` | 37d90bf | medium | trusted
+- 2026-02-09 | Add Studio persona import/export (local-only) and apply imported personas during generation | Persona libraries are core to repeatable voice; import/export keeps workflows local-first while enabling sharing | `web/index.html`, `web/app.js`, `test/server.test.ts`; `make check`, `npm run smoke:web` | 5fcf555 | high | trusted
+- 2026-02-09 | Enrich Studio exports with per-draft metadata (title/url/persona/channel/template) and show source context above drafts | Improves downstream scheduler/import workflows and reduces context switching when reviewing drafts | `web/app.js`, `web/styles.css`, `README.md`, `CHANGELOG.md`; `make check`, `npm run smoke:web` | 1e76b86 | high | trusted
 
 ## Mistakes And Fixes
 - Template: YYYY-MM-DD | Issue | Root cause | Fix | Prevention rule | Commit | Confidence
@@ -29,9 +31,12 @@
 - Studio item filters (Impact 5, Effort 2, Fit 5, Diff 2, Risk 2, Conf 5).
 - Studio UI error hardening (Impact 4, Effort 2, Fit 5, Diff 1, Risk 1, Conf 5).
 - Fix Studio GitHub links (Impact 2, Effort 1, Fit 4, Diff 0, Risk 1, Conf 5).
+- Studio personas import/export (Impact 4, Effort 2, Fit 5, Diff 2, Risk 2, Conf 4).
+- Studio draft exports with metadata + source context (Impact 4, Effort 2, Fit 5, Diff 2, Risk 2, Conf 4).
 - Remaining backlog:
 - Studio E2E (browser) critical flow in CI (Impact 4, Effort 4, Fit 5, Diff 1, Risk 2, Conf 3).
-- Studio personas import/export in UI (Impact 3, Effort 3, Fit 4, Diff 2, Risk 2, Conf 3).
+- Studio fetch summary details in UI (Impact 3, Effort 2, Fit 4, Diff 1, Risk 1, Conf 4).
+- Studio local feed-set presets (Impact 3, Effort 3, Fit 4, Diff 1, Risk 1, Conf 3).
 - Optional `--llm` generation backend (Impact 4, Effort 4, Fit 4, Diff 3, Risk 4, Conf 2).
 
 ## Verification Evidence
@@ -43,6 +48,9 @@
 - 2026-02-09 | `make check` | `Tests 25 passed (25)` | pass
 - 2026-02-09 | `npm run smoke:web` | `Smoke check passed: personas/fetch/generate/index 200.` | pass
 - 2026-02-09 | `gh run watch 21822522911 --exit-status` | `✓ main ci · 21822522911` | pass
+- 2026-02-09 | `make check` | `Tests 26 passed (26)` | pass
+- 2026-02-09 | `npm run smoke:web` | `Smoke check passed: personas/fetch/generate/index 200.` | pass
+- 2026-02-09 | `gh run watch 21830319469 --exit-status` | `Run codeql ... completed with 'success'` | pass
 
 ## Historical Summary
 - Keep compact summaries of older entries here when file compaction runs.

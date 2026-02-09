@@ -36,7 +36,7 @@
 - Local `make check` output matched historical failing GitHub Actions runs exactly, so Biome drift was the root CI failure.
 - Studio fetch security needed a stricter default than CLI: server-side requests can be triggered from browser clients, so private-host blocking now defaults to on for Studio.
 - Disk cache can affect integration tests if URLs are reused; tests should prefer unique URLs or isolated cache settings.
-- Market scan (untrusted web): reader/automation tools emphasize (1) rules/filters (keywords, duplicates), (2) summaries/highlights, and (3) downstream automation/export to schedulers.
+- Market scan (untrusted web): RSS-to-social tools emphasize (1) rules/filters (keywords, duplicates), (2) configurable post text (prepend/append, tags/UTMs), (3) queues/scheduling with optional review, and (4) downstream automation/export to schedulers.
 - References (untrusted web):
   - https://www.inoreader.com/blog/2026/01/save-time-with-automations.html
   - https://feedly.com/new-features/posts/feedly-ai-and-summarization
@@ -45,6 +45,9 @@
   - https://support.buffer.com/article/613-automating-rss-feeds-using-feedly-and-zapier
   - https://www.make.com/en/integrations/rss
   - https://rss.app/blog/how-to-filter-rss-feeds
+  - https://help.hootsuite.com/hc/en-us/articles/204598580-Auto-publish-posts-from-RSS-feeds
+  - https://support.sproutsocial.com/hc/en-us/articles/20299161205645-How-do-I-use-Automated-Feed-Publishing-on-the-Professional-and-Advanced-Plans
+  - https://missinglettr.com/features/drip-campaigns/
 
 ## Notes
 - This file is maintained by the autonomous clone loop.
