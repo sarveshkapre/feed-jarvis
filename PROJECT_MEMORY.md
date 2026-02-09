@@ -18,6 +18,8 @@
 - 2026-02-09 | Harden Studio API error handling for non-JSON responses and unknown thrown values | Prevent confusing status messages when the server/proxy returns unexpected payloads | `web/app.js`; `make check`, `npm run smoke:web` | 37d90bf | medium | trusted
 - 2026-02-09 | Add Studio persona import/export (local-only) and apply imported personas during generation | Persona libraries are core to repeatable voice; import/export keeps workflows local-first while enabling sharing | `web/index.html`, `web/app.js`, `test/server.test.ts`; `make check`, `npm run smoke:web` | 5fcf555 | high | trusted
 - 2026-02-09 | Enrich Studio exports with per-draft metadata (title/url/persona/channel/template) and show source context above drafts | Improves downstream scheduler/import workflows and reduces context switching when reviewing drafts | `web/app.js`, `web/styles.css`, `README.md`, `CHANGELOG.md`; `make check`, `npm run smoke:web` | 1e76b86 | high | trusted
+- 2026-02-09 | Clarify Studio `/api/fetch` summary (separate `deduped` vs `limited`) and add test coverage | Enables accurate UX messaging and avoids confusing "deduped" counts when the item cap trims results | `test/server.test.ts` (summary assertions), `make check` | fa3d5a4 | high | trusted
+- 2026-02-09 | Persist per-channel `maxChars` (local-only) and show richer fetch status in Studio | Reduces friction when switching channels and makes caching/dedupe behavior visible without leaving the UI | `test/studioPrefs.test.ts`, `npm run smoke:web`, `make check` | a6a0e86 | high | trusted
 - 2026-02-09 | Bump CodeQL workflow to use `github/codeql-action@v4` | CodeQL Action v3 emits deprecation warnings; upgrading now avoids future breakage with minimal risk | `.github/workflows/codeql.yml`; `gh run watch 21830511384 --exit-status` | 455f6a6 | high | trusted
 
 ## Mistakes And Fixes
@@ -29,6 +31,8 @@
 ## Next Prioritized Tasks
 - Scoring rubric: Impact (1-5), Effort (1-5, lower is easier), Strategic fit (1-5), Differentiation (1-5), Risk (1-5, lower is safer), Confidence (1-5).
 - Selected (shipped this session):
+- Studio fetch summary details in UI (Impact 3, Effort 2, Fit 4, Diff 1, Risk 1, Conf 4).
+- Studio per-channel `maxChars` persistence (Impact 3, Effort 2, Fit 4, Diff 1, Risk 1, Conf 4).
 - Studio item filters (Impact 5, Effort 2, Fit 5, Diff 2, Risk 2, Conf 5).
 - Studio UI error hardening (Impact 4, Effort 2, Fit 5, Diff 1, Risk 1, Conf 5).
 - Fix Studio GitHub links (Impact 2, Effort 1, Fit 4, Diff 0, Risk 1, Conf 5).
@@ -36,7 +40,6 @@
 - Studio draft exports with metadata + source context (Impact 4, Effort 2, Fit 5, Diff 2, Risk 2, Conf 4).
 - Remaining backlog:
 - Studio E2E (browser) critical flow in CI (Impact 4, Effort 4, Fit 5, Diff 1, Risk 2, Conf 3).
-- Studio fetch summary details in UI (Impact 3, Effort 2, Fit 4, Diff 1, Risk 1, Conf 4).
 - Studio local feed-set presets (Impact 3, Effort 3, Fit 4, Diff 1, Risk 1, Conf 3).
 - Optional `--llm` generation backend (Impact 4, Effort 4, Fit 4, Diff 3, Risk 4, Conf 2).
 
@@ -58,6 +61,11 @@
 - 2026-02-09 | `gh run watch 21830591018 --exit-status` | `✓ main codeql · 21830591018` | pass
 - 2026-02-09 | `gh run watch 21830673200 --exit-status` | `Run ci (21830673200) ... completed with 'success'` | pass
 - 2026-02-09 | `gh run watch 21830673184 --exit-status` | `✓ main codeql · 21830673184` | pass
+- 2026-02-09 | `make check` | `Tests 31 passed (31)` | pass
+- 2026-02-09 | `npm run smoke:web` | `Smoke check passed: personas 200, fetch 200, generate 200, index 200.` | pass
+- 2026-02-09 | `gh run watch 21839142786 --exit-status` | `Run ci (21839142786) ... completed with 'success'` | pass
+- 2026-02-09 | `gh run watch 21839139024 --exit-status` | `✓ main codeql · 21839139024` | pass
+- 2026-02-09 | `gh run watch 21839142802 --exit-status` | `✓ main codeql · 21839142802` | pass
 
 ## Historical Summary
 - Keep compact summaries of older entries here when file compaction runs.

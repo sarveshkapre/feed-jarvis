@@ -7,14 +7,17 @@
 - Gaps found during codebase exploration
 
 ## Candidate Features To Do
-- [ ] P2: Studio: show fetch summary details (cache/network/deduped) in the UI after loading items.
 - [ ] P2: Add browser-level E2E coverage for Studio critical flow (fetch -> generate -> export) in CI (Playwright).
 - [ ] P3: Studio: save/load named feed sets (local-only presets) for faster repeat workflows.
-- [ ] P3: Studio: allow per-channel default `maxChars` presets to be edited and saved (local-only).
+- [ ] P3: Studio: optional text rules for generation (prepend/append, hashtag presets, basic UTM tagging) while always honoring `maxChars`.
+- [ ] P3: Studio: import/export feed sets as OPML (local-only) for interoperability with RSS readers.
 - [ ] P3: CLI: add `generate --format csv` with metadata columns (persona/channel/template/title/url/post) for scheduler import.
 - [ ] P3: Implement optional LLM-backed generation behind an explicit `--llm` opt-in flag (roadmap item).
 
 ## Implemented
+- [x] 2026-02-09 P1: Studio: remember per-channel `maxChars` (local-only) so switching channels restores the last-used value per channel. Evidence: `web/app.js`, `web/studioPrefs.js`, `test/studioPrefs.test.ts`; verification: `make check`, `npm run smoke:web`.
+- [x] 2026-02-09 P1: Studio: show richer fetch summary after loading items (feeds, cache vs network, deduped, trimmed-to-max). Evidence: `web/app.js`, `src/server.ts`, `test/server.test.ts`; verification: `make check`, `npm run smoke:web`.
+- [x] 2026-02-09 P2: Studio server: return a clearer `/api/fetch` summary (separate `deduped` vs `limited`) + add test coverage. Evidence: `src/server.ts`, `test/server.test.ts`; verification: `make check`.
 - [x] 2026-02-09 P0: CI: bump CodeQL Action to `v4` to remove deprecation warning and keep analysis future-proof. Evidence: `.github/workflows/codeql.yml`; verification: `gh run watch 21830511384 --exit-status`.
 - [x] 2026-02-09 P1: Studio: import/export personas (JSON) from the UI (local-only), persisted in `localStorage`, and applied during generation. Evidence: `web/index.html`, `web/app.js`, `test/server.test.ts`; verification: `make check`, `npm run smoke:web`.
 - [x] 2026-02-09 P1: Studio: enrich exports (CSV + JSONL) with source metadata (title/url) plus persona/channel/template; snapshot generation inputs for aligned export; show source title/link above drafts. Evidence: `web/index.html`, `web/app.js`, `web/styles.css`, `README.md`, `CHANGELOG.md`; verification: `make check`, `npm run smoke:web`.
@@ -38,12 +41,14 @@
 - Studio fetch security needed a stricter default than CLI: server-side requests can be triggered from browser clients, so private-host blocking now defaults to on for Studio.
 - Disk cache can affect integration tests if URLs are reused; tests should prefer unique URLs or isolated cache settings.
 - Market scan (untrusted web): RSS-to-social tools emphasize (1) rules/filters (keywords, duplicates), (2) configurable post text (prepend/append, tags/UTMs), (3) queues/scheduling with optional review, and (4) downstream automation/export to schedulers.
+- Market scan (untrusted web, cycle4): auto-publish tools highlight scheduler queue integration and feed-to-channel mapping, with copy review as a differentiator for teams.
 - References (untrusted web):
   - https://www.inoreader.com/blog/2026/01/save-time-with-automations.html
   - https://feedly.com/new-features/posts/feedly-ai-and-summarization
   - https://feedly.helpscoutdocs.com/article/345-mute-filters
   - https://zapier.com/apps/buffer/integrations/rss
   - https://support.buffer.com/article/613-automating-rss-feeds-using-feedly-and-zapier
+  - https://dlvrit.com/
   - https://www.make.com/en/integrations/rss
   - https://rss.app/blog/how-to-filter-rss-feeds
   - https://help.hootsuite.com/hc/en-us/articles/204598580-Auto-publish-posts-from-RSS-feeds

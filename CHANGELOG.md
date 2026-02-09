@@ -4,6 +4,9 @@
 - Studio UI: import/export personas as JSON (local-only, stored in `localStorage`).
 - Studio UI: exports (`.jsonl`/`.csv`) now include source + persona metadata for each draft.
 - Studio UI: show the source title/link above each generated draft card.
+- Studio UI: remember per-channel `maxChars` (local-only) so switching channels restores the last-used value per channel.
+- Studio UI: fetch status now includes cache vs network and dedupe/trim summary details.
+- Studio server: `/api/fetch` summary now separates `deduped` vs `limited`.
 - CLI: add `personas`, `--version`, and improved `--help`.
 - CLI: add `fetch` to convert RSS/Atom feeds into the events JSON format (explicit allowlist + caching).
 - CLI: `fetch` supports multiple `--url` values, url-based dedupe (default on), and allowlist-enforced redirects.
