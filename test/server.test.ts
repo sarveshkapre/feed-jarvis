@@ -52,6 +52,7 @@ describe("studio server", () => {
       expect(indexRes.status).toBe(200);
       const html = await indexRes.text();
       expect(html.includes("Feed Jarvis Studio")).toBe(true);
+      expect(html.includes("Import personas")).toBe(true);
     });
   });
 
@@ -74,6 +75,27 @@ describe("studio server", () => {
       expect(Array.isArray(payload.posts)).toBe(true);
       expect(payload.posts).toHaveLength(1);
       expect(payload.posts[0].includes("Analysis:")).toBe(true);
+    });
+  });
+
+  it("supports custom personas via /api/generate", async () => {
+    await withServer({}, async (baseUrl) => {
+      const res = await fetch(`${baseUrl}/api/generate`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          items: [{ title: "Release notes", url: "https://example.com/r1" }],
+          personaCustom: { name: "Ops", prefix: "Ops note:" },
+          channel: "x",
+          template: "straight",
+          maxChars: 200,
+        }),
+      });
+
+      expect(res.status).toBe(200);
+      const payload = await res.json();
+      expect(payload.posts).toHaveLength(1);
+      expect(payload.posts[0].includes("Ops note:")).toBe(true);
     });
   });
 

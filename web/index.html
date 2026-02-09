@@ -142,6 +142,13 @@
               <span>Presets ship with a short prefix that sets the tone.</span>
             </label>
             <select id="personaSelect"></select>
+            <div class="button-row">
+              <input id="personasFile" type="file" accept="application/json,.json" hidden />
+              <button class="ghost" id="importPersonasBtn" type="button">Import personas</button>
+              <button class="ghost" id="exportPersonasBtn" type="button">Export personas</button>
+              <button class="secondary" id="clearPersonasBtn" type="button">Clear imports</button>
+            </div>
+            <div class="status" id="personasStatus" role="status" aria-live="polite"></div>
             <label class="switch">
               <input id="customPersonaToggle" type="checkbox" />
               Use a custom persona

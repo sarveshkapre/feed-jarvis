@@ -1,11 +1,14 @@
 import { applyItemFilters, normalizeItemFilters } from "./filters.js";
 
 const STUDIO_SESSION_KEY = "feed-jarvis-studio:v1";
+const STUDIO_PERSONAS_KEY = "feed-jarvis-personas:v1";
 
 const state = {
   items: [],
   filteredItems: [],
   posts: [],
+  personasBase: [],
+  personasOverrides: [],
   personas: [],
   channel: "x",
   template: "straight",
@@ -32,6 +35,11 @@ const elements = {
   itemsList: document.getElementById("itemsList"),
   itemsEmpty: document.getElementById("itemsEmpty"),
   personaSelect: document.getElementById("personaSelect"),
+  personasFile: document.getElementById("personasFile"),
+  importPersonasBtn: document.getElementById("importPersonasBtn"),
+  exportPersonasBtn: document.getElementById("exportPersonasBtn"),
+  clearPersonasBtn: document.getElementById("clearPersonasBtn"),
+  personasStatus: document.getElementById("personasStatus"),
   customPersonaToggle: document.getElementById("customPersonaToggle"),
   customPersonaFields: document.getElementById("customPersonaFields"),
   customPersonaName: document.getElementById("customPersonaName"),
@@ -453,29 +461,94 @@ function toCsv(posts, channel) {
   return `${[header, ...rows].join("\\n")}\\n`;
 }
 
-async function loadPersonas() {
-  try {
-    const res = await fetch("/api/personas");
-    const payload = await readApiPayload(res);
-    if (!res.ok) {
-      throw new Error(getApiError(res, payload, "Failed to load personas"));
+function mergePersonas(base, overrides) {
+  const merged = base.map((p) => ({ ...p }));
+
+  for (const override of overrides) {
+    const needle =
+      override &&
+      typeof override === "object" &&
+      typeof override.name === "string"
+        ? override.name.toLowerCase()
+        : "";
+    if (!needle) continue;
+
+    const index = merged.findIndex((p) => p.name.toLowerCase() === needle);
+    if (index === -1) {
+      merged.push({ ...override });
+    } else {
+      merged[index] = { ...override };
     }
-    if (payload.kind !== "json") {
-      throw new Error("Unexpected response while loading personas.");
-    }
-    const data = payload.value;
-    const personas =
-      data && typeof data === "object" ? Reflect.get(data, "personas") : [];
-    state.personas = Array.isArray(personas) ? personas : [];
-  } catch (_err) {
-    setStatus(
-      elements.itemsStatus,
-      "Unable to load personas. Refresh to retry.",
-      "error",
-    );
-    return;
   }
 
+  return merged;
+}
+
+function parsePersonasJson(raw) {
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (err) {
+    throw new Error(`Invalid JSON: ${String(err)}`);
+  }
+
+  if (!Array.isArray(parsed)) {
+    throw new Error("Expected a JSON array of personas.");
+  }
+
+  const personas = [];
+  for (let i = 0; i < parsed.length; i++) {
+    const value = parsed[i];
+    if (!value || typeof value !== "object") {
+      throw new Error(`Invalid persona at index ${i}: expected an object.`);
+    }
+
+    const name = Reflect.get(value, "name");
+    const prefix = Reflect.get(value, "prefix");
+    if (typeof name !== "string" || typeof prefix !== "string") {
+      throw new Error(
+        `Invalid persona at index ${i}: expected string 'name' and 'prefix'.`,
+      );
+    }
+    if (name.trim().length === 0 || prefix.trim().length === 0) {
+      throw new Error(
+        `Invalid persona at index ${i}: 'name' and 'prefix' must be non-empty.`,
+      );
+    }
+
+    personas.push({ name: name.trim(), prefix: prefix.trim() });
+  }
+
+  return personas;
+}
+
+function readPersonasOverrides() {
+  try {
+    const raw = window.localStorage.getItem(STUDIO_PERSONAS_KEY);
+    if (!raw) return [];
+    return parsePersonasJson(raw);
+  } catch {
+    return [];
+  }
+}
+
+function writePersonasOverrides(personas) {
+  try {
+    window.localStorage.setItem(STUDIO_PERSONAS_KEY, JSON.stringify(personas));
+  } catch {
+    // Ignore quota/privacy mode errors.
+  }
+}
+
+function clearPersonasOverrides() {
+  try {
+    window.localStorage.removeItem(STUDIO_PERSONAS_KEY);
+  } catch {
+    // Ignore quota/privacy mode errors.
+  }
+}
+
+function renderPersonas() {
   elements.personaSelect.innerHTML = "";
   state.personas.forEach((persona) => {
     const option = document.createElement("option");
@@ -498,8 +571,42 @@ async function loadPersonas() {
     }
   }
 
+  elements.personaSelect.disabled = elements.customPersonaToggle.checked;
   updatePersonaCards();
   persistSessionSnapshot();
+}
+
+function applyPersonas(base, overrides) {
+  state.personasBase = Array.isArray(base) ? base : [];
+  state.personasOverrides = Array.isArray(overrides) ? overrides : [];
+  state.personas = mergePersonas(state.personasBase, state.personasOverrides);
+  renderPersonas();
+}
+
+async function loadPersonas() {
+  try {
+    const res = await fetch("/api/personas");
+    const payload = await readApiPayload(res);
+    if (!res.ok) {
+      throw new Error(getApiError(res, payload, "Failed to load personas"));
+    }
+    if (payload.kind !== "json") {
+      throw new Error("Unexpected response while loading personas.");
+    }
+    const data = payload.value;
+    const personas =
+      data && typeof data === "object" ? Reflect.get(data, "personas") : [];
+    const basePersonas = Array.isArray(personas) ? personas : [];
+    const overrides = readPersonasOverrides();
+    applyPersonas(basePersonas, overrides);
+  } catch (_err) {
+    setStatus(
+      elements.itemsStatus,
+      "Unable to load personas. Refresh to retry.",
+      "error",
+    );
+    return;
+  }
 }
 
 async function fetchItems() {
@@ -604,18 +711,24 @@ async function generatePosts() {
 
   const maxChars = Math.max(1, Number(elements.maxChars.value) || 280);
   const useCustom = elements.customPersonaToggle.checked;
+  const selectedName = elements.personaSelect.value;
+  const selectedPersona = state.personas.find(
+    (persona) => persona.name === selectedName,
+  ) ?? {
+    name: selectedName || "Custom",
+    prefix: `${selectedName || "Custom"}:`,
+  };
   const payload = {
     items: state.filteredItems,
     maxChars,
     channel: state.channel,
     template: elements.templateSelect.value,
-    personaName: useCustom ? undefined : elements.personaSelect.value,
     personaCustom: useCustom
       ? {
           name: elements.customPersonaName.value.trim() || "Custom",
           prefix: elements.customPersonaPrefix.value.trim() || "Custom:",
         }
-      : undefined,
+      : selectedPersona,
   };
 
   setButtonLoading(elements.generateBtn, true, "Generating...");
@@ -659,7 +772,54 @@ function wireEvents() {
 
   elements.customPersonaToggle.addEventListener("change", () => {
     elements.customPersonaFields.hidden = !elements.customPersonaToggle.checked;
+    elements.personaSelect.disabled = elements.customPersonaToggle.checked;
     persistSessionSnapshot();
+  });
+
+  elements.importPersonasBtn.addEventListener("click", () => {
+    setStatus(elements.personasStatus, "");
+    elements.personasFile.click();
+  });
+
+  elements.personasFile.addEventListener("change", async () => {
+    setStatus(elements.personasStatus, "");
+    const file = elements.personasFile.files?.[0];
+    if (!file) return;
+
+    try {
+      const raw = await file.text();
+      const personas = parsePersonasJson(raw);
+      writePersonasOverrides(personas);
+      applyPersonas(state.personasBase, personas);
+      setStatus(
+        elements.personasStatus,
+        `Imported ${personas.length} persona(s).`,
+      );
+    } catch (err) {
+      setStatus(
+        elements.personasStatus,
+        getErrorMessage(err, "Failed to import personas."),
+        "error",
+      );
+    } finally {
+      // Allow re-importing the same file.
+      elements.personasFile.value = "";
+    }
+  });
+
+  elements.exportPersonasBtn.addEventListener("click", () => {
+    setStatus(elements.personasStatus, "");
+    downloadFile(
+      "feed-jarvis-personas.json",
+      `${JSON.stringify(state.personas, null, 2)}\n`,
+    );
+    setStatus(elements.personasStatus, "Exported personas JSON.");
+  });
+
+  elements.clearPersonasBtn.addEventListener("click", () => {
+    clearPersonasOverrides();
+    applyPersonas(state.personasBase, []);
+    setStatus(elements.personasStatus, "Cleared imported personas.");
   });
 
   elements.fetchBtn.addEventListener("click", fetchItems);

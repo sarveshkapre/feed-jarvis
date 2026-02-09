@@ -7,8 +7,13 @@
 - Gaps found during codebase exploration
 
 ## Candidate Features To Do
-- [ ] P2: Add browser-level E2E coverage for Studio critical flow (fetch -> generate -> export) in CI.
-- [ ] P3: Studio: import/export personas (JSON) from the UI (local-only).
+- [ ] P1 (selected): Studio: import/export personas (JSON) from the UI (local-only), persisted in `localStorage`, and applied during generation/export.
+- [ ] P1 (selected): Studio: enrich exports (CSV + JSONL) with source metadata (title/url) plus persona/channel/template; snapshot generation inputs so edits/export stay aligned.
+- [ ] P2: Studio: show fetch summary details (cache/network/deduped) in the UI after loading items.
+- [ ] P2: Add browser-level E2E coverage for Studio critical flow (fetch -> generate -> export) in CI (Playwright).
+- [ ] P3: Studio: save/load named feed sets (local-only presets) for faster repeat workflows.
+- [ ] P3: Studio: allow per-channel default `maxChars` presets to be edited and saved (local-only).
+- [ ] P3: CLI: add `generate --format csv` with metadata columns (persona/channel/template/title/url/post) for scheduler import.
 - [ ] P3: Implement optional LLM-backed generation behind an explicit `--llm` opt-in flag (roadmap item).
 
 ## Implemented
