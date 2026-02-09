@@ -1,7 +1,15 @@
 import { applyItemFilters, normalizeItemFilters } from "./filters.js";
+import {
+  formatFetchSummary,
+  getMaxCharsForChannel,
+  parseChannelMaxChars,
+  serializeChannelMaxChars,
+  setMaxCharsForChannel,
+} from "./studioPrefs.js";
 
 const STUDIO_SESSION_KEY = "feed-jarvis-studio:v1";
 const STUDIO_PERSONAS_KEY = "feed-jarvis-personas:v1";
+const STUDIO_CHANNEL_MAXCHARS_KEY = "feed-jarvis-studio:channel-maxchars:v1";
 
 const state = {
   items: [],
@@ -16,6 +24,7 @@ const state = {
   template: "straight",
   restoredPersonaName: "",
   filters: normalizeItemFilters(),
+  channelMaxCharsByChannel: {},
 };
 
 const elements = {
@@ -67,6 +76,26 @@ const channelDefaults = {
   linkedin: 700,
   newsletter: 900,
 };
+
+function readChannelMaxCharsByChannel() {
+  try {
+    const raw = window.localStorage.getItem(STUDIO_CHANNEL_MAXCHARS_KEY);
+    return parseChannelMaxChars(raw);
+  } catch {
+    return {};
+  }
+}
+
+function writeChannelMaxCharsByChannel(map) {
+  try {
+    window.localStorage.setItem(
+      STUDIO_CHANNEL_MAXCHARS_KEY,
+      serializeChannelMaxChars(map),
+    );
+  } catch {
+    // Ignore quota/privacy mode errors.
+  }
+}
 
 function setStatus(element, message, tone = "info") {
   if (!element) return;
@@ -192,7 +221,13 @@ function setChannel(channel, { syncMaxChars = true, persist = true } = {}) {
     button.classList.toggle("active", button.dataset.channel === channel);
   });
   if (syncMaxChars) {
-    elements.maxChars.value = String(channelDefaults[channel]);
+    elements.maxChars.value = String(
+      getMaxCharsForChannel(
+        channel,
+        state.channelMaxCharsByChannel,
+        channelDefaults,
+      ),
+    );
   }
 
   if (persist) {
@@ -276,6 +311,12 @@ function restoreSessionSnapshot() {
 
   if (typeof snapshot.maxChars === "string" && snapshot.maxChars.trim()) {
     elements.maxChars.value = snapshot.maxChars;
+    state.channelMaxCharsByChannel = setMaxCharsForChannel(
+      state.channelMaxCharsByChannel,
+      state.channel,
+      snapshot.maxChars,
+    );
+    writeChannelMaxCharsByChannel(state.channelMaxCharsByChannel);
   }
 
   if (typeof snapshot.personaName === "string") {
@@ -742,13 +783,9 @@ async function fetchItems() {
 
     const summary =
       data && typeof data === "object" ? Reflect.get(data, "summary") : null;
-    const sources =
-      summary && typeof summary === "object"
-        ? Reflect.get(summary, "sources")
-        : null;
     setStatus(
       elements.itemsStatus,
-      `Loaded ${state.items.length} items from ${typeof sources === "number" ? sources : urls.length} feed(s).`,
+      formatFetchSummary(summary, state.items.length, urls.length),
     );
   } catch (err) {
     setStatus(
@@ -980,6 +1017,18 @@ function wireEvents() {
     });
   });
 
+  elements.maxChars.addEventListener("input", () => {
+    const next = setMaxCharsForChannel(
+      state.channelMaxCharsByChannel,
+      state.channel,
+      elements.maxChars.value,
+    );
+    if (next !== state.channelMaxCharsByChannel) {
+      state.channelMaxCharsByChannel = next;
+      writeChannelMaxCharsByChannel(next);
+    }
+  });
+
   [
     elements.feedUrls,
     elements.maxItems,
@@ -1013,6 +1062,7 @@ function wireEvents() {
   });
 }
 
+state.channelMaxCharsByChannel = readChannelMaxCharsByChannel();
 restoreSessionSnapshot();
 wireEvents();
 loadPersonas();
