@@ -357,6 +357,38 @@ button[disabled] {
   display: block;
 }
 
+.filters {
+  margin-top: 16px;
+  padding: 16px;
+  border-radius: var(--radius-sm);
+  background: rgba(238, 245, 242, 0.45);
+  border: 1px solid rgba(20, 32, 41, 0.08);
+  display: grid;
+  gap: 12px;
+}
+
+.filters h3 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.filter-grid {
+  display: grid;
+  grid-template-columns: minmax(160px, 220px) 1fr;
+  gap: 10px 12px;
+  align-items: center;
+}
+
+.filter-grid label {
+  margin: 0;
+}
+
+.filter-help {
+  margin: 0;
+  font-size: 0.86rem;
+  color: var(--muted);
+}
+
 .preview {
   margin-top: 16px;
   border-radius: var(--radius-sm);
@@ -493,6 +525,10 @@ button[disabled] {
 }
 
 @media (max-width: 600px) {
+  .filter-grid {
+    grid-template-columns: 1fr;
+  }
+
   main {
     padding: 24px 18px 60px;
   }

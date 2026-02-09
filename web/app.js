@@ -1,12 +1,16 @@
+import { applyItemFilters, normalizeItemFilters } from "./filters.js";
+
 const STUDIO_SESSION_KEY = "feed-jarvis-studio:v1";
 
 const state = {
   items: [],
+  filteredItems: [],
   posts: [],
   personas: [],
   channel: "x",
   template: "straight",
   restoredPersonaName: "",
+  filters: normalizeItemFilters(),
 };
 
 const elements = {
@@ -21,6 +25,10 @@ const elements = {
   jsonItems: document.getElementById("jsonItems"),
   itemsStatus: document.getElementById("itemsStatus"),
   jsonStatus: document.getElementById("jsonStatus"),
+  filterInclude: document.getElementById("filterInclude"),
+  filterExclude: document.getElementById("filterExclude"),
+  filterMinTitleLength: document.getElementById("filterMinTitleLength"),
+  filterStatus: document.getElementById("filterStatus"),
   itemsList: document.getElementById("itemsList"),
   itemsEmpty: document.getElementById("itemsEmpty"),
   personaSelect: document.getElementById("personaSelect"),
@@ -79,11 +87,38 @@ function normalizeUrls(raw) {
     .filter((entry) => entry.length > 0);
 }
 
+function getErrorMessage(err, fallback) {
+  if (err instanceof Error && typeof err.message === "string" && err.message) {
+    return err.message;
+  }
+  if (typeof err === "string" && err.trim()) return err.trim();
+  if (err && typeof err === "object") {
+    const message = Reflect.get(err, "message");
+    if (typeof message === "string" && message.trim()) return message.trim();
+  }
+  return fallback;
+}
+
 function getActiveSource() {
   const activeButton = elements.sourceButtons.find((button) =>
     button.classList.contains("active"),
   );
   return activeButton?.dataset.source === "json" ? "json" : "feed";
+}
+
+function currentFilters() {
+  return normalizeItemFilters({
+    include: elements.filterInclude?.value ?? "",
+    exclude: elements.filterExclude?.value ?? "",
+    minTitleLength: elements.filterMinTitleLength?.value ?? 0,
+  });
+}
+
+function refreshFilteredItems({ updateStatus = true } = {}) {
+  state.filters = currentFilters();
+  state.filteredItems = applyItemFilters(state.items, state.filters);
+  updateItemsPreview();
+  if (updateStatus) updateFilterStatus();
 }
 
 function setSource(source, { persist = true } = {}) {
@@ -133,6 +168,9 @@ function persistSessionSnapshot() {
     maxItems: elements.maxItems.value,
     dedupe: elements.dedupe.checked,
     jsonItems: elements.jsonItems.value,
+    filterInclude: elements.filterInclude.value,
+    filterExclude: elements.filterExclude.value,
+    filterMinTitleLength: elements.filterMinTitleLength.value,
     personaName: elements.personaSelect.value,
     useCustomPersona: elements.customPersonaToggle.checked,
     customPersonaName: elements.customPersonaName.value,
@@ -169,6 +207,15 @@ function restoreSessionSnapshot() {
   if (typeof snapshot.jsonItems === "string") {
     elements.jsonItems.value = snapshot.jsonItems;
   }
+  if (typeof snapshot.filterInclude === "string") {
+    elements.filterInclude.value = snapshot.filterInclude;
+  }
+  if (typeof snapshot.filterExclude === "string") {
+    elements.filterExclude.value = snapshot.filterExclude;
+  }
+  if (typeof snapshot.filterMinTitleLength === "string") {
+    elements.filterMinTitleLength.value = snapshot.filterMinTitleLength;
+  }
   if (typeof snapshot.template === "string") {
     elements.templateSelect.value = snapshot.template;
   }
@@ -196,24 +243,68 @@ function restoreSessionSnapshot() {
   elements.customPersonaFields.hidden = !elements.customPersonaToggle.checked;
 }
 
+function updateFilterStatus() {
+  if (state.items.length === 0) {
+    setStatus(elements.filterStatus, "");
+    return;
+  }
+
+  const { include, exclude, minTitleLength } = state.filters;
+  const active =
+    Boolean(include.trim()) ||
+    Boolean(exclude.trim()) ||
+    (minTitleLength ?? 0) > 0;
+  if (!active) {
+    setStatus(elements.filterStatus, "");
+    return;
+  }
+
+  const filtered = state.filteredItems.length;
+  const total = state.items.length;
+  setStatus(
+    elements.filterStatus,
+    `Filters: ${filtered} of ${total} item(s) match.`,
+  );
+}
+
 function updateItemsPreview() {
   elements.itemsList.innerHTML = "";
   if (state.items.length === 0) {
+    elements.itemsEmpty.textContent =
+      "No items yet. Add a feed to see results.";
     elements.itemsEmpty.style.display = "block";
+    updateFilterStatus();
     return;
   }
+
+  if (state.filteredItems.length === 0) {
+    elements.itemsEmpty.textContent =
+      "No items match your filters. Adjust the filter inputs to continue.";
+    elements.itemsEmpty.style.display = "block";
+    updateFilterStatus();
+    return;
+  }
+
   elements.itemsEmpty.style.display = "none";
-  const previewItems = state.items.slice(0, 8);
+  const previewItems = state.filteredItems.slice(0, 8);
   for (const item of previewItems) {
     const li = document.createElement("li");
     li.textContent = item.title;
     elements.itemsList.appendChild(li);
   }
-  if (state.items.length > previewItems.length) {
+  if (state.filteredItems.length > previewItems.length) {
     const li = document.createElement("li");
-    li.textContent = `+${state.items.length - previewItems.length} more items loaded`;
+    li.textContent = `+${state.filteredItems.length - previewItems.length} more items loaded`;
     elements.itemsList.appendChild(li);
   }
+
+  if (state.filteredItems.length !== state.items.length) {
+    const li = document.createElement("li");
+    li.textContent = `Showing ${state.filteredItems.length} of ${state.items.length} item(s) after filters`;
+    elements.itemsList.appendChild(li);
+  }
+
+  updateFilterStatus();
 }
 
 function updatePersonaCards() {
@@ -388,7 +479,7 @@ async function fetchItems() {
     }
 
     state.items = data.items || [];
-    updateItemsPreview();
+    refreshFilteredItems();
     setStatus(
       elements.itemsStatus,
       `Loaded ${state.items.length} items from ${data.summary?.sources ?? urls.length} feed(s).`,
@@ -396,7 +487,7 @@ async function fetchItems() {
   } catch (err) {
     setStatus(
       elements.itemsStatus,
-      err.message || "Feed fetch failed.",
+      getErrorMessage(err, "Feed fetch failed."),
       "error",
     );
   } finally {
@@ -423,10 +514,14 @@ function loadItemsFromJson() {
 
     if (items.length === 0) throw new Error("No valid items found.");
     state.items = items;
-    updateItemsPreview();
+    refreshFilteredItems();
     setStatus(elements.jsonStatus, `Loaded ${items.length} items.`);
   } catch (err) {
-    setStatus(elements.jsonStatus, err.message || "Invalid JSON.", "error");
+    setStatus(
+      elements.jsonStatus,
+      getErrorMessage(err, "Invalid JSON."),
+      "error",
+    );
   }
 }
 
@@ -436,11 +531,19 @@ async function generatePosts() {
     setStatus(elements.postsStatus, "Load items first.", "error");
     return;
   }
+  if (state.filteredItems.length === 0) {
+    setStatus(
+      elements.postsStatus,
+      "No items match your filters. Adjust filters, then try again.",
+      "error",
+    );
+    return;
+  }
 
   const maxChars = Math.max(1, Number(elements.maxChars.value) || 280);
   const useCustom = elements.customPersonaToggle.checked;
   const payload = {
-    items: state.items,
+    items: state.filteredItems,
     maxChars,
     channel: state.channel,
     template: elements.templateSelect.value,
@@ -469,7 +572,7 @@ async function generatePosts() {
   } catch (err) {
     setStatus(
       elements.postsStatus,
-      err.message || "Generation failed.",
+      getErrorMessage(err, "Generation failed."),
       "error",
     );
   } finally {
@@ -539,6 +642,9 @@ function wireEvents() {
     elements.maxItems,
     elements.dedupe,
     elements.jsonItems,
+    elements.filterInclude,
+    elements.filterExclude,
+    elements.filterMinTitleLength,
     elements.personaSelect,
     elements.customPersonaName,
     elements.customPersonaPrefix,
@@ -551,9 +657,21 @@ function wireEvents() {
         : "input";
     element.addEventListener(eventName, persistSessionSnapshot);
   });
+
+  [
+    elements.filterInclude,
+    elements.filterExclude,
+    elements.filterMinTitleLength,
+  ].forEach((element) => {
+    element.addEventListener("input", () => {
+      refreshFilteredItems();
+      persistSessionSnapshot();
+    });
+  });
 }
 
 restoreSessionSnapshot();
 wireEvents();
 loadPersonas();
+refreshFilteredItems({ updateStatus: false });
 persistSessionSnapshot();

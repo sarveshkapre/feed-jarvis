@@ -96,6 +96,31 @@
             </div>
             <div class="status" id="jsonStatus" role="status" aria-live="polite"></div>
           </div>
+          <div class="filters">
+            <h3>Filter items (optional)</h3>
+            <div class="filter-grid">
+              <label for="filterInclude">Include keywords</label>
+              <input
+                id="filterInclude"
+                type="text"
+                placeholder="release, launch, pricing"
+                autocomplete="off"
+              />
+              <label for="filterExclude">Exclude keywords</label>
+              <input
+                id="filterExclude"
+                type="text"
+                placeholder="hiring, podcast, recap"
+                autocomplete="off"
+              />
+              <label for="filterMinTitleLength">Min title length</label>
+              <input id="filterMinTitleLength" type="number" min="0" value="0" />
+            </div>
+            <p class="filter-help">
+              Matches are case-insensitive. Include matches any keyword. Exclude wins.
+            </p>
+            <div class="status" id="filterStatus" role="status" aria-live="polite"></div>
+          </div>
           <div class="preview" aria-live="polite">
             <h3>Items preview</h3>
             <div class="empty" id="itemsEmpty">No items yet. Add a feed to see results.</div>
