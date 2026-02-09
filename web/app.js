@@ -99,6 +99,47 @@ function getErrorMessage(err, fallback) {
   return fallback;
 }
 
+async function readApiPayload(res) {
+  const contentType = res.headers.get("content-type") ?? "";
+  const text = await res.text().catch(() => "");
+  const trimmed = text.trim();
+  const probablyJson =
+    contentType.includes("application/json") ||
+    trimmed.startsWith("{") ||
+    trimmed.startsWith("[");
+
+  if (probablyJson) {
+    try {
+      return { kind: "json", value: JSON.parse(text) };
+    } catch {
+      // Fall back to text for non-JSON payloads.
+    }
+  }
+
+  return { kind: "text", value: text };
+}
+
+function getApiError(res, payload, fallback) {
+  if (payload?.kind === "json") {
+    const value = payload.value;
+    if (value && typeof value === "object") {
+      const error = Reflect.get(value, "error");
+      if (typeof error === "string" && error.trim()) return error.trim();
+    }
+  }
+
+  if (payload?.kind === "text") {
+    const text = typeof payload.value === "string" ? payload.value.trim() : "";
+    if (text) {
+      const snippet = text.length > 240 ? `${text.slice(0, 240)}…` : text;
+      return `${fallback}: ${snippet}`;
+    }
+  }
+
+  const statusText = `${res.status} ${res.statusText}`.trim();
+  return statusText ? `${fallback} (${statusText})` : fallback;
+}
+
 function getActiveSource() {
   const activeButton = elements.sourceButtons.find((button) =>
     button.classList.contains("active"),
@@ -415,9 +456,17 @@ function toCsv(posts, channel) {
 async function loadPersonas() {
   try {
     const res = await fetch("/api/personas");
-    if (!res.ok) throw new Error("Failed to load personas");
-    const data = await res.json();
-    state.personas = data.personas || [];
+    const payload = await readApiPayload(res);
+    if (!res.ok) {
+      throw new Error(getApiError(res, payload, "Failed to load personas"));
+    }
+    if (payload.kind !== "json") {
+      throw new Error("Unexpected response while loading personas.");
+    }
+    const data = payload.value;
+    const personas =
+      data && typeof data === "object" ? Reflect.get(data, "personas") : [];
+    state.personas = Array.isArray(personas) ? personas : [];
   } catch (_err) {
     setStatus(
       elements.itemsStatus,
@@ -473,16 +522,29 @@ async function fetchItems() {
       body: JSON.stringify({ urls, maxItems, dedupe }),
     });
 
-    const data = await res.json();
+    const payload = await readApiPayload(res);
     if (!res.ok) {
-      throw new Error(data.error || "Failed to fetch feed");
+      throw new Error(getApiError(res, payload, "Failed to fetch feed"));
     }
+    if (payload.kind !== "json") {
+      throw new Error("Unexpected response while fetching feed.");
+    }
+    const data = payload.value;
 
-    state.items = data.items || [];
+    const items =
+      data && typeof data === "object" ? Reflect.get(data, "items") : [];
+    state.items = Array.isArray(items) ? items : [];
     refreshFilteredItems();
+
+    const summary =
+      data && typeof data === "object" ? Reflect.get(data, "summary") : null;
+    const sources =
+      summary && typeof summary === "object"
+        ? Reflect.get(summary, "sources")
+        : null;
     setStatus(
       elements.itemsStatus,
-      `Loaded ${state.items.length} items from ${data.summary?.sources ?? urls.length} feed(s).`,
+      `Loaded ${state.items.length} items from ${typeof sources === "number" ? sources : urls.length} feed(s).`,
     );
   } catch (err) {
     setStatus(
@@ -564,9 +626,17 @@ async function generatePosts() {
       headers: { "content-type": "application/json" },
       body: JSON.stringify(payload),
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || "Generation failed");
-    state.posts = data.posts || [];
+    const payloadResult = await readApiPayload(res);
+    if (!res.ok) {
+      throw new Error(getApiError(res, payloadResult, "Generation failed"));
+    }
+    if (payloadResult.kind !== "json") {
+      throw new Error("Unexpected response while generating drafts.");
+    }
+    const data = payloadResult.value;
+    const posts =
+      data && typeof data === "object" ? Reflect.get(data, "posts") : [];
+    state.posts = Array.isArray(posts) ? posts : [];
     updatePostsPreview();
     setStatus(elements.postsStatus, `Generated ${state.posts.length} drafts.`);
   } catch (err) {
