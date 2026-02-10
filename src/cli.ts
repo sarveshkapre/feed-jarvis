@@ -9,11 +9,26 @@ import {
   loadPersonasFile,
   mergePersonas,
 } from "./lib/personas.js";
-import { type FeedItem, generatePosts } from "./lib/posts.js";
+import {
+  applyUtmToUrl,
+  type FeedItem,
+  generatePosts,
+  type PostChannel,
+  type PostRules,
+  type PostTemplate,
+} from "./lib/posts.js";
 
 type PackageJson = { name?: string; version?: string };
 const require = createRequire(import.meta.url);
 const pkg = require("../package.json") as PackageJson;
+
+process.stdout.on("error", (err: unknown) => {
+  // Common when users pipe output into tools like `head`.
+  if (err && typeof err === "object" && Reflect.get(err, "code") === "EPIPE") {
+    process.exit(0);
+  }
+  throw err;
+});
 
 function printHelp(): void {
   console.log(`Feed Jarvis (${pkg.name ?? "feed-jarvis"} ${pkg.version ?? "0.0.0"})
@@ -45,7 +60,17 @@ Generate options:
   --persona <name>        Persona name (required)
   --personas <path>       Optional personas JSON file (array of {name, prefix})
   --max-chars <number>    Max characters per post (default: 280)
-  --format <text|json|jsonl> Output format (default: text)
+  --channel <x|linkedin|newsletter> Target channel style (default: x)
+  --template <straight|takeaway|cta> Draft framing template (default: straight)
+  --prepend <text>        Optional text to prepend
+  --append <text>         Optional text to append
+  --hashtags <text>       Optional hashtags (space/comma separated)
+  --utm-source <value>    Optional UTM parameter for links
+  --utm-medium <value>    Optional UTM parameter for links
+  --utm-campaign <value>  Optional UTM parameter for links
+  --utm-content <value>   Optional UTM parameter for links
+  --utm-term <value>      Optional UTM parameter for links
+  --format <text|json|jsonl|csv> Output format (default: text)
   --out <path|->          Output path for posts (default: stdout)
 
 Examples:
@@ -230,12 +255,22 @@ async function main() {
   const inputPath = getRequiredFlag(args.flags, "--input");
   const personaName = getRequiredFlag(args.flags, "--persona");
   const maxChars = getNumberFlag(args.flags, "--max-chars", 280, { min: 1 });
+  const channel = resolveChannel(getStringFlag(args.flags, "--channel", "x"));
+  const template = resolveTemplate(
+    getStringFlag(args.flags, "--template", "straight"),
+  );
+  const rules = resolveRules(args.flags);
   const format = getStringFlag(args.flags, "--format", "text");
   const personasPath = getOptionalStringFlag(args.flags, "--personas");
   const outPath = getOptionalStringFlag(args.flags, "--out");
-  if (format !== "text" && format !== "json" && format !== "jsonl") {
+  if (
+    format !== "text" &&
+    format !== "json" &&
+    format !== "jsonl" &&
+    format !== "csv"
+  ) {
     dieUsage(
-      `Invalid --format: ${format} (expected 'text', 'json', or 'jsonl')`,
+      `Invalid --format: ${format} (expected 'text', 'json', 'jsonl', or 'csv')`,
     );
   }
 
@@ -248,9 +283,20 @@ async function main() {
     : [];
   const personas = mergePersonas(DEFAULT_PERSONAS, filePersonas);
   const persona = getPersona(personaName, personas);
-  const posts = generatePosts(items, persona, maxChars);
+  const resolvedItems = applyRulesToItems(items, rules);
+  const posts = generatePosts(resolvedItems, persona, maxChars, {
+    channel,
+    template,
+    rules,
+  });
 
-  const output = formatPosts(posts, format);
+  const output = formatGenerateOutput(posts, format, {
+    items: resolvedItems,
+    persona,
+    channel,
+    template,
+    rules,
+  });
   if (!outPath || outPath === "-") {
     process.stdout.write(output);
     return;
@@ -299,7 +345,19 @@ function parseArgs(argv: string[]): ParsedArgs {
     }
 
     const next = argv[i + 1];
-    if (!next || next.startsWith("-")) {
+    if (!next) {
+      setFlagValue(flags, arg, true);
+      continue;
+    }
+
+    // Treat '-' as a value for flags like --input/- or --out -.
+    if (next === "-") {
+      setFlagValue(flags, arg, next);
+      i++;
+      continue;
+    }
+
+    if (next.startsWith("-")) {
       setFlagValue(flags, arg, true);
       continue;
     }
@@ -409,12 +467,74 @@ async function loadPersonasOrDie(path: string) {
   }
 }
 
-function formatPosts(posts: string[], format: string): string {
+type GenerateContext = {
+  items: FeedItem[];
+  persona: { name: string; prefix: string };
+  channel: PostChannel;
+  template: PostTemplate;
+  rules?: PostRules;
+};
+
+function escapeCsv(value: unknown): string {
+  const text = String(value ?? "");
+  return `"${text.replace(/"/g, '""')}"`;
+}
+
+function formatGenerateOutput(
+  posts: string[],
+  format: string,
+  context: GenerateContext,
+): string {
   if (format === "json") {
     return `${JSON.stringify(posts, null, 2)}\n`;
   }
   if (format === "jsonl") {
     return `${posts.map((post) => JSON.stringify(post)).join("\n")}\n`;
+  }
+  if (format === "csv") {
+    const header = [
+      "channel",
+      "template",
+      "persona_name",
+      "persona_prefix",
+      "rule_prepend",
+      "rule_append",
+      "rule_hashtags",
+      "utm_source",
+      "utm_medium",
+      "utm_campaign",
+      "utm_content",
+      "utm_term",
+      "title",
+      "url",
+      "post",
+    ].join(",");
+
+    const rules = context.rules ?? {};
+    const utm = rules.utm ?? {};
+    const rows = context.items.map((item, index) => {
+      const post = posts[index] ?? "";
+      const url = item.url ?? "";
+      return [
+        escapeCsv(context.channel),
+        escapeCsv(context.template),
+        escapeCsv(context.persona.name),
+        escapeCsv(context.persona.prefix),
+        escapeCsv(rules.prepend ?? ""),
+        escapeCsv(rules.append ?? ""),
+        escapeCsv(rules.hashtags ?? ""),
+        escapeCsv(utm.source ?? ""),
+        escapeCsv(utm.medium ?? ""),
+        escapeCsv(utm.campaign ?? ""),
+        escapeCsv(utm.content ?? ""),
+        escapeCsv(utm.term ?? ""),
+        escapeCsv(item.title ?? ""),
+        escapeCsv(url),
+        escapeCsv(post),
+      ].join(",");
+    });
+
+    return `${[header, ...rows].join("\n")}\n`;
   }
   return `${posts.join("\n")}\n`;
 }
@@ -467,4 +587,59 @@ function resolveStringFlag(value: FlagValue | undefined): string | undefined {
   if (!value || value === true) return undefined;
   if (Array.isArray(value)) return value.at(-1);
   return value;
+}
+
+function resolveChannel(value: string): PostChannel {
+  if (value === "x" || value === "linkedin" || value === "newsletter") {
+    return value;
+  }
+  dieUsage(
+    `Invalid --channel: ${value} (expected 'x', 'linkedin', or 'newsletter')`,
+  );
+}
+
+function resolveTemplate(value: string): PostTemplate {
+  if (value === "straight" || value === "takeaway" || value === "cta") {
+    return value;
+  }
+  dieUsage(
+    `Invalid --template: ${value} (expected 'straight', 'takeaway', or 'cta')`,
+  );
+}
+
+function resolveRules(flags: Map<string, FlagValue>): PostRules | undefined {
+  const prepend = getOptionalStringFlag(flags, "--prepend")?.trim();
+  const append = getOptionalStringFlag(flags, "--append")?.trim();
+  const hashtags = getOptionalStringFlag(flags, "--hashtags")?.trim();
+
+  const utmSource = getOptionalStringFlag(flags, "--utm-source")?.trim();
+  const utmMedium = getOptionalStringFlag(flags, "--utm-medium")?.trim();
+  const utmCampaign = getOptionalStringFlag(flags, "--utm-campaign")?.trim();
+  const utmContent = getOptionalStringFlag(flags, "--utm-content")?.trim();
+  const utmTerm = getOptionalStringFlag(flags, "--utm-term")?.trim();
+
+  const utm =
+    utmSource || utmMedium || utmCampaign || utmContent || utmTerm
+      ? {
+          source: utmSource || undefined,
+          medium: utmMedium || undefined,
+          campaign: utmCampaign || undefined,
+          content: utmContent || undefined,
+          term: utmTerm || undefined,
+        }
+      : undefined;
+
+  if (!prepend && !append && !hashtags && !utm) return undefined;
+  return {
+    prepend: prepend || undefined,
+    append: append || undefined,
+    hashtags: hashtags || undefined,
+    utm,
+  };
+}
+
+function applyRulesToItems(items: FeedItem[], rules?: PostRules): FeedItem[] {
+  const utm = rules?.utm;
+  if (!utm) return items;
+  return items.map((item) => ({ ...item, url: applyUtmToUrl(item.url, utm) }));
 }
