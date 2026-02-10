@@ -5,9 +5,11 @@ import { fileURLToPath } from "node:url";
 import { fetchFeed } from "./lib/feedFetch.js";
 import { DEFAULT_PERSONAS, getPersona, type Persona } from "./lib/personas.js";
 import {
+  applyUtmToUrl,
   type FeedItem,
   generatePosts,
   type PostChannel,
+  type PostRules,
   type PostTemplate,
 } from "./lib/posts.js";
 
@@ -236,9 +238,16 @@ async function handleGenerate(body: unknown) {
   const persona = resolvePersona(body as Record<string, unknown>);
   const channel = resolveChannel(Reflect.get(body, "channel"));
   const template = resolveTemplate(Reflect.get(body, "template"));
+  const rules = resolveRules(Reflect.get(body, "rules"));
+  const resolvedItems = applyRulesToItems(items, rules);
 
   return {
-    posts: generatePosts(items, persona, maxChars, { channel, template }),
+    posts: generatePosts(resolvedItems, persona, maxChars, {
+      channel,
+      template,
+      rules,
+    }),
+    items: resolvedItems,
   };
 }
 
@@ -254,6 +263,69 @@ function resolveTemplate(value: unknown): PostTemplate {
     return value;
   }
   return "straight";
+}
+
+function resolveRules(value: unknown): PostRules | undefined {
+  if (!value || typeof value !== "object") return undefined;
+
+  const prepend =
+    typeof Reflect.get(value, "prepend") === "string"
+      ? String(Reflect.get(value, "prepend")).trim()
+      : "";
+  const append =
+    typeof Reflect.get(value, "append") === "string"
+      ? String(Reflect.get(value, "append")).trim()
+      : "";
+  const hashtags =
+    typeof Reflect.get(value, "hashtags") === "string"
+      ? String(Reflect.get(value, "hashtags")).trim()
+      : "";
+
+  const utmRaw = Reflect.get(value, "utm");
+  const utm =
+    utmRaw && typeof utmRaw === "object"
+      ? {
+          source:
+            typeof Reflect.get(utmRaw, "source") === "string"
+              ? String(Reflect.get(utmRaw, "source")).trim()
+              : undefined,
+          medium:
+            typeof Reflect.get(utmRaw, "medium") === "string"
+              ? String(Reflect.get(utmRaw, "medium")).trim()
+              : undefined,
+          campaign:
+            typeof Reflect.get(utmRaw, "campaign") === "string"
+              ? String(Reflect.get(utmRaw, "campaign")).trim()
+              : undefined,
+          content:
+            typeof Reflect.get(utmRaw, "content") === "string"
+              ? String(Reflect.get(utmRaw, "content")).trim()
+              : undefined,
+          term:
+            typeof Reflect.get(utmRaw, "term") === "string"
+              ? String(Reflect.get(utmRaw, "term")).trim()
+              : undefined,
+        }
+      : undefined;
+
+  const normalizedUtm =
+    utm && (utm.source || utm.medium || utm.campaign || utm.content || utm.term)
+      ? utm
+      : undefined;
+
+  if (!prepend && !append && !hashtags && !normalizedUtm) return undefined;
+  return {
+    prepend: prepend || undefined,
+    append: append || undefined,
+    hashtags: hashtags || undefined,
+    utm: normalizedUtm,
+  };
+}
+
+function applyRulesToItems(items: FeedItem[], rules?: PostRules): FeedItem[] {
+  const utm = rules?.utm;
+  if (!utm) return items;
+  return items.map((item) => ({ ...item, url: applyUtmToUrl(item.url, utm) }));
 }
 
 async function serveStatic(

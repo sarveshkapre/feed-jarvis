@@ -194,6 +194,47 @@
               <label for="maxChars">Max characters</label>
               <input id="maxChars" type="number" min="1" value="280" />
             </div>
+            <div class="rules">
+              <h3>Text rules (optional)</h3>
+              <div class="rules-grid">
+                <label for="rulePrepend">Prepend text</label>
+                <input
+                  id="rulePrepend"
+                  type="text"
+                  placeholder="New:"
+                  autocomplete="off"
+                />
+                <label for="ruleAppend">Append text</label>
+                <input
+                  id="ruleAppend"
+                  type="text"
+                  placeholder="Worth a look."
+                  autocomplete="off"
+                />
+                <label for="ruleHashtags">Hashtags</label>
+                <input
+                  id="ruleHashtags"
+                  type="text"
+                  placeholder="#Product, ai, #Launch"
+                  autocomplete="off"
+                />
+              </div>
+              <label class="switch">
+                <input id="utmToggle" type="checkbox" />
+                Add UTM tags to links
+              </label>
+              <div class="rules-grid" id="utmFields" hidden>
+                <label for="utmSource">utm_source</label>
+                <input id="utmSource" type="text" placeholder="feed-jarvis" autocomplete="off" />
+                <label for="utmMedium">utm_medium</label>
+                <input id="utmMedium" type="text" placeholder="social" autocomplete="off" />
+                <label for="utmCampaign">utm_campaign</label>
+                <input id="utmCampaign" type="text" placeholder="launch" autocomplete="off" />
+              </div>
+              <p class="rule-help">
+                Rules apply before the link. Drafts are always truncated to honor max characters.
+              </p>
+            </div>
             <div class="button-row">
               <button class="primary" id="generateBtn">Generate posts</button>
               <button class="secondary" id="copyAllBtn" disabled>Copy all</button>

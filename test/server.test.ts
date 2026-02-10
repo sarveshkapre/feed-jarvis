@@ -99,6 +99,37 @@ describe("studio server", () => {
     });
   });
 
+  it("applies generation rules via /api/generate", async () => {
+    await withServer({}, async (baseUrl) => {
+      const res = await fetch(`${baseUrl}/api/generate`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          items: [{ title: "Release notes", url: "https://example.com/r1" }],
+          personaName: "Analyst",
+          channel: "x",
+          template: "straight",
+          maxChars: 240,
+          rules: {
+            prepend: "New:",
+            append: "Worth a look.",
+            hashtags: "ai,#Product",
+            utm: { source: "feed-jarvis", medium: "social" },
+          },
+        }),
+      });
+
+      expect(res.status).toBe(200);
+      const payload = await res.json();
+      expect(payload.posts).toHaveLength(1);
+      expect(String(payload.posts[0])).toMatch(/New:/);
+      expect(String(payload.posts[0])).toMatch(/#ai/i);
+      expect(String(payload.posts[0])).toMatch(/utm_source=feed-jarvis/);
+      expect(Array.isArray(payload.items)).toBe(true);
+      expect(String(payload.items[0].url)).toMatch(/utm_source=feed-jarvis/);
+    });
+  });
+
   it("blocks localhost feed fetch by default", async () => {
     await withServer({}, async (baseUrl) => {
       const res = await fetch(`${baseUrl}/api/fetch`, {

@@ -61,6 +61,14 @@ const elements = {
   ),
   templateSelect: document.getElementById("templateSelect"),
   maxChars: document.getElementById("maxChars"),
+  rulePrepend: document.getElementById("rulePrepend"),
+  ruleAppend: document.getElementById("ruleAppend"),
+  ruleHashtags: document.getElementById("ruleHashtags"),
+  utmToggle: document.getElementById("utmToggle"),
+  utmFields: document.getElementById("utmFields"),
+  utmSource: document.getElementById("utmSource"),
+  utmMedium: document.getElementById("utmMedium"),
+  utmCampaign: document.getElementById("utmCampaign"),
   generateBtn: document.getElementById("generateBtn"),
   postsStatus: document.getElementById("postsStatus"),
   postsList: document.getElementById("postsList"),
@@ -194,6 +202,36 @@ function currentFilters() {
   });
 }
 
+function currentRules() {
+  const prepend = elements.rulePrepend?.value?.trim?.() ?? "";
+  const append = elements.ruleAppend?.value?.trim?.() ?? "";
+  const hashtags = elements.ruleHashtags?.value?.trim?.() ?? "";
+
+  const utmEnabled = Boolean(elements.utmToggle?.checked);
+  const source = utmEnabled ? (elements.utmSource?.value?.trim?.() ?? "") : "";
+  const medium = utmEnabled ? (elements.utmMedium?.value?.trim?.() ?? "") : "";
+  const campaign = utmEnabled
+    ? (elements.utmCampaign?.value?.trim?.() ?? "")
+    : "";
+
+  const utm =
+    source || medium || campaign
+      ? {
+          source: source || undefined,
+          medium: medium || undefined,
+          campaign: campaign || undefined,
+        }
+      : undefined;
+
+  if (!prepend && !append && !hashtags && !utm) return undefined;
+  return {
+    prepend: prepend || undefined,
+    append: append || undefined,
+    hashtags: hashtags || undefined,
+    utm,
+  };
+}
+
 function refreshFilteredItems({ updateStatus = true } = {}) {
   state.filters = currentFilters();
   state.filteredItems = applyItemFilters(state.items, state.filters);
@@ -264,6 +302,13 @@ function persistSessionSnapshot() {
     channel: state.channel,
     template: elements.templateSelect.value,
     maxChars: elements.maxChars.value,
+    rulePrepend: elements.rulePrepend.value,
+    ruleAppend: elements.ruleAppend.value,
+    ruleHashtags: elements.ruleHashtags.value,
+    utmEnabled: elements.utmToggle.checked,
+    utmSource: elements.utmSource.value,
+    utmMedium: elements.utmMedium.value,
+    utmCampaign: elements.utmCampaign.value,
   };
 
   try {
@@ -305,6 +350,27 @@ function restoreSessionSnapshot() {
   if (typeof snapshot.template === "string") {
     elements.templateSelect.value = snapshot.template;
   }
+  if (typeof snapshot.rulePrepend === "string") {
+    elements.rulePrepend.value = snapshot.rulePrepend;
+  }
+  if (typeof snapshot.ruleAppend === "string") {
+    elements.ruleAppend.value = snapshot.ruleAppend;
+  }
+  if (typeof snapshot.ruleHashtags === "string") {
+    elements.ruleHashtags.value = snapshot.ruleHashtags;
+  }
+  if (typeof snapshot.utmEnabled === "boolean") {
+    elements.utmToggle.checked = snapshot.utmEnabled;
+  }
+  if (typeof snapshot.utmSource === "string") {
+    elements.utmSource.value = snapshot.utmSource;
+  }
+  if (typeof snapshot.utmMedium === "string") {
+    elements.utmMedium.value = snapshot.utmMedium;
+  }
+  if (typeof snapshot.utmCampaign === "string") {
+    elements.utmCampaign.value = snapshot.utmCampaign;
+  }
 
   setSource(snapshot.source, { persist: false });
   setChannel(snapshot.channel, { persist: false });
@@ -333,6 +399,7 @@ function restoreSessionSnapshot() {
   }
 
   elements.customPersonaFields.hidden = !elements.customPersonaToggle.checked;
+  elements.utmFields.hidden = !elements.utmToggle.checked;
 }
 
 function updateFilterStatus() {
@@ -549,6 +616,8 @@ function buildDraftRows() {
   if (!state.generatedMeta) return [];
   const max = Math.min(state.posts.length, state.generatedItems.length);
   const rows = [];
+  const rules = state.generatedMeta.rules ?? {};
+  const utm = rules.utm ?? {};
 
   for (let i = 0; i < max; i++) {
     const item = state.generatedItems[i] ?? {};
@@ -557,6 +626,12 @@ function buildDraftRows() {
       template: state.generatedMeta.template,
       personaName: state.generatedMeta.persona?.name ?? "",
       personaPrefix: state.generatedMeta.persona?.prefix ?? "",
+      rulePrepend: rules.prepend ?? "",
+      ruleAppend: rules.append ?? "",
+      ruleHashtags: rules.hashtags ?? "",
+      utmSource: utm.source ?? "",
+      utmMedium: utm.medium ?? "",
+      utmCampaign: utm.campaign ?? "",
       title: item.title ?? "",
       url: item.url ?? "",
       post: state.posts[i] ?? "",
@@ -578,6 +653,12 @@ function toDraftsCsv() {
     "template",
     "persona_name",
     "persona_prefix",
+    "rule_prepend",
+    "rule_append",
+    "rule_hashtags",
+    "utm_source",
+    "utm_medium",
+    "utm_campaign",
     "title",
     "url",
     "post",
@@ -589,6 +670,12 @@ function toDraftsCsv() {
       escapeCsv(row.template),
       escapeCsv(row.personaName),
       escapeCsv(row.personaPrefix),
+      escapeCsv(row.rulePrepend),
+      escapeCsv(row.ruleAppend),
+      escapeCsv(row.ruleHashtags),
+      escapeCsv(row.utmSource),
+      escapeCsv(row.utmMedium),
+      escapeCsv(row.utmCampaign),
       escapeCsv(row.title),
       escapeCsv(row.url),
       escapeCsv(row.post),
@@ -861,6 +948,7 @@ async function generatePosts() {
       }
     : selectedPersona;
   const template = elements.templateSelect.value;
+  const rules = currentRules();
 
   const payload = {
     items: generationItems,
@@ -868,6 +956,7 @@ async function generatePosts() {
     channel: state.channel,
     template,
     personaCustom: personaUsed,
+    rules,
   };
 
   setButtonLoading(elements.generateBtn, true, "Generating...");
@@ -889,12 +978,17 @@ async function generatePosts() {
     const posts =
       data && typeof data === "object" ? Reflect.get(data, "posts") : [];
     state.posts = Array.isArray(posts) ? posts : [];
-    state.generatedItems = generationItems;
+    const returnedItems =
+      data && typeof data === "object" ? Reflect.get(data, "items") : null;
+    state.generatedItems = Array.isArray(returnedItems)
+      ? returnedItems
+      : generationItems;
     state.generatedMeta = {
       channel: state.channel,
       template,
       persona: personaUsed,
       maxChars,
+      rules,
     };
     updatePostsPreview();
     setStatus(elements.postsStatus, `Generated ${state.posts.length} drafts.`);
@@ -919,6 +1013,11 @@ function wireEvents() {
   elements.customPersonaToggle.addEventListener("change", () => {
     elements.customPersonaFields.hidden = !elements.customPersonaToggle.checked;
     elements.personaSelect.disabled = elements.customPersonaToggle.checked;
+    persistSessionSnapshot();
+  });
+
+  elements.utmToggle.addEventListener("change", () => {
+    elements.utmFields.hidden = !elements.utmToggle.checked;
     persistSessionSnapshot();
   });
 
@@ -1042,6 +1141,13 @@ function wireEvents() {
     elements.customPersonaPrefix,
     elements.templateSelect,
     elements.maxChars,
+    elements.rulePrepend,
+    elements.ruleAppend,
+    elements.ruleHashtags,
+    elements.utmToggle,
+    elements.utmSource,
+    elements.utmMedium,
+    elements.utmCampaign,
   ].forEach((element) => {
     const eventName =
       element.type === "checkbox" || element.tagName === "SELECT"
