@@ -74,6 +74,8 @@
 - 2026-02-10 | `make check` | `Tests 35 passed (35)` | pass
 - 2026-02-10 | `npm run smoke:web` | `Smoke check passed: ... generate 200 ...` | pass
 - 2026-02-10 | `./node_modules/.bin/tsx src/cli.ts generate --input - --persona Analyst --format csv --channel x --template takeaway --prepend "New:" --hashtags "ai,#Product" --utm-source feed-jarvis --utm-medium social --max-chars 200` | CSV header + one row emitted | pass
+- 2026-02-10 | `gh run watch 21846239705 --exit-status` | `✓ main ci · 21846239705` | pass
+- 2026-02-10 | `gh run watch 21846239703 --exit-status` | `✓ main codeql · 21846239703` | pass
 
 ## Historical Summary
 - Keep compact summaries of older entries here when file compaction runs.
