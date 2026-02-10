@@ -21,10 +21,13 @@
 - 2026-02-09 | Clarify Studio `/api/fetch` summary (separate `deduped` vs `limited`) and add test coverage | Enables accurate UX messaging and avoids confusing "deduped" counts when the item cap trims results | `test/server.test.ts` (summary assertions), `make check` | fa3d5a4 | high | trusted
 - 2026-02-09 | Persist per-channel `maxChars` (local-only) and show richer fetch status in Studio | Reduces friction when switching channels and makes caching/dedupe behavior visible without leaving the UI | `test/studioPrefs.test.ts`, `npm run smoke:web`, `make check` | a6a0e86 | high | trusted
 - 2026-02-09 | Bump CodeQL workflow to use `github/codeql-action@v4` | CodeQL Action v3 emits deprecation warnings; upgrading now avoids future breakage with minimal risk | `.github/workflows/codeql.yml`; `gh run watch 21830511384 --exit-status` | 455f6a6 | high | trusted
+- 2026-02-10 | Studio: add optional generation text rules (prepend/append/hashtags) + basic UTM tagging and persist them locally | Post-text customization + UTM tagging is baseline parity for RSS-to-social workflows; shipping locally-first rules improves PMF without external dependencies | `test/posts.test.ts`, `test/server.test.ts`, `npm run smoke:web` | b576b01 | high | trusted
+- 2026-02-10 | CLI: add `generate --format csv`, `--channel`/`--template`, rule/UTM flags; fix `--input -` parsing and handle stdout `EPIPE` | CSV export and channel/template parity improves downstream scheduler import; stdin and pipe robustness makes the CLI match documented workflows | `test/cli.test.ts`, manual `tsx src/cli.ts generate --format csv ...`, `make check` | ffd3299 | high | trusted
 
 ## Mistakes And Fixes
 - Template: YYYY-MM-DD | Issue | Root cause | Fix | Prevention rule | Commit | Confidence
 - 2026-02-09 | "Dependabot Updates" Actions workflow failing with 403 | Repo default `GITHUB_TOKEN` workflow permissions were `read` but the dynamic Dependabot workflow requires write access to fetch job details | Updated repo default workflow permissions to `write`; added explicit `permissions: contents: read` to `ci.yml` | Treat repo-level Actions defaults as production config; whenever enabling write defaults, pin every workflow to explicit minimal permissions | c233218 (plus repo setting) | medium
+- 2026-02-10 | CLI `generate --input -` example failing + piping output causing `EPIPE` crash | `parseArgs` treated `-` as a new flag (not a value), and the CLI did not handle stdout `EPIPE` when downstream consumers closed the pipe | Treat `-` as a valid flag value for `--input`/`--out`; exit cleanly on `EPIPE`; add a regression test | Treat README command examples as contract tests; add CLI integration tests for argument edge cases (`-`, pipes) | ffd3299 | high
 
 ## Known Risks
 
@@ -68,6 +71,9 @@
 - 2026-02-09 | `gh run watch 21839142802 --exit-status` | `✓ main codeql · 21839142802` | pass
 - 2026-02-09 | `gh run watch 21839254074 --exit-status` | `✓ main ci · 21839254074` | pass
 - 2026-02-09 | `gh run watch 21839254032 --exit-status` | `✓ main codeql · 21839254032` | pass
+- 2026-02-10 | `make check` | `Tests 35 passed (35)` | pass
+- 2026-02-10 | `npm run smoke:web` | `Smoke check passed: ... generate 200 ...` | pass
+- 2026-02-10 | `./node_modules/.bin/tsx src/cli.ts generate --input - --persona Analyst --format csv --channel x --template takeaway --prepend "New:" --hashtags "ai,#Product" --utm-source feed-jarvis --utm-medium social --max-chars 200` | CSV header + one row emitted | pass
 
 ## Historical Summary
 - Keep compact summaries of older entries here when file compaction runs.

@@ -32,6 +32,15 @@ echo '[{"title":"Hello world","url":"https://example.com"}]' > events.json
 npm run dev -- generate --input events.json --persona "Analyst"
 ```
 
+Generate drafts as CSV (for scheduler import) with optional text rules:
+
+```bash
+cat events.json | npm run dev -- generate --input - --persona Analyst --format csv \
+  --channel x --template takeaway \
+  --prepend "New:" --hashtags "ai,#Product" \
+  --utm-source feed-jarvis --utm-medium social > drafts.csv
+```
+
 Fetch from an RSS/Atom feed (requires explicit allowlist):
 
 ```bash
@@ -46,8 +55,9 @@ npm run dev -- generate --input events.json --persona Analyst
 - Local-first: feeds and drafts never leave your machine.
 - Studio persistence: remembers your input mode and form settings across refreshes.
 - Studio filters: optionally include/exclude keywords and enforce a minimum title length before generation/export.
+- Studio text rules: optional prepend/append/hashtags plus basic UTM tagging while always honoring `maxChars`.
 - Personas: consistent voice with editable prefixes (Studio supports local-only persona import/export).
-- Outputs: Studio exports `.txt`, `.jsonl`, and `.csv` drafts (JSONL/CSV include source metadata); CLI supports text/JSON/JSONL.
+- Outputs: Studio exports `.txt`, `.jsonl`, and `.csv` drafts (JSONL/CSV include source metadata); CLI supports text/JSON/JSONL/CSV.
 
 Tip: load/override personas from a file via `--personas personas.json` (array of `{name, prefix}`).
 Tip: write posts to a file with `--out posts.txt` or `--format jsonl` for one JSON string per line.

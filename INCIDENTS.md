@@ -21,3 +21,13 @@
 - Evidence: `gh api /repos/sarveshkapre/feed-jarvis/actions/permissions/workflow`
 - Commit: c233218 (workflow pin), plus repo setting (no git commit)
 - Confidence: medium
+
+- Date: 2026-02-10
+- Trigger: CLI example `generate --input -` and piping output (for example into `head`) revealed incorrect arg parsing and an unhandled stdout `EPIPE`
+- Impact: Documented stdin workflows failed; piping could crash the CLI with a stack trace
+- Root Cause: `parseArgs` treated `-` as a new flag (not a value) and the CLI did not handle stdout `EPIPE`
+- Fix: Treat `-` as a valid flag value for `--input`/`--out`; exit cleanly on stdout `EPIPE`; added a regression test for stdin input
+- Prevention Rule: Treat README command examples as contract tests; add CLI integration tests for argument edge cases (`-`, pipes) when introducing flags/output formats
+- Evidence: `test/cli.test.ts`, `make check`
+- Commit: ffd3299
+- Confidence: high

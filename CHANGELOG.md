@@ -1,6 +1,8 @@
 # CHANGELOG
 
 ## Unreleased
+- Studio UI: add optional generation text rules (prepend/append/hashtags) plus basic UTM tagging while always honoring `maxChars`.
+- Studio server: `/api/generate` now accepts optional `rules` and returns the resolved `items` payload (for export-aligned URLs).
 - Studio UI: import/export personas as JSON (local-only, stored in `localStorage`).
 - Studio UI: exports (`.jsonl`/`.csv`) now include source + persona metadata for each draft.
 - Studio UI: show the source title/link above each generated draft card.
@@ -16,6 +18,7 @@
 - Fetch: when private hosts are disabled, block hostnames that resolve via DNS to private/local IP ranges.
 - CLI: `generate` supports `--out` and `--format jsonl`.
 - CLI: `generate` supports `--input -`, `--format json`, and `--max-chars`.
+- CLI: `generate` supports `--format csv`, `--channel`, `--template`, and optional rules/UTM flags for downstream scheduler import.
 - CLI: `--personas` loads persona definitions from a JSON file (overrides built-ins).
 - Posts: always respect `maxChars` even with extremely long URLs.
 - Studio server: expose `createStudioServer`/`startStudioServer` for integration tests and smoke tooling.
