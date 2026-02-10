@@ -7,11 +7,15 @@
 - Gaps found during codebase exploration
 
 ## Candidate Features To Do
+- [ ] P1: Studio: add optional text rules for generation (prepend/append, hashtag presets, basic UTM tagging) while always honoring `maxChars`.
+- [ ] P1: CLI: add `generate --format csv` with metadata columns (persona/channel/template/title/url/post) plus `--channel`/`--template` parity with Studio.
 - [ ] P2: Add browser-level E2E coverage for Studio critical flow (fetch -> generate -> export) in CI (Playwright).
-- [ ] P3: Studio: save/load named feed sets (local-only presets) for faster repeat workflows.
-- [ ] P3: Studio: optional text rules for generation (prepend/append, hashtag presets, basic UTM tagging) while always honoring `maxChars`.
+- [ ] P2: Studio: save/load named feed sets (local-only presets) for faster repeat workflows.
+- [ ] P2: Studio: add "Download items.json" export for the filtered item set (so users can move between Studio and CLI easily).
+- [ ] P3: Studio: optional rule presets (save/load) for repeatable prepend/append/hashtags/UTM settings (local-only).
 - [ ] P3: Studio: import/export feed sets as OPML (local-only) for interoperability with RSS readers.
-- [ ] P3: CLI: add `generate --format csv` with metadata columns (persona/channel/template/title/url/post) for scheduler import.
+- [ ] P3: CLI: add `generate --stats` to print post counts + length distribution to stderr for quick validation.
+- [ ] P3: CLI: allow `fetch` from an OPML file (local-only) to batch feed URLs while preserving the allowlist model.
 - [ ] P3: Implement optional LLM-backed generation behind an explicit `--llm` opt-in flag (roadmap item).
 
 ## Implemented
