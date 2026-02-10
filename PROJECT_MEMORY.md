@@ -23,6 +23,8 @@
 - 2026-02-09 | Bump CodeQL workflow to use `github/codeql-action@v4` | CodeQL Action v3 emits deprecation warnings; upgrading now avoids future breakage with minimal risk | `.github/workflows/codeql.yml`; `gh run watch 21830511384 --exit-status` | 455f6a6 | high | trusted
 - 2026-02-10 | Studio: add optional generation text rules (prepend/append/hashtags) + basic UTM tagging and persist them locally | Post-text customization + UTM tagging is baseline parity for RSS-to-social workflows; shipping locally-first rules improves PMF without external dependencies | `test/posts.test.ts`, `test/server.test.ts`, `npm run smoke:web` | b576b01 | high | trusted
 - 2026-02-10 | CLI: add `generate --format csv`, `--channel`/`--template`, rule/UTM flags; fix `--input -` parsing and handle stdout `EPIPE` | CSV export and channel/template parity improves downstream scheduler import; stdin and pipe robustness makes the CLI match documented workflows | `test/cli.test.ts`, manual `tsx src/cli.ts generate --format csv ...`, `make check` | ffd3299 | high | trusted
+- 2026-02-10 | Studio: add local-only feed set presets (save/load/delete) and a filtered `items.json` export bridge | Feed grouping + export bridges are baseline UX for RSS-to-social workflows; this keeps the product local-first while reducing repeat friction and enabling Studio -> CLI handoff | `web/feedSets.js`, `test/feedSets.test.ts`, `make check`, `npm run smoke:web` | f64f9ab | high | trusted
+- 2026-02-10 | CLI: add `generate --stats` to print post count + length distribution to stderr | Quick validation and QA loops are common when exporting drafts; stats help spot outliers without changing output formats | `src/cli.ts`, `test/cli.test.ts`, `make check` | b6e0cc2 | high | trusted
 
 ## Mistakes And Fixes
 - Template: YYYY-MM-DD | Issue | Root cause | Fix | Prevention rule | Commit | Confidence
@@ -33,17 +35,13 @@
 
 ## Next Prioritized Tasks
 - Scoring rubric: Impact (1-5), Effort (1-5, lower is easier), Strategic fit (1-5), Differentiation (1-5), Risk (1-5, lower is safer), Confidence (1-5).
-- Selected (shipped this session):
-- Studio fetch summary details in UI (Impact 3, Effort 2, Fit 4, Diff 1, Risk 1, Conf 4).
-- Studio per-channel `maxChars` persistence (Impact 3, Effort 2, Fit 4, Diff 1, Risk 1, Conf 4).
-- Studio item filters (Impact 5, Effort 2, Fit 5, Diff 2, Risk 2, Conf 5).
-- Studio UI error hardening (Impact 4, Effort 2, Fit 5, Diff 1, Risk 1, Conf 5).
-- Fix Studio GitHub links (Impact 2, Effort 1, Fit 4, Diff 0, Risk 1, Conf 5).
-- Studio personas import/export (Impact 4, Effort 2, Fit 5, Diff 2, Risk 2, Conf 4).
-- Studio draft exports with metadata + source context (Impact 4, Effort 2, Fit 5, Diff 2, Risk 2, Conf 4).
+- Selected (shipped 2026-02-10):
+- Studio feed sets (local-only) + filtered `items.json` export bridge (Impact 5, Effort 2, Fit 5, Diff 2, Risk 1, Conf 4).
+- CLI `generate --stats` (Impact 3, Effort 2, Fit 4, Diff 1, Risk 1, Conf 5).
 - Remaining backlog:
 - Studio E2E (browser) critical flow in CI (Impact 4, Effort 4, Fit 5, Diff 1, Risk 2, Conf 3).
-- Studio local feed-set presets (Impact 3, Effort 3, Fit 4, Diff 1, Risk 1, Conf 3).
+- Studio optional rule presets (save/load) for prepend/append/hashtags/UTM (Impact 3, Effort 3, Fit 5, Diff 1, Risk 1, Conf 3).
+- Studio import/export feed sets as OPML (Impact 3, Effort 4, Fit 4, Diff 1, Risk 2, Conf 2).
 - Optional `--llm` generation backend (Impact 4, Effort 4, Fit 4, Diff 3, Risk 4, Conf 2).
 
 ## Verification Evidence
@@ -76,6 +74,13 @@
 - 2026-02-10 | `./node_modules/.bin/tsx src/cli.ts generate --input - --persona Analyst --format csv --channel x --template takeaway --prepend "New:" --hashtags "ai,#Product" --utm-source feed-jarvis --utm-medium social --max-chars 200` | CSV header + one row emitted | pass
 - 2026-02-10 | `gh run watch 21846239705 --exit-status` | `✓ main ci · 21846239705` | pass
 - 2026-02-10 | `gh run watch 21846239703 --exit-status` | `✓ main codeql · 21846239703` | pass
+- 2026-02-10 | `make check` | `Tests 39 passed (39)` | pass
+- 2026-02-10 | `npm run smoke:web` | `Smoke check passed: personas 200, fetch 200, generate 200, index 200.` | pass
+- 2026-02-10 | `gh run watch 21854460348 --exit-status` | `✓ main ci · 21854460348` | pass
+- 2026-02-10 | `gh run watch 21854460336 --exit-status` | `✓ main codeql · 21854460336` | pass
+- 2026-02-10 | `make check` | `Tests 40 passed (40)` | pass
+- 2026-02-10 | `gh run watch 21854524500 --exit-status` | `✓ main ci · 21854524500` | pass
+- 2026-02-10 | `gh run watch 21854524494 --exit-status` | `✓ main codeql · 21854524494` | pass
 
 ## Historical Summary
 - Keep compact summaries of older entries here when file compaction runs.
