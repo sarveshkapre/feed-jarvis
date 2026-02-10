@@ -1,3 +1,10 @@
+import {
+  FEED_SETS_STORAGE_KEY,
+  parseFeedSets,
+  removeFeedSet,
+  serializeFeedSets,
+  upsertFeedSet,
+} from "./feedSets.js";
 import { applyItemFilters, normalizeItemFilters } from "./filters.js";
 import {
   formatFetchSummary,
@@ -17,6 +24,7 @@ const state = {
   posts: [],
   generatedItems: [],
   generatedMeta: null,
+  feedSets: [],
   personasBase: [],
   personasOverrides: [],
   personas: [],
@@ -32,6 +40,11 @@ const elements = {
   feedPanel: document.querySelector("[data-panel='feed']"),
   jsonPanel: document.querySelector("[data-panel='json']"),
   feedUrls: document.getElementById("feedUrls"),
+  feedSetSelect: document.getElementById("feedSetSelect"),
+  loadFeedSetBtn: document.getElementById("loadFeedSetBtn"),
+  saveFeedSetBtn: document.getElementById("saveFeedSetBtn"),
+  deleteFeedSetBtn: document.getElementById("deleteFeedSetBtn"),
+  feedSetStatus: document.getElementById("feedSetStatus"),
   maxItems: document.getElementById("maxItems"),
   dedupe: document.getElementById("dedupe"),
   fetchBtn: document.getElementById("fetchBtn"),
@@ -39,6 +52,9 @@ const elements = {
   jsonItems: document.getElementById("jsonItems"),
   itemsStatus: document.getElementById("itemsStatus"),
   jsonStatus: document.getElementById("jsonStatus"),
+  downloadItemsBtn: document.getElementById("downloadItemsBtn"),
+  copyItemsBtn: document.getElementById("copyItemsBtn"),
+  itemsExportStatus: document.getElementById("itemsExportStatus"),
   filterInclude: document.getElementById("filterInclude"),
   filterExclude: document.getElementById("filterExclude"),
   filterMinTitleLength: document.getElementById("filterMinTitleLength"),
@@ -100,6 +116,23 @@ function writeChannelMaxCharsByChannel(map) {
       STUDIO_CHANNEL_MAXCHARS_KEY,
       serializeChannelMaxChars(map),
     );
+  } catch {
+    // Ignore quota/privacy mode errors.
+  }
+}
+
+function readFeedSets() {
+  try {
+    const raw = window.localStorage.getItem(FEED_SETS_STORAGE_KEY);
+    return parseFeedSets(raw);
+  } catch {
+    return [];
+  }
+}
+
+function writeFeedSets(sets) {
+  try {
+    window.localStorage.setItem(FEED_SETS_STORAGE_KEY, serializeFeedSets(sets));
   } catch {
     // Ignore quota/privacy mode errors.
   }
@@ -289,6 +322,7 @@ function persistSessionSnapshot() {
   const snapshot = {
     source: getActiveSource(),
     feedUrls: elements.feedUrls.value,
+    feedSetName: elements.feedSetSelect?.value ?? "",
     maxItems: elements.maxItems.value,
     dedupe: elements.dedupe.checked,
     jsonItems: elements.jsonItems.value,
@@ -328,6 +362,13 @@ function restoreSessionSnapshot() {
 
   if (typeof snapshot.feedUrls === "string") {
     elements.feedUrls.value = snapshot.feedUrls;
+  }
+  if (
+    typeof snapshot.feedSetName === "string" &&
+    elements.feedSetSelect &&
+    snapshot.feedSetName.trim()
+  ) {
+    elements.feedSetSelect.value = snapshot.feedSetName;
   }
   if (typeof snapshot.maxItems === "string") {
     elements.maxItems.value = snapshot.maxItems;
@@ -426,12 +467,113 @@ function updateFilterStatus() {
   );
 }
 
+function refreshFeedSetSelect() {
+  if (!elements.feedSetSelect) return;
+
+  const selected = elements.feedSetSelect.value;
+  elements.feedSetSelect.innerHTML = "";
+
+  const placeholder = document.createElement("option");
+  placeholder.value = "";
+  placeholder.textContent = "Choose a saved set…";
+  elements.feedSetSelect.appendChild(placeholder);
+
+  for (const set of state.feedSets) {
+    const option = document.createElement("option");
+    option.value = set.name;
+    option.textContent = set.name;
+    elements.feedSetSelect.appendChild(option);
+  }
+
+  if (selected && state.feedSets.some((set) => set.name === selected)) {
+    elements.feedSetSelect.value = selected;
+  }
+
+  const hasSelection = Boolean(elements.feedSetSelect.value);
+  if (elements.loadFeedSetBtn) elements.loadFeedSetBtn.disabled = !hasSelection;
+  if (elements.deleteFeedSetBtn)
+    elements.deleteFeedSetBtn.disabled = !hasSelection;
+}
+
+function getSelectedFeedSet() {
+  const name = elements.feedSetSelect?.value ?? "";
+  if (!name) return null;
+  return state.feedSets.find((set) => set.name === name) ?? null;
+}
+
+function loadSelectedFeedSet() {
+  const set = getSelectedFeedSet();
+  if (!set) {
+    setStatus(
+      elements.feedSetStatus,
+      "Choose a saved feed set first.",
+      "error",
+    );
+    return;
+  }
+  elements.feedUrls.value = set.urls.join("\n");
+  setStatus(elements.feedSetStatus, `Loaded "${set.name}".`);
+  persistSessionSnapshot();
+}
+
+function saveFeedSet() {
+  const urls = normalizeUrls(elements.feedUrls.value);
+  if (urls.length === 0) {
+    setStatus(
+      elements.feedSetStatus,
+      "Add at least one feed URL before saving a set.",
+      "error",
+    );
+    return;
+  }
+
+  let firstHost = "";
+  try {
+    firstHost = new URL(urls[0]).hostname;
+  } catch {
+    firstHost = "";
+  }
+  const defaultName =
+    (elements.feedSetSelect?.value ?? "").trim() || firstHost || "My feeds";
+  const nameRaw = window.prompt("Name this feed set:", defaultName);
+  const name = typeof nameRaw === "string" ? nameRaw.trim() : "";
+  if (!name) {
+    setStatus(elements.feedSetStatus, "Cancelled feed set save.");
+    return;
+  }
+
+  state.feedSets = upsertFeedSet(state.feedSets, { name, urls });
+  writeFeedSets(state.feedSets);
+  refreshFeedSetSelect();
+  if (elements.feedSetSelect) elements.feedSetSelect.value = name;
+  refreshFeedSetSelect();
+  setStatus(elements.feedSetStatus, `Saved "${name}".`);
+  persistSessionSnapshot();
+}
+
+function deleteFeedSet() {
+  const set = getSelectedFeedSet();
+  if (!set) return;
+  const ok = window.confirm(`Delete feed set "${set.name}"?`);
+  if (!ok) return;
+  state.feedSets = removeFeedSet(state.feedSets, set.name);
+  writeFeedSets(state.feedSets);
+  if (elements.feedSetSelect) elements.feedSetSelect.value = "";
+  refreshFeedSetSelect();
+  setStatus(elements.feedSetStatus, `Deleted "${set.name}".`);
+  persistSessionSnapshot();
+}
+
 function updateItemsPreview() {
   elements.itemsList.innerHTML = "";
+  setStatus(elements.itemsExportStatus, "");
+
   if (state.items.length === 0) {
     elements.itemsEmpty.textContent =
       "No items yet. Add a feed to see results.";
     elements.itemsEmpty.style.display = "block";
+    if (elements.downloadItemsBtn) elements.downloadItemsBtn.disabled = true;
+    if (elements.copyItemsBtn) elements.copyItemsBtn.disabled = true;
     updateFilterStatus();
     return;
   }
@@ -440,11 +582,15 @@ function updateItemsPreview() {
     elements.itemsEmpty.textContent =
       "No items match your filters. Adjust the filter inputs to continue.";
     elements.itemsEmpty.style.display = "block";
+    if (elements.downloadItemsBtn) elements.downloadItemsBtn.disabled = true;
+    if (elements.copyItemsBtn) elements.copyItemsBtn.disabled = true;
     updateFilterStatus();
     return;
   }
 
   elements.itemsEmpty.style.display = "none";
+  if (elements.downloadItemsBtn) elements.downloadItemsBtn.disabled = false;
+  if (elements.copyItemsBtn) elements.copyItemsBtn.disabled = false;
   const previewItems = state.filteredItems.slice(0, 8);
   for (const item of previewItems) {
     const li = document.createElement("li");
@@ -586,6 +732,10 @@ function downloadFile(filename, content) {
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
+}
+
+function toItemsJson(items) {
+  return `${JSON.stringify(items, null, 2)}\n`;
 }
 
 function safeHttpUrl(raw) {
@@ -1067,6 +1217,14 @@ function wireEvents() {
     setStatus(elements.personasStatus, "Cleared imported personas.");
   });
 
+  elements.feedSetSelect?.addEventListener("change", () => {
+    refreshFeedSetSelect();
+    persistSessionSnapshot();
+  });
+  elements.loadFeedSetBtn?.addEventListener("click", loadSelectedFeedSet);
+  elements.saveFeedSetBtn?.addEventListener("click", saveFeedSet);
+  elements.deleteFeedSetBtn?.addEventListener("click", deleteFeedSet);
+
   elements.fetchBtn.addEventListener("click", fetchItems);
   elements.loadJsonBtn.addEventListener("click", loadItemsFromJson);
   elements.generateBtn.addEventListener("click", generatePosts);
@@ -1096,6 +1254,32 @@ function wireEvents() {
       return;
     }
     downloadFile(`feed-jarvis-${state.channel}-drafts.csv`, toDraftsCsv());
+  });
+
+  elements.downloadItemsBtn?.addEventListener("click", () => {
+    if (state.filteredItems.length === 0) {
+      setStatus(elements.itemsExportStatus, "Load items to export.", "error");
+      return;
+    }
+    downloadFile("feed-jarvis-items.json", toItemsJson(state.filteredItems));
+    setStatus(elements.itemsExportStatus, "Downloaded items.json.");
+  });
+
+  elements.copyItemsBtn?.addEventListener("click", () => {
+    if (state.filteredItems.length === 0) {
+      setStatus(elements.itemsExportStatus, "Load items to copy.", "error");
+      return;
+    }
+    const payload = toItemsJson(state.filteredItems);
+    navigator.clipboard.writeText(payload).then(
+      () => setStatus(elements.itemsExportStatus, "Copied items JSON."),
+      () =>
+        setStatus(
+          elements.itemsExportStatus,
+          "Copy failed. Download items.json instead.",
+          "error",
+        ),
+    );
   });
 
   document.addEventListener("keydown", (event) => {
@@ -1130,6 +1314,7 @@ function wireEvents() {
 
   [
     elements.feedUrls,
+    elements.feedSetSelect,
     elements.maxItems,
     elements.dedupe,
     elements.jsonItems,
@@ -1149,6 +1334,7 @@ function wireEvents() {
     elements.utmMedium,
     elements.utmCampaign,
   ].forEach((element) => {
+    if (!element) return;
     const eventName =
       element.type === "checkbox" || element.tagName === "SELECT"
         ? "change"
@@ -1169,7 +1355,10 @@ function wireEvents() {
 }
 
 state.channelMaxCharsByChannel = readChannelMaxCharsByChannel();
+state.feedSets = readFeedSets();
+refreshFeedSetSelect();
 restoreSessionSnapshot();
+refreshFeedSetSelect();
 wireEvents();
 loadPersonas();
 refreshFilteredItems({ updateStatus: false });

@@ -1,6 +1,8 @@
 # CHANGELOG
 
 ## Unreleased
+- Studio UI: save/load named feed sets (local-only presets) for faster repeat workflows.
+- Studio UI: export the filtered item list as `feed-jarvis-items.json` (download + copy to clipboard).
 - Studio UI: add optional generation text rules (prepend/append/hashtags) plus basic UTM tagging while always honoring `maxChars`.
 - Studio server: `/api/generate` now accepts optional `rules` and returns the resolved `items` payload (for export-aligned URLs).
 - Studio UI: import/export personas as JSON (local-only, stored in `localStorage`).

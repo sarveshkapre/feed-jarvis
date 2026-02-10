@@ -367,6 +367,23 @@ button[disabled] {
   gap: 12px;
 }
 
+.feed-presets {
+  padding: 16px;
+  border-radius: var(--radius-sm);
+  background: rgba(238, 245, 242, 0.35);
+  border: 1px solid rgba(20, 32, 41, 0.08);
+  display: grid;
+  gap: 12px;
+}
+
+.feed-presets .inline-row {
+  gap: 12px;
+}
+
+.feed-presets select {
+  min-width: 220px;
+}
+
 .filters h3 {
   margin: 0;
   font-size: 0.95rem;
@@ -453,6 +470,10 @@ button[disabled] {
 .preview .empty {
   color: var(--muted-2);
   font-size: 0.9rem;
+}
+
+.preview .button-row {
+  margin-top: 12px;
 }
 
 .persona-grid {

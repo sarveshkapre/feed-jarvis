@@ -54,7 +54,9 @@ npm run dev -- generate --input events.json --persona Analyst
 - Studio: three-step workspace to fetch items, pick a persona, and edit/export drafts.
 - Local-first: feeds and drafts never leave your machine.
 - Studio persistence: remembers your input mode and form settings across refreshes.
+- Studio feed sets: save/load named groups of feed URLs (local-only).
 - Studio filters: optionally include/exclude keywords and enforce a minimum title length before generation/export.
+- Studio items export: download/copy the filtered item list as `items.json` to move between Studio and CLI.
 - Studio text rules: optional prepend/append/hashtags plus basic UTM tagging while always honoring `maxChars`.
 - Personas: consistent voice with editable prefixes (Studio supports local-only persona import/export).
 - Outputs: Studio exports `.txt`, `.jsonl`, and `.csv` drafts (JSONL/CSV include source metadata); CLI supports text/JSON/JSONL/CSV.

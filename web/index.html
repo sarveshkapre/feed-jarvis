@@ -68,6 +68,23 @@
               id="feedUrls"
               placeholder="https://example.com/rss.xml\nhttps://news.example.com/atom.xml"
             ></textarea>
+            <div class="feed-presets">
+              <div class="inline-row">
+                <label for="feedSetSelect">
+                  Feed set
+                  <span>Save and recall groups of feed URLs (local-only).</span>
+                </label>
+                <select id="feedSetSelect">
+                  <option value="">Choose a saved set…</option>
+                </select>
+              </div>
+              <div class="button-row">
+                <button class="ghost" id="loadFeedSetBtn" type="button" disabled>Load</button>
+                <button class="ghost" id="saveFeedSetBtn" type="button">Save</button>
+                <button class="secondary" id="deleteFeedSetBtn" type="button" disabled>Delete</button>
+              </div>
+              <div class="status" id="feedSetStatus" role="status" aria-live="polite"></div>
+            </div>
             <div class="inline-row">
               <label for="maxItems">Max items</label>
               <input id="maxItems" type="number" min="1" value="20" />
@@ -125,6 +142,13 @@
             <h3>Items preview</h3>
             <div class="empty" id="itemsEmpty">No items yet. Add a feed to see results.</div>
             <ul id="itemsList"></ul>
+            <div class="button-row">
+              <button class="ghost" id="downloadItemsBtn" type="button" disabled>
+                Download items.json
+              </button>
+              <button class="secondary" id="copyItemsBtn" type="button" disabled>Copy items JSON</button>
+            </div>
+            <div class="status" id="itemsExportStatus" role="status" aria-live="polite"></div>
           </div>
         </article>
 
