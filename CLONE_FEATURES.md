@@ -7,7 +7,6 @@
 - Gaps found during codebase exploration
 
 ## Candidate Features To Do
-- [ ] P2: CLI: add `generate --stats` to print post counts + length distribution to stderr for quick validation. (Impact 3, Effort 2, Fit 4, Diff 1, Risk 1, Conf 5)
 - [ ] P2: Add browser-level E2E coverage for Studio critical flow (fetch -> generate -> export) in CI (Playwright). (Impact 4, Effort 4, Fit 5, Diff 0, Risk 2, Conf 3)
 - [ ] P3: Studio: optional rule presets (save/load) for repeatable prepend/append/hashtags/UTM settings (local-only). (Impact 3, Effort 3, Fit 5, Diff 1, Risk 1, Conf 3)
 - [ ] P3: Studio: import/export feed sets as OPML (local-only) for interoperability with RSS readers. (Impact 3, Effort 4, Fit 4, Diff 1, Risk 2, Conf 2)
@@ -15,6 +14,7 @@
 - [ ] P3: Implement optional LLM-backed generation behind an explicit `--llm` opt-in flag (roadmap item). (Impact 4, Effort 4, Fit 4, Diff 3, Risk 4, Conf 2)
 
 ## Implemented
+- [x] 2026-02-10 P2: CLI: `generate --stats` prints post counts + character-length distribution to stderr. Evidence: `src/cli.ts`, `test/cli.test.ts`; verification: `make check`.
 - [x] 2026-02-10 P1: Studio: save/load named feed sets (local-only presets) to speed up repeat workflows. Evidence: `web/index.html`, `web/app.js`, `web/styles.css`, `web/feedSets.js`, `test/feedSets.test.ts`; verification: `make check`, `npm run smoke:web`.
 - [x] 2026-02-10 P1: Studio: add "Download items.json" (and copy-to-clipboard) export for the filtered item set to bridge Studio to CLI workflows. Evidence: `web/index.html`, `web/app.js`, `web/styles.css`; verification: `make check`.
 - [x] 2026-02-10 P1: Studio: optional generation text rules (prepend/append/hashtags) + basic UTM tagging, persisted locally and applied while always honoring `maxChars`. Evidence: `web/index.html`, `web/app.js`, `web/styles.css`, `src/lib/posts.ts`, `src/server.ts`, `test/posts.test.ts`, `test/server.test.ts`; verification: `make check`, `npm run smoke:web`.

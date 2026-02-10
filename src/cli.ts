@@ -70,6 +70,7 @@ Generate options:
   --utm-campaign <value>  Optional UTM parameter for links
   --utm-content <value>   Optional UTM parameter for links
   --utm-term <value>      Optional UTM parameter for links
+  --stats                Print generation stats to stderr
   --format <text|json|jsonl|csv> Output format (default: text)
   --out <path|->          Output path for posts (default: stdout)
 
@@ -263,6 +264,7 @@ async function main() {
   const format = getStringFlag(args.flags, "--format", "text");
   const personasPath = getOptionalStringFlag(args.flags, "--personas");
   const outPath = getOptionalStringFlag(args.flags, "--out");
+  const stats = args.flags.has("--stats");
   if (
     format !== "text" &&
     format !== "json" &&
@@ -289,6 +291,17 @@ async function main() {
     template,
     rules,
   });
+
+  if (stats) {
+    console.error(
+      formatGenerateStats(posts, maxChars, {
+        channel,
+        template,
+        persona,
+        items: resolvedItems,
+      }),
+    );
+  }
 
   const output = formatGenerateOutput(posts, format, {
     items: resolvedItems,
@@ -474,6 +487,48 @@ type GenerateContext = {
   template: PostTemplate;
   rules?: PostRules;
 };
+
+type GenerateStatsContext = {
+  items: FeedItem[];
+  persona: { name: string; prefix: string };
+  channel: PostChannel;
+  template: PostTemplate;
+};
+
+function formatGenerateStats(
+  posts: string[],
+  maxChars: number,
+  context: GenerateStatsContext,
+): string {
+  const lengths = posts.map((post) => post.length).sort((a, b) => a - b);
+  const count = lengths.length;
+  const sum = lengths.reduce((acc, n) => acc + n, 0);
+  const min = count ? lengths[0] : 0;
+  const max = count ? lengths[lengths.length - 1] : 0;
+  const avg = count ? Math.round(sum / count) : 0;
+
+  const p50 = percentile(lengths, 0.5);
+  const p90 = percentile(lengths, 0.9);
+  const over = posts.filter((post) => post.length > maxChars).length;
+
+  return [
+    "Feed Jarvis generate stats:",
+    `- persona: ${context.persona.name}`,
+    `- channel: ${context.channel}`,
+    `- template: ${context.template}`,
+    `- items: ${context.items.length}`,
+    `- posts: ${posts.length}`,
+    `- chars: min ${min}, p50 ${p50}, p90 ${p90}, avg ${avg}, max ${max}`,
+    `- over maxChars (${maxChars}): ${over}`,
+  ].join("\n");
+}
+
+function percentile(sorted: number[], p: number): number {
+  if (sorted.length === 0) return 0;
+  const clamped = Math.min(1, Math.max(0, p));
+  const index = Math.floor(clamped * (sorted.length - 1));
+  return sorted[index] ?? 0;
+}
 
 function escapeCsv(value: unknown): string {
   const text = String(value ?? "");
