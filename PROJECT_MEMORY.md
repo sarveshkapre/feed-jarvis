@@ -55,6 +55,8 @@
 - 2026-02-11 | `node <<'NODE' ... (local OPML + local HTTP feed smoke)` | `status: 0` and one fetched item JSON emitted | pass
 - 2026-02-11 | `gh run watch 21894950679 --exit-status` | `✓ main ci · 21894950679` | pass
 - 2026-02-11 | `gh run watch 21894950666 --exit-status` | `✓ main codeql · 21894950666` | pass
+- 2026-02-11 | `gh run watch 21895007475 --exit-status` | `✓ main ci · 21895007475` | pass
+- 2026-02-11 | `gh run watch 21895007476 --exit-status` | `✓ main codeql · 21895007476` | pass
 - 2026-02-09 | `make check` | `Tests 20 passed (20)` | pass
 - 2026-02-09 | `npm run smoke:web` | `Smoke check passed` | pass
 - 2026-02-09 | `gh api /repos/sarveshkapre/feed-jarvis/actions/permissions/workflow` | `"default_workflow_permissions":"write"` | pass
