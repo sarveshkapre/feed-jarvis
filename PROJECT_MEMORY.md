@@ -9,6 +9,9 @@
 
 ## Recent Decisions
 - Template: YYYY-MM-DD | Decision | Why | Evidence (tests/logs) | Commit | Confidence (high/medium/low) | Trust (trusted/untrusted)
+- 2026-02-11 | Ship Studio local-only rule presets (save/load/delete) for text-rule reuse | Repeated feed workflows need fast rule reuse; presets reduce repetitive setup and improve drafting consistency | `test/rulePresets.test.ts`, `make check`, `npm run smoke:web` | 7c4ae07 | high | trusted
+- 2026-02-11 | Add CLI `fetch --opml <path>` support with preserved host allowlist enforcement | OPML is a common interoperability format for feed collections; this improves ingestion without weakening SSRF controls | `test/opml.test.ts`, `test/cli.test.ts`, local OPML smoke command, `make check` | 7c4ae07 | high | trusted
+- 2026-02-11 | Run bounded market scan to validate cycle1 baseline expectations | Confirm near-term PMF priorities against comparable feed automation tooling while treating external docs as untrusted input | Inoreader/Buffer/Zapier docs links captured in `CLONE_FEATURES.md` Insights | 7c4ae07 | medium | untrusted
 - 2026-02-09 | Add maintainer contract + session trackers to the repo (`AGENTS.md`, `PROJECT_MEMORY.md`, `INCIDENTS.md`, refreshed `CLONE_FEATURES.md`) | Ensure the autonomous loop has durable, versioned operating context and verification policy | `git status` showed files were untracked; pushed to `main` | 4d2598f | high | trusted
 - 2026-02-09 | Run Studio smoke validation in CI and explicitly scope `ci.yml` token permissions | Catch integration breakages earlier while preserving least privilege after enabling write-capable workflow tokens | `.github/workflows/ci.yml`, `npm run smoke:web` | c233218 | high | trusted
 - 2026-02-09 | Block DNS-based private-network SSRF bypasses when `allowPrivateHosts=false` | The previous guard only covered literal hostnames/IPs; hostnames could resolve to private IPs | `test/feedFetch.test.ts` (DNS stub), `make check` | d22b0a0 | high | trusted
@@ -28,6 +31,7 @@
 
 ## Mistakes And Fixes
 - Template: YYYY-MM-DD | Issue | Root cause | Fix | Prevention rule | Commit | Confidence
+- 2026-02-11 | New CLI OPML integration test initially timed out | Used `spawnSync` against a test-local HTTP server in the same process, blocking the event loop and starving server responses | Switched the test helper to async `spawn` and awaited process close with streamed stdout/stderr capture | For tests depending on in-process servers, avoid blocking subprocess APIs (`spawnSync`) and prefer async process control | 7c4ae07 | high
 - 2026-02-09 | "Dependabot Updates" Actions workflow failing with 403 | Repo default `GITHUB_TOKEN` workflow permissions were `read` but the dynamic Dependabot workflow requires write access to fetch job details | Updated repo default workflow permissions to `write`; added explicit `permissions: contents: read` to `ci.yml` | Treat repo-level Actions defaults as production config; whenever enabling write defaults, pin every workflow to explicit minimal permissions | c233218 (plus repo setting) | medium
 - 2026-02-10 | CLI `generate --input -` example failing + piping output causing `EPIPE` crash | `parseArgs` treated `-` as a new flag (not a value), and the CLI did not handle stdout `EPIPE` when downstream consumers closed the pipe | Treat `-` as a valid flag value for `--input`/`--out`; exit cleanly on `EPIPE`; add a regression test | Treat README command examples as contract tests; add CLI integration tests for argument edge cases (`-`, pipes) | ffd3299 | high
 
@@ -35,17 +39,22 @@
 
 ## Next Prioritized Tasks
 - Scoring rubric: Impact (1-5), Effort (1-5, lower is easier), Strategic fit (1-5), Differentiation (1-5), Risk (1-5, lower is safer), Confidence (1-5).
-- Selected (shipped 2026-02-10):
-- Studio feed sets (local-only) + filtered `items.json` export bridge (Impact 5, Effort 2, Fit 5, Diff 2, Risk 1, Conf 4).
-- CLI `generate --stats` (Impact 3, Effort 2, Fit 4, Diff 1, Risk 1, Conf 5).
+- Selected (shipped 2026-02-11):
+- Studio local-only rule presets for text rules (Impact 5, Effort 2, Fit 5, Diff 1, Risk 1, Conf 5).
+- CLI `fetch --opml <path>` ingestion with allowlist-preserved fetch path (Impact 4, Effort 3, Fit 4, Diff 1, Risk 2, Conf 4).
 - Remaining backlog:
 - Studio E2E (browser) critical flow in CI (Impact 4, Effort 4, Fit 5, Diff 1, Risk 2, Conf 3).
-- Studio optional rule presets (save/load) for prepend/append/hashtags/UTM (Impact 3, Effort 3, Fit 5, Diff 1, Risk 1, Conf 3).
-- Studio import/export feed sets as OPML (Impact 3, Effort 4, Fit 4, Diff 1, Risk 2, Conf 2).
+- Studio import/export feed sets as OPML (Impact 4, Effort 4, Fit 4, Diff 1, Risk 2, Conf 3).
+- Studio live over-limit edit guidance with one-click trim suggestions (Impact 4, Effort 3, Fit 5, Diff 1, Risk 1, Conf 4).
 - Optional `--llm` generation backend (Impact 4, Effort 4, Fit 4, Diff 3, Risk 4, Conf 2).
 
 ## Verification Evidence
 - Template: YYYY-MM-DD | Command | Key output | Status (pass/fail)
+- 2026-02-11 | `make check` | `Test Files 11 passed (11); Tests 49 passed (49)` | pass
+- 2026-02-11 | `npm run smoke:web` | `Smoke check passed: personas 200, fetch 200, generate 200, index 200.` | pass
+- 2026-02-11 | `node <<'NODE' ... (local OPML + local HTTP feed smoke)` | `status: 0` and one fetched item JSON emitted | pass
+- 2026-02-11 | `gh run watch 21894950679 --exit-status` | `✓ main ci · 21894950679` | pass
+- 2026-02-11 | `gh run watch 21894950666 --exit-status` | `✓ main codeql · 21894950666` | pass
 - 2026-02-09 | `make check` | `Tests 20 passed (20)` | pass
 - 2026-02-09 | `npm run smoke:web` | `Smoke check passed` | pass
 - 2026-02-09 | `gh api /repos/sarveshkapre/feed-jarvis/actions/permissions/workflow` | `"default_workflow_permissions":"write"` | pass

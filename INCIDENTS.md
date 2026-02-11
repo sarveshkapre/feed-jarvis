@@ -12,6 +12,16 @@
 - Confidence
 
 ## Entries
+- Date: 2026-02-11
+- Trigger: New CLI `fetch --opml` test failed with timeout in local `make check`
+- Impact: Temporary false-negative test failure blocked the quality gate during implementation
+- Root Cause: Test used `spawnSync` while also hosting a local HTTP server in the same process; blocking the event loop prevented responses
+- Fix: Reworked the OPML CLI test to run child CLI process asynchronously (`spawn`) and await completion without blocking the server
+- Prevention Rule: For tests that rely on in-process network servers, avoid blocking subprocess calls and use async process orchestration
+- Evidence: `test/cli.test.ts`, `make check`
+- Commit: 7c4ae07
+- Confidence: high
+
 - Date: 2026-02-09
 - Trigger: GitHub Actions run "Dependabot Updates" failing on `main` (403 while fetching job details)
 - Impact: CI signal noise and reduced confidence that dependency update automation is working

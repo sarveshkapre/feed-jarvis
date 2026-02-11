@@ -8,12 +8,27 @@
 
 ## Candidate Features To Do
 - [ ] P2: Add browser-level E2E coverage for Studio critical flow (fetch -> generate -> export) in CI (Playwright). (Impact 4, Effort 4, Fit 5, Diff 0, Risk 2, Conf 3)
-- [ ] P3: Studio: optional rule presets (save/load) for repeatable prepend/append/hashtags/UTM settings (local-only). (Impact 3, Effort 3, Fit 5, Diff 1, Risk 1, Conf 3)
-- [ ] P3: Studio: import/export feed sets as OPML (local-only) for interoperability with RSS readers. (Impact 3, Effort 4, Fit 4, Diff 1, Risk 2, Conf 2)
-- [ ] P3: CLI: allow `fetch` from an OPML file (local-only) to batch feed URLs while preserving the allowlist model. (Impact 3, Effort 4, Fit 4, Diff 1, Risk 2, Conf 2)
-- [ ] P3: Implement optional LLM-backed generation behind an explicit `--llm` opt-in flag (roadmap item). (Impact 4, Effort 4, Fit 4, Diff 3, Risk 4, Conf 2)
+- [ ] P2: Studio: import/export feed sets as OPML (local-only) for interoperability with RSS readers. (Impact 4, Effort 4, Fit 4, Diff 1, Risk 2, Conf 3)
+- [ ] P2: Studio: show live "over max chars" warnings while editing generated drafts and expose one-click trim suggestions. (Impact 4, Effort 3, Fit 5, Diff 1, Risk 1, Conf 4)
+- [ ] P2: Studio: validate pasted JSON item URLs (`http/https` only) before generation/export to prevent broken output links. (Impact 4, Effort 2, Fit 4, Diff 0, Risk 1, Conf 5)
+- [ ] P2: CLI: add `fetch --urls-file <path>` for newline-delimited feed URLs with existing allowlist + dedupe behavior. (Impact 3, Effort 2, Fit 4, Diff 0, Risk 1, Conf 4)
+- [ ] P2: Feed fetcher: add bounded retry/backoff for transient 5xx/network failures (still honoring timeout + stale-if-error). (Impact 4, Effort 3, Fit 4, Diff 1, Risk 2, Conf 3)
+- [ ] P2: Feed fetcher: add a configurable concurrent-fetch limit for large multi-feed runs to reduce network spikes. (Impact 3, Effort 3, Fit 4, Diff 0, Risk 2, Conf 3)
+- [ ] P2: Studio: add saved filter presets (include/exclude/min-title) for repeatable triage workflows. (Impact 3, Effort 3, Fit 4, Diff 1, Risk 1, Conf 3)
+- [ ] P2: Studio: add per-item "mute domain" quick action that appends to filter exclusion terms locally. (Impact 3, Effort 3, Fit 4, Diff 2, Risk 1, Conf 3)
+- [ ] P3: Refactor `web/app.js` into focused modules (state, API client, exporters, UI bindings) to reduce maintenance risk. (Impact 3, Effort 4, Fit 5, Diff 0, Risk 2, Conf 3)
+- [ ] P3: Add targeted unit coverage for session persistence edge cases (invalid snapshots, stale keys, partial payloads). (Impact 3, Effort 2, Fit 4, Diff 0, Risk 1, Conf 4)
+- [ ] P3: Add CLI regression tests for output piping behavior (`EPIPE`) across `text/json/jsonl/csv` formats. (Impact 3, Effort 2, Fit 4, Diff 0, Risk 1, Conf 4)
+- [ ] P3: Add smoke path for CSV/JSONL export payload shape validation in CI (headers + metadata columns). (Impact 3, Effort 2, Fit 4, Diff 0, Risk 1, Conf 4)
+- [ ] P3: Document deep command recipes under `docs/` and keep README constrained to quickstart + links (1-2 screens). (Impact 2, Effort 2, Fit 4, Diff 0, Risk 1, Conf 5)
+- [ ] P3: Add release checklist automation script (version bump + changelog guard + build artifact verification). (Impact 2, Effort 3, Fit 3, Diff 0, Risk 2, Conf 3)
+- [ ] P3: Add optional `--dry-run` generation mode with richer diagnostics (invalid items, duplicate URLs, truncation counts). (Impact 3, Effort 3, Fit 4, Diff 1, Risk 1, Conf 3)
+- [ ] P3: Add Studio keyboard shortcuts for generate/export actions to speed high-volume review loops. (Impact 2, Effort 2, Fit 3, Diff 1, Risk 1, Conf 4)
+- [ ] P3: Implement optional LLM-backed generation behind explicit `--llm` opt-in (roadmap item, default off). (Impact 4, Effort 4, Fit 4, Diff 3, Risk 4, Conf 2)
 
 ## Implemented
+- [x] 2026-02-11 P1: Studio: add local-only rule presets (save/load/delete) for optional text rules (`prepend`/`append`/`hashtags`/UTM). Evidence: `web/index.html`, `web/app.js`, `web/styles.css`, `web/rulePresets.js`, `test/rulePresets.test.ts`; verification: `make check`, `npm run smoke:web`.
+- [x] 2026-02-11 P2: CLI: add `fetch --opml <path>` support for local OPML feed URL ingestion with existing host allowlist enforcement. Evidence: `src/cli.ts`, `src/lib/opml.ts`, `test/opml.test.ts`, `test/cli.test.ts`; verification: `make check`, local smoke command (CLI OPML fetch via local HTTP server).
 - [x] 2026-02-10 P2: CLI: `generate --stats` prints post counts + character-length distribution to stderr. Evidence: `src/cli.ts`, `test/cli.test.ts`; verification: `make check`.
 - [x] 2026-02-10 P1: Studio: save/load named feed sets (local-only presets) to speed up repeat workflows. Evidence: `web/index.html`, `web/app.js`, `web/styles.css`, `web/feedSets.js`, `test/feedSets.test.ts`; verification: `make check`, `npm run smoke:web`.
 - [x] 2026-02-10 P1: Studio: add "Download items.json" (and copy-to-clipboard) export for the filtered item set to bridge Studio to CLI workflows. Evidence: `web/index.html`, `web/app.js`, `web/styles.css`; verification: `make check`.
@@ -44,6 +59,8 @@
 - Local `make check` output matched historical failing GitHub Actions runs exactly, so Biome drift was the root CI failure.
 - Studio fetch security needed a stricter default than CLI: server-side requests can be triggered from browser clients, so private-host blocking now defaults to on for Studio.
 - Disk cache can affect integration tests if URLs are reused; tests should prefer unique URLs or isolated cache settings.
+- Gap map (cycle1): Missing = browser-level Studio E2E and OPML import/export in Studio; Weak = no live over-limit editing guidance; Parity = local-first feed grouping/filters/rules + metadata exports; Differentiator = deterministic local-first workflow with strong private-host safeguards.
+- Market scan (untrusted web, cycle1): baseline feed-to-social UX consistently includes reusable content rules and lightweight feed automation/import paths; OPML support and reusable text rules are common interoperability/efficiency expectations.
 - Market scan (untrusted web): RSS-to-social tools emphasize (1) rules/filters (keywords, duplicates), (2) configurable post text (prepend/append, tags/UTMs), (3) queues/scheduling with optional review, and (4) downstream automation/export to schedulers.
 - Market scan (untrusted web, cycle4): auto-publish tools highlight scheduler queue integration and feed-to-channel mapping, with copy review as a differentiator for teams.
 - Market scan (untrusted web, cycle5): auto-publish workflows commonly support per-feed post text customization (including hashtags) and basic tracking via UTM parameters, plus downstream scheduling/approval flows; our Studio now covers the text customization + UTM parity while staying local-first.
@@ -63,6 +80,8 @@
   - https://help.missinglettr.com/article/386-how-do-i-add-hashtags-to-my-default-post-content-settings
   - https://support.sproutsocial.com/hc/en-us/articles/20299161205645-How-do-I-use-Automated-Feed-Publishing-on-the-Professional-and-Advanced-Plans
   - https://missinglettr.com/features/drip-campaigns/
+  - https://zapier.com/blog/rss-to-buffer/
+  - https://help.buffer.com/en/articles/3056329-how-to-automate-your-posts-from-rss-feeds
 
 ## Notes
 - This file is maintained by the autonomous clone loop.
