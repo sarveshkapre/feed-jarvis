@@ -220,6 +220,23 @@
             </div>
             <div class="rules">
               <h3>Text rules (optional)</h3>
+              <div class="rule-presets">
+                <div class="inline-row">
+                  <label for="rulePresetSelect">
+                    Rule preset
+                    <span>Save and recall text-rule combinations (local-only).</span>
+                  </label>
+                  <select id="rulePresetSelect">
+                    <option value="">Choose a saved preset…</option>
+                  </select>
+                </div>
+                <div class="button-row">
+                  <button class="ghost" id="loadRulePresetBtn" type="button" disabled>Load</button>
+                  <button class="ghost" id="saveRulePresetBtn" type="button">Save</button>
+                  <button class="secondary" id="deleteRulePresetBtn" type="button" disabled>Delete</button>
+                </div>
+                <div class="status" id="rulePresetStatus" role="status" aria-live="polite"></div>
+              </div>
               <div class="rules-grid">
                 <label for="rulePrepend">Prepend text</label>
                 <input

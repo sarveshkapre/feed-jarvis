@@ -3,6 +3,7 @@
 import { readFile, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { fetchFeed } from "./lib/feedFetch.js";
+import { parseOpmlUrls } from "./lib/opml.js";
 import {
   DEFAULT_PERSONAS,
   getPersona,
@@ -42,7 +43,8 @@ Commands:
   personas   List built-in personas
 
 Fetch options:
-  --url <url>               RSS/Atom feed URL (repeatable; required)
+  --url <url>               RSS/Atom feed URL (repeatable; required unless --opml provided)
+  --opml <path>             Local OPML file with feed URLs (repeatable)
   --allow-host <host>       Allowed host (repeatable; required)
   --out <path|->            Output events JSON path (default: stdout)
   --max-items <number>      Max events to emit (default: 20)
@@ -79,6 +81,7 @@ Examples:
   feed-jarvis personas --personas personas.json
   feed-jarvis fetch --url https://example.com/rss.xml --allow-host example.com > events.json
   feed-jarvis fetch --url https://a.com/rss.xml --url https://b.com/atom.xml --allow-host a.com --allow-host b.com > events.json
+  feed-jarvis fetch --opml feeds.opml --allow-host example.com --allow-host news.example.com > events.json
   feed-jarvis generate --input events.json --persona Analyst --personas personas.json --out posts.txt
   cat events.json | feed-jarvis generate --input - --persona Builder --format json
 
@@ -171,8 +174,14 @@ async function main() {
       dieUsage(`Unexpected argument(s): ${args.positionals.join(" ")}`);
     }
 
-    const urls = getStringArrayFlag(args.flags, "--url");
-    if (urls.length === 0) dieUsage("Missing required flag: --url");
+    const directUrls = getStringArrayFlag(args.flags, "--url");
+    const opmlPaths = getStringArrayFlag(args.flags, "--opml");
+    const opmlUrls =
+      opmlPaths.length > 0 ? await loadOpmlUrlsOrDie(opmlPaths) : [];
+    const urls = dedupeStrings([...directUrls, ...opmlUrls]);
+    if (urls.length === 0) {
+      dieUsage("Provide one or more --url values or at least one --opml file.");
+    }
     const allowHosts = getStringArrayFlag(args.flags, "--allow-host");
     const outPath = getOptionalStringFlag(args.flags, "--out");
     const maxItems = getNumberFlag(args.flags, "--max-items", 20, { min: 1 });
@@ -223,6 +232,9 @@ async function main() {
       console.error(
         [
           "Feed Jarvis fetch stats:",
+          opmlPaths.length > 0
+            ? `- opml files: ${opmlPaths.length} (${opmlUrls.length} url(s))`
+            : undefined,
           `- feeds: ${results.length} (${cacheCount} cache, ${networkCount} network)`,
           `- items: ${items.length}`,
           `- emitted: ${finalItems.length}`,
@@ -480,6 +492,26 @@ async function loadPersonasOrDie(path: string) {
   }
 }
 
+async function loadOpmlUrlsOrDie(paths: string[]): Promise<string[]> {
+  const urls: string[] = [];
+  for (const path of paths) {
+    let raw = "";
+    try {
+      raw = await readFile(path, "utf8");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      die(`Unable to read OPML file '${path}': ${message}`);
+    }
+
+    const parsedUrls = parseOpmlUrls(raw, 1000);
+    if (parsedUrls.length === 0) {
+      die(`No valid feed URLs found in OPML file '${path}'.`);
+    }
+    urls.push(...parsedUrls);
+  }
+  return dedupeStrings(urls);
+}
+
 type GenerateContext = {
   items: FeedItem[];
   persona: { name: string; prefix: string };
@@ -603,6 +635,18 @@ function dedupeByUrl(items: FeedItem[]): FeedItem[] {
     if (seen.has(key)) continue;
     seen.add(key);
     out.push(item);
+  }
+  return out;
+}
+
+function dedupeStrings(values: string[]): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const value of values) {
+    const key = value.trim();
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    out.push(key);
   }
   return out;
 }

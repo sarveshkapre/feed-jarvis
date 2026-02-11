@@ -7,6 +7,13 @@ import {
 } from "./feedSets.js";
 import { applyItemFilters, normalizeItemFilters } from "./filters.js";
 import {
+  parseRulePresets,
+  RULE_PRESETS_STORAGE_KEY,
+  removeRulePreset,
+  serializeRulePresets,
+  upsertRulePreset,
+} from "./rulePresets.js";
+import {
   formatFetchSummary,
   getMaxCharsForChannel,
   parseChannelMaxChars,
@@ -25,6 +32,7 @@ const state = {
   generatedItems: [],
   generatedMeta: null,
   feedSets: [],
+  rulePresets: [],
   personasBase: [],
   personasOverrides: [],
   personas: [],
@@ -80,6 +88,11 @@ const elements = {
   rulePrepend: document.getElementById("rulePrepend"),
   ruleAppend: document.getElementById("ruleAppend"),
   ruleHashtags: document.getElementById("ruleHashtags"),
+  rulePresetSelect: document.getElementById("rulePresetSelect"),
+  loadRulePresetBtn: document.getElementById("loadRulePresetBtn"),
+  saveRulePresetBtn: document.getElementById("saveRulePresetBtn"),
+  deleteRulePresetBtn: document.getElementById("deleteRulePresetBtn"),
+  rulePresetStatus: document.getElementById("rulePresetStatus"),
   utmToggle: document.getElementById("utmToggle"),
   utmFields: document.getElementById("utmFields"),
   utmSource: document.getElementById("utmSource"),
@@ -133,6 +146,26 @@ function readFeedSets() {
 function writeFeedSets(sets) {
   try {
     window.localStorage.setItem(FEED_SETS_STORAGE_KEY, serializeFeedSets(sets));
+  } catch {
+    // Ignore quota/privacy mode errors.
+  }
+}
+
+function readRulePresets() {
+  try {
+    const raw = window.localStorage.getItem(RULE_PRESETS_STORAGE_KEY);
+    return parseRulePresets(raw);
+  } catch {
+    return [];
+  }
+}
+
+function writeRulePresets(presets) {
+  try {
+    window.localStorage.setItem(
+      RULE_PRESETS_STORAGE_KEY,
+      serializeRulePresets(presets),
+    );
   } catch {
     // Ignore quota/privacy mode errors.
   }
@@ -336,6 +369,7 @@ function persistSessionSnapshot() {
     channel: state.channel,
     template: elements.templateSelect.value,
     maxChars: elements.maxChars.value,
+    rulePresetName: elements.rulePresetSelect?.value ?? "",
     rulePrepend: elements.rulePrepend.value,
     ruleAppend: elements.ruleAppend.value,
     ruleHashtags: elements.ruleHashtags.value,
@@ -390,6 +424,13 @@ function restoreSessionSnapshot() {
   }
   if (typeof snapshot.template === "string") {
     elements.templateSelect.value = snapshot.template;
+  }
+  if (
+    typeof snapshot.rulePresetName === "string" &&
+    elements.rulePresetSelect &&
+    snapshot.rulePresetName.trim()
+  ) {
+    elements.rulePresetSelect.value = snapshot.rulePresetName;
   }
   if (typeof snapshot.rulePrepend === "string") {
     elements.rulePrepend.value = snapshot.rulePrepend;
@@ -561,6 +602,144 @@ function deleteFeedSet() {
   if (elements.feedSetSelect) elements.feedSetSelect.value = "";
   refreshFeedSetSelect();
   setStatus(elements.feedSetStatus, `Deleted "${set.name}".`);
+  persistSessionSnapshot();
+}
+
+function refreshRulePresetSelect() {
+  if (!elements.rulePresetSelect) return;
+
+  const selected = elements.rulePresetSelect.value;
+  elements.rulePresetSelect.innerHTML = "";
+
+  const placeholder = document.createElement("option");
+  placeholder.value = "";
+  placeholder.textContent = "Choose a saved preset…";
+  elements.rulePresetSelect.appendChild(placeholder);
+
+  for (const preset of state.rulePresets) {
+    const option = document.createElement("option");
+    option.value = preset.name;
+    option.textContent = preset.name;
+    elements.rulePresetSelect.appendChild(option);
+  }
+
+  if (
+    selected &&
+    state.rulePresets.some((preset) => preset.name === selected)
+  ) {
+    elements.rulePresetSelect.value = selected;
+  }
+
+  const hasSelection = Boolean(elements.rulePresetSelect.value);
+  if (elements.loadRulePresetBtn)
+    elements.loadRulePresetBtn.disabled = !hasSelection;
+  if (elements.deleteRulePresetBtn)
+    elements.deleteRulePresetBtn.disabled = !hasSelection;
+}
+
+function getSelectedRulePreset() {
+  const name = elements.rulePresetSelect?.value ?? "";
+  if (!name) return null;
+  return state.rulePresets.find((preset) => preset.name === name) ?? null;
+}
+
+function applyRulesToForm(rules) {
+  const safeRules = rules && typeof rules === "object" ? rules : {};
+  const utmRaw = Reflect.get(safeRules, "utm");
+  const utm = utmRaw && typeof utmRaw === "object" ? utmRaw : {};
+
+  elements.rulePrepend.value =
+    typeof Reflect.get(safeRules, "prepend") === "string"
+      ? String(Reflect.get(safeRules, "prepend"))
+      : "";
+  elements.ruleAppend.value =
+    typeof Reflect.get(safeRules, "append") === "string"
+      ? String(Reflect.get(safeRules, "append"))
+      : "";
+  elements.ruleHashtags.value =
+    typeof Reflect.get(safeRules, "hashtags") === "string"
+      ? String(Reflect.get(safeRules, "hashtags"))
+      : "";
+
+  const utmSource =
+    typeof Reflect.get(utm, "source") === "string"
+      ? String(Reflect.get(utm, "source"))
+      : "";
+  const utmMedium =
+    typeof Reflect.get(utm, "medium") === "string"
+      ? String(Reflect.get(utm, "medium"))
+      : "";
+  const utmCampaign =
+    typeof Reflect.get(utm, "campaign") === "string"
+      ? String(Reflect.get(utm, "campaign"))
+      : "";
+
+  elements.utmSource.value = utmSource;
+  elements.utmMedium.value = utmMedium;
+  elements.utmCampaign.value = utmCampaign;
+
+  const hasUtm = Boolean(utmSource || utmMedium || utmCampaign);
+  elements.utmToggle.checked = hasUtm;
+  elements.utmFields.hidden = !hasUtm;
+}
+
+function loadSelectedRulePreset() {
+  const preset = getSelectedRulePreset();
+  if (!preset) {
+    setStatus(
+      elements.rulePresetStatus,
+      "Choose a saved rule preset first.",
+      "error",
+    );
+    return;
+  }
+
+  applyRulesToForm(preset.rules);
+  setStatus(elements.rulePresetStatus, `Loaded "${preset.name}".`);
+  persistSessionSnapshot();
+}
+
+function saveRulePreset() {
+  const rules = currentRules();
+  if (!rules) {
+    setStatus(
+      elements.rulePresetStatus,
+      "Add at least one text rule before saving a preset.",
+      "error",
+    );
+    return;
+  }
+
+  const defaultName =
+    (elements.rulePresetSelect?.value ?? "").trim() ||
+    `${state.channel.toUpperCase()} default`;
+  const nameRaw = window.prompt("Name this rule preset:", defaultName);
+  const name = typeof nameRaw === "string" ? nameRaw.trim() : "";
+  if (!name) {
+    setStatus(elements.rulePresetStatus, "Cancelled rule preset save.");
+    return;
+  }
+
+  state.rulePresets = upsertRulePreset(state.rulePresets, { name, rules });
+  writeRulePresets(state.rulePresets);
+  refreshRulePresetSelect();
+  if (elements.rulePresetSelect) elements.rulePresetSelect.value = name;
+  refreshRulePresetSelect();
+  setStatus(elements.rulePresetStatus, `Saved "${name}".`);
+  persistSessionSnapshot();
+}
+
+function deleteRulePreset() {
+  const preset = getSelectedRulePreset();
+  if (!preset) return;
+  const ok = window.confirm(`Delete rule preset "${preset.name}"?`);
+  if (!ok) return;
+
+  state.rulePresets = removeRulePreset(state.rulePresets, preset.name);
+  writeRulePresets(state.rulePresets);
+  if (elements.rulePresetSelect) elements.rulePresetSelect.value = "";
+  refreshRulePresetSelect();
+  setStatus(elements.rulePresetStatus, `Deleted "${preset.name}".`);
   persistSessionSnapshot();
 }
 
@@ -1224,6 +1403,13 @@ function wireEvents() {
   elements.loadFeedSetBtn?.addEventListener("click", loadSelectedFeedSet);
   elements.saveFeedSetBtn?.addEventListener("click", saveFeedSet);
   elements.deleteFeedSetBtn?.addEventListener("click", deleteFeedSet);
+  elements.rulePresetSelect?.addEventListener("change", () => {
+    refreshRulePresetSelect();
+    persistSessionSnapshot();
+  });
+  elements.loadRulePresetBtn?.addEventListener("click", loadSelectedRulePreset);
+  elements.saveRulePresetBtn?.addEventListener("click", saveRulePreset);
+  elements.deleteRulePresetBtn?.addEventListener("click", deleteRulePreset);
 
   elements.fetchBtn.addEventListener("click", fetchItems);
   elements.loadJsonBtn.addEventListener("click", loadItemsFromJson);
@@ -1326,6 +1512,7 @@ function wireEvents() {
     elements.customPersonaPrefix,
     elements.templateSelect,
     elements.maxChars,
+    elements.rulePresetSelect,
     elements.rulePrepend,
     elements.ruleAppend,
     elements.ruleHashtags,
@@ -1356,9 +1543,12 @@ function wireEvents() {
 
 state.channelMaxCharsByChannel = readChannelMaxCharsByChannel();
 state.feedSets = readFeedSets();
+state.rulePresets = readRulePresets();
 refreshFeedSetSelect();
+refreshRulePresetSelect();
 restoreSessionSnapshot();
 refreshFeedSetSelect();
+refreshRulePresetSelect();
 wireEvents();
 loadPersonas();
 refreshFilteredItems({ updateStatus: false });

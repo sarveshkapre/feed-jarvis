@@ -50,11 +50,18 @@ npm run dev -- fetch --url https://example.com/rss.xml --allow-host example.com 
 npm run dev -- generate --input events.json --persona Analyst
 ```
 
+Fetch from a local OPML file (still requires explicit allowlist hosts):
+
+```bash
+npm run dev -- fetch --opml feeds.opml --allow-host example.com --allow-host news.example.com > events.json
+```
+
 ## What it does
 - Studio: three-step workspace to fetch items, pick a persona, and edit/export drafts.
 - Local-first: feeds and drafts never leave your machine.
 - Studio persistence: remembers your input mode and form settings across refreshes.
 - Studio feed sets: save/load named groups of feed URLs (local-only).
+- Studio rule presets: save/load named text-rule bundles (prepend/append/hashtags/UTM) for repeat runs.
 - Studio filters: optionally include/exclude keywords and enforce a minimum title length before generation/export.
 - Studio items export: download/copy the filtered item list as `items.json` to move between Studio and CLI.
 - Studio text rules: optional prepend/append/hashtags plus basic UTM tagging while always honoring `maxChars`.

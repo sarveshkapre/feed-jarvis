@@ -1,4 +1,8 @@
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { createServer } from "node:http";
+import os from "node:os";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 describe("cli", () => {
@@ -55,4 +59,84 @@ describe("cli", () => {
     expect(String(res.stderr)).toMatch(/Feed Jarvis generate stats:/);
     expect(String(res.stderr)).toMatch(/- posts: 2/);
   });
+
+  it("supports fetch --opml input", async () => {
+    const xml = `<?xml version="1.0"?>\n<rss version="2.0"><channel><item><title>OPML item</title><link>http://127.0.0.1/item</link></item></channel></rss>`;
+
+    const server = createServer((_req, res) => {
+      res.writeHead(200, { "content-type": "application/rss+xml" });
+      res.end(xml);
+    });
+    await new Promise<void>((resolve) => {
+      server.listen(0, "127.0.0.1", () => resolve());
+    });
+
+    const address = server.address();
+    if (!address || typeof address === "string") {
+      throw new Error("Failed to resolve test server address.");
+    }
+
+    const tmpDir = mkdtempSync(path.join(os.tmpdir(), "feed-jarvis-opml-"));
+    const opmlPath = path.join(tmpDir, "feeds.opml");
+    const feedUrl = `http://127.0.0.1:${address.port}/feed.xml`;
+    const opml = `<?xml version="1.0"?>\n<opml version="2.0"><body><outline text="Feed" xmlUrl="${feedUrl}" /></body></opml>`;
+    writeFileSync(opmlPath, opml, "utf8");
+
+    try {
+      const cli = "./node_modules/.bin/tsx";
+      const args = [
+        "src/cli.ts",
+        "fetch",
+        "--opml",
+        opmlPath,
+        "--allow-host",
+        "127.0.0.1",
+        "--no-cache",
+      ];
+
+      const res = await runCli(cli, args);
+
+      expect(res.status).toBe(0);
+      const parsed = JSON.parse(res.stdout);
+      expect(parsed).toEqual([
+        {
+          title: "OPML item",
+          url: "http://127.0.0.1/item",
+        },
+      ]);
+    } finally {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+      rmSync(tmpDir, { recursive: true, force: true });
+    }
+  });
 });
+
+function runCli(
+  cmd: string,
+  args: string[],
+): Promise<{ status: number | null; stdout: string; stderr: string }> {
+  return new Promise((resolve, reject) => {
+    const child = spawn(cmd, args, {
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+
+    let stdout = "";
+    let stderr = "";
+
+    child.stdout.on("data", (chunk) => {
+      stdout += String(chunk);
+    });
+    child.stderr.on("data", (chunk) => {
+      stderr += String(chunk);
+    });
+
+    child.on("error", reject);
+    child.on("close", (status) => {
+      resolve({
+        status,
+        stdout,
+        stderr,
+      });
+    });
+  });
+}

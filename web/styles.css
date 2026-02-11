@@ -367,7 +367,8 @@ button[disabled] {
   gap: 12px;
 }
 
-.feed-presets {
+.feed-presets,
+.rule-presets {
   padding: 16px;
   border-radius: var(--radius-sm);
   background: rgba(238, 245, 242, 0.35);
@@ -376,11 +377,13 @@ button[disabled] {
   gap: 12px;
 }
 
-.feed-presets .inline-row {
+.feed-presets .inline-row,
+.rule-presets .inline-row {
   gap: 12px;
 }
 
-.feed-presets select {
+.feed-presets select,
+.rule-presets select {
   min-width: 220px;
 }
 
