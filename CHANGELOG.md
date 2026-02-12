@@ -3,6 +3,7 @@
 ## Unreleased
 - Studio UI: add local-only rule presets (save/load/delete) for optional text rules (`prepend`/`append`/`hashtags`/UTM fields).
 - CLI: `fetch` now supports `--opml <path>` (repeatable) to read feed URLs from local OPML files while preserving host allowlist checks.
+- Personas: `--personas` now accepts JSON, a single markdown persona file, or a markdown directory; Studio server can load the same set via `FEED_JARVIS_PERSONAS`.
 - Studio UI: save/load named feed sets (local-only presets) for faster repeat workflows.
 - Studio UI: export the filtered item list as `feed-jarvis-items.json` (download + copy to clipboard).
 - CLI: `generate --stats` prints post count + character-length distribution to stderr for quick validation.

@@ -41,6 +41,13 @@ cat events.json | npm run dev -- generate --input - --persona Analyst --format c
   --utm-source feed-jarvis --utm-medium social > drafts.csv
 ```
 
+Load personas from markdown files (single file or directory):
+
+```bash
+npm run dev -- personas --personas personas/
+npm run dev -- generate --input events.json --persona "Macro Hawk" --personas personas/
+```
+
 Fetch from an RSS/Atom feed (requires explicit allowlist):
 
 ```bash
@@ -65,10 +72,11 @@ npm run dev -- fetch --opml feeds.opml --allow-host example.com --allow-host new
 - Studio filters: optionally include/exclude keywords and enforce a minimum title length before generation/export.
 - Studio items export: download/copy the filtered item list as `items.json` to move between Studio and CLI.
 - Studio text rules: optional prepend/append/hashtags plus basic UTM tagging while always honoring `maxChars`.
-- Personas: consistent voice with editable prefixes (Studio supports local-only persona import/export).
+- Personas: consistent voice with editable prefixes (Studio supports local-only JSON import/export; CLI/Studio server support markdown persona files).
 - Outputs: Studio exports `.txt`, `.jsonl`, and `.csv` drafts (JSONL/CSV include source metadata); CLI supports text/JSON/JSONL/CSV.
 
-Tip: load/override personas from a file via `--personas personas.json` (array of `{name, prefix}`).
+Tip: load/override personas via `--personas` from JSON, a single `.md` persona file, or a directory of `.md` persona files.
+Tip: set `FEED_JARVIS_PERSONAS=/absolute/path/to/personas` to have Studio server load personas from markdown files.
 Tip: write posts to a file with `--out posts.txt` or `--format jsonl` for one JSON string per line.
 
 ## Docs

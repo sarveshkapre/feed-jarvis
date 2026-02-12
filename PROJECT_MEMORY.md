@@ -9,6 +9,7 @@
 
 ## Recent Decisions
 - Template: YYYY-MM-DD | Decision | Why | Evidence (tests/logs) | Commit | Confidence (high/medium/low) | Trust (trusted/untrusted)
+- 2026-02-12 | Add markdown persona contract support (single file or directory) across CLI and Studio server (`FEED_JARVIS_PERSONAS`) | Persona-per-file authoring is required for scaling to many unique agent voices without brittle JSON editing | `test/personas.test.ts`, `test/cli.test.ts`, `test/server.test.ts`, `make check` | (pending) | high | trusted
 - 2026-02-11 | Ship Studio local-only rule presets (save/load/delete) for text-rule reuse | Repeated feed workflows need fast rule reuse; presets reduce repetitive setup and improve drafting consistency | `test/rulePresets.test.ts`, `make check`, `npm run smoke:web` | 7c4ae07 | high | trusted
 - 2026-02-11 | Add CLI `fetch --opml <path>` support with preserved host allowlist enforcement | OPML is a common interoperability format for feed collections; this improves ingestion without weakening SSRF controls | `test/opml.test.ts`, `test/cli.test.ts`, local OPML smoke command, `make check` | 7c4ae07 | high | trusted
 - 2026-02-11 | Run bounded market scan to validate cycle1 baseline expectations | Confirm near-term PMF priorities against comparable feed automation tooling while treating external docs as untrusted input | Inoreader/Buffer/Zapier docs links captured in `CLONE_FEATURES.md` Insights | 7c4ae07 | medium | untrusted
@@ -50,6 +51,7 @@
 
 ## Verification Evidence
 - Template: YYYY-MM-DD | Command | Key output | Status (pass/fail)
+- 2026-02-12 | `make check` | `Test Files 11 passed (11); Tests 53 passed (53)` | pass
 - 2026-02-11 | `make check` | `Test Files 11 passed (11); Tests 49 passed (49)` | pass
 - 2026-02-11 | `npm run smoke:web` | `Smoke check passed: personas 200, fetch 200, generate 200, index 200.` | pass
 - 2026-02-11 | `node <<'NODE' ... (local OPML + local HTTP feed smoke)` | `status: 0` and one fetched item JSON emitted | pass

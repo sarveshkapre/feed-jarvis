@@ -7,7 +7,7 @@ import { parseOpmlUrls } from "./lib/opml.js";
 import {
   DEFAULT_PERSONAS,
   getPersona,
-  loadPersonasFile,
+  loadPersonasPath,
   mergePersonas,
 } from "./lib/personas.js";
 import {
@@ -60,7 +60,7 @@ Fetch options:
 Generate options:
   --input <path|->        Path to events JSON, or '-' for stdin (required)
   --persona <name>        Persona name (required)
-  --personas <path>       Optional personas JSON file (array of {name, prefix})
+  --personas <path>       Optional personas source: JSON, markdown file, or markdown directory
   --max-chars <number>    Max characters per post (default: 280)
   --channel <x|linkedin|newsletter> Target channel style (default: x)
   --template <straight|takeaway|cta> Draft framing template (default: straight)
@@ -485,7 +485,7 @@ function parseFeedItems(raw: string): FeedItem[] {
 
 async function loadPersonasOrDie(path: string) {
   try {
-    return await loadPersonasFile(path);
+    return await loadPersonasPath(path);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     die(`Invalid personas file '${path}': ${message}`);

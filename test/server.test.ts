@@ -1,4 +1,7 @@
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import type { AddressInfo } from "node:net";
+import os from "node:os";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { createStudioServer, type StudioServerOptions } from "../src/server.js";
 
@@ -268,5 +271,33 @@ describe("studio server", () => {
       const payload = await res.json();
       expect(payload).toEqual({ error: "Not found" });
     });
+  });
+
+  it("loads personas from markdown directory when configured", async () => {
+    const tmpDir = mkdtempSync(path.join(os.tmpdir(), "feed-jarvis-server-"));
+    const personasDir = path.join(tmpDir, "personas");
+
+    try {
+      mkdirSync(personasDir, { recursive: true });
+      writeFileSync(
+        path.join(personasDir, "finance.md"),
+        "name: Finance Wire\nprefix: Finance Wire:\n",
+        "utf8",
+      );
+
+      await withServer({ personasPath: personasDir }, async (baseUrl) => {
+        const res = await fetch(`${baseUrl}/api/personas`);
+        expect(res.status).toBe(200);
+        const payload = await res.json();
+        expect(Array.isArray(payload.personas)).toBe(true);
+        expect(payload.personas).toHaveLength(1);
+        expect(payload.personas[0]).toMatchObject({
+          name: "Finance Wire",
+          prefix: "Finance Wire:",
+        });
+      });
+    } finally {
+      rmSync(tmpDir, { recursive: true, force: true });
+    }
   });
 });

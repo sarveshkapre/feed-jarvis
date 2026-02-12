@@ -3,7 +3,12 @@ import { createServer, type Server } from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { fetchFeed } from "./lib/feedFetch.js";
-import { DEFAULT_PERSONAS, getPersona, type Persona } from "./lib/personas.js";
+import {
+  DEFAULT_PERSONAS,
+  getPersona,
+  loadPersonasPath,
+  type Persona,
+} from "./lib/personas.js";
 import {
   applyUtmToUrl,
   type FeedItem,
@@ -39,6 +44,7 @@ export type StudioServerOptions = {
   allowPrivateHosts?: boolean;
   fetchFn?: typeof fetch;
   port?: number;
+  personasPath?: string;
 };
 
 type RuntimeOptions = {
@@ -200,7 +206,10 @@ async function handleFetchFeed(body: unknown, options: RuntimeOptions) {
   };
 }
 
-function resolvePersona(body: Record<string, unknown>): Persona {
+function resolvePersona(
+  body: Record<string, unknown>,
+  personas: Persona[],
+): Persona {
   const custom = Reflect.get(body, "personaCustom");
   if (custom && typeof custom === "object") {
     const name =
@@ -221,10 +230,10 @@ function resolvePersona(body: Record<string, unknown>): Persona {
     typeof Reflect.get(body, "personaName") === "string"
       ? String(Reflect.get(body, "personaName")).trim()
       : "Analyst";
-  return getPersona(personaName, DEFAULT_PERSONAS);
+  return getPersona(personaName, personas);
 }
 
-async function handleGenerate(body: unknown) {
+async function handleGenerate(body: unknown, personas: Persona[]) {
   if (!body || typeof body !== "object") {
     throw new Error("Missing request body.");
   }
@@ -235,7 +244,7 @@ async function handleGenerate(body: unknown) {
     Number.isFinite(maxCharsRaw) && maxCharsRaw > 0
       ? Math.floor(maxCharsRaw)
       : 280;
-  const persona = resolvePersona(body as Record<string, unknown>);
+  const persona = resolvePersona(body as Record<string, unknown>, personas);
   const channel = resolveChannel(Reflect.get(body, "channel"));
   const template = resolveTemplate(Reflect.get(body, "template"));
   const rules = resolveRules(Reflect.get(body, "rules"));
@@ -390,11 +399,40 @@ function resolveAllowPrivateHosts(configured?: boolean): boolean {
   );
 }
 
+function resolvePersonasPath(configured?: string): string | undefined {
+  const direct = configured?.trim();
+  if (direct) return direct;
+  const fromEnv = process.env.FEED_JARVIS_PERSONAS?.trim();
+  return fromEnv || undefined;
+}
+
+async function loadRuntimePersonas(personasPath?: string): Promise<Persona[]> {
+  if (!personasPath) return DEFAULT_PERSONAS;
+  try {
+    const loaded = await loadPersonasPath(personasPath);
+    return mergeIfEmpty(DEFAULT_PERSONAS, loaded);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error(
+      `Failed to load personas from '${personasPath}': ${message}. Falling back to defaults.`,
+    );
+    return DEFAULT_PERSONAS;
+  }
+}
+
+function mergeIfEmpty(base: Persona[], loaded: Persona[]): Persona[] {
+  if (loaded.length > 0) return loaded;
+  return base;
+}
+
 export function createStudioServer(options: StudioServerOptions = {}): Server {
   const runtimeOptions: RuntimeOptions = {
     allowPrivateHosts: resolveAllowPrivateHosts(options.allowPrivateHosts),
     fetchFn: options.fetchFn,
   };
+  const personasPromise = loadRuntimePersonas(
+    resolvePersonasPath(options.personasPath),
+  );
 
   return createServer(async (req, res) => {
     const requestUrl = new URL(
@@ -404,7 +442,8 @@ export function createStudioServer(options: StudioServerOptions = {}): Server {
     const method = req.method ?? "GET";
 
     if (requestUrl.pathname === "/api/personas" && method === "GET") {
-      sendJson(res, 200, { personas: DEFAULT_PERSONAS });
+      const personas = await personasPromise;
+      sendJson(res, 200, { personas });
       return;
     }
 
@@ -423,7 +462,8 @@ export function createStudioServer(options: StudioServerOptions = {}): Server {
     if (requestUrl.pathname === "/api/generate" && method === "POST") {
       try {
         const body = await readJsonBody(req);
-        const payload = await handleGenerate(body);
+        const personas = await personasPromise;
+        const payload = await handleGenerate(body, personas);
         sendJson(res, 200, payload);
       } catch (err) {
         const message = err instanceof Error ? err.message : "Request failed.";

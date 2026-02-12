@@ -1,5 +1,5 @@
 import { spawn, spawnSync } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { createServer } from "node:http";
 import os from "node:os";
 import path from "node:path";
@@ -106,6 +106,53 @@ describe("cli", () => {
       ]);
     } finally {
       await new Promise<void>((resolve) => server.close(() => resolve()));
+      rmSync(tmpDir, { recursive: true, force: true });
+    }
+  });
+
+  it("supports markdown persona directories via --personas", () => {
+    const tmpDir = mkdtempSync(path.join(os.tmpdir(), "feed-jarvis-personas-"));
+    const personasDir = path.join(tmpDir, "personas");
+    const inputPath = path.join(tmpDir, "items.json");
+
+    try {
+      mkdirSync(personasDir, { recursive: true });
+      writeFileSync(
+        inputPath,
+        JSON.stringify([
+          {
+            title: "Rate cut expectations shift",
+            url: "https://example.com/r",
+          },
+        ]),
+        "utf8",
+      );
+      writeFileSync(
+        path.join(personasDir, "macro.md"),
+        "name: Macro Hawk\nprefix: Macro Hawk:\n",
+        "utf8",
+      );
+
+      const res = spawnSync(
+        "./node_modules/.bin/tsx",
+        [
+          "src/cli.ts",
+          "generate",
+          "--input",
+          inputPath,
+          "--persona",
+          "Macro Hawk",
+          "--personas",
+          personasDir,
+          "--max-chars",
+          "220",
+        ],
+        { encoding: "utf8" },
+      );
+
+      expect(res.status).toBe(0);
+      expect(String(res.stdout)).toMatch(/Macro Hawk:/);
+    } finally {
       rmSync(tmpDir, { recursive: true, force: true });
     }
   });
