@@ -138,6 +138,8 @@
 
 ## Verification Evidence
 - Template: YYYY-MM-DD | Command | Key output | Status (pass/fail)
+- 2026-02-12 | `git push origin main` | `4a444f6..f739a49 main -> main` | pass
+- 2026-02-12 | `gh run list --branch main --limit 5` | `error connecting to api.github.com` in this environment | fail (env)
 - 2026-02-12 | `make check` | lint/typecheck passed; test phase failed with sandbox `listen EPERM` + cache write EPERM restrictions on this host | fail (env)
 - 2026-02-12 | `npm run lint` | `Checked 40 files in 23ms. No fixes applied.` | pass
 - 2026-02-12 | `npm run typecheck` | `tsc -p tsconfig.json --noEmit` completed with no errors | pass
