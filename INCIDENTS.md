@@ -41,3 +41,14 @@
 - Evidence: `test/cli.test.ts`, `make check`
 - Commit: ffd3299
 - Confidence: high
+
+### 2026-02-12T20:00:42Z | Codex execution failure
+- Date: 2026-02-12T20:00:42Z
+- Trigger: Codex execution failure
+- Impact: Repo session did not complete cleanly
+- Root Cause: codex exec returned a non-zero status
+- Fix: Captured failure logs and kept repository in a recoverable state
+- Prevention Rule: Re-run with same pass context and inspect pass log before retrying
+- Evidence: pass_log=logs/20260212-101456-feed-jarvis-cycle-2.log
+- Commit: pending
+- Confidence: medium
