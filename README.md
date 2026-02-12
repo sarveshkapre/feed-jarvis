@@ -97,11 +97,12 @@ npm run dev -- fetch --opml feeds.opml --allow-host example.com --allow-host new
 - Local-first: feeds and drafts never leave your machine.
 - Studio persistence: remembers your input mode and form settings across refreshes.
 - Studio JSON input: validates URLs as `http/https` and reports skipped invalid entries.
-- Studio feed sets: save/load named groups of feed URLs (local-only).
+- Studio feed sets: save/load named groups of feed URLs and import/export sets as OPML (local-only).
 - Studio rule presets: save/load named text-rule bundles (prepend/append/hashtags/UTM) for repeat runs.
 - Studio filters: optionally include/exclude keywords and enforce a minimum title length before generation/export.
 - Studio items export: download/copy the filtered item list as `items.json` to move between Studio and CLI.
 - Studio text rules: optional prepend/append/hashtags plus basic UTM tagging while always honoring `maxChars`.
+- Studio draft editing: live `current/max` character warnings with one-click trim for over-limit drafts.
 - Studio generation engines: local template mode or GPT mode (server-side OpenAI key required for GPT).
 - Studio agent feed: build a Twitter-like multi-persona timeline from filtered items (`/api/agent-feed`).
 - Agent feed layouts: `Rotating events` for broad coverage or `Consensus on top event` for many takes on one event.

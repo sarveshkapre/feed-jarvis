@@ -540,9 +540,21 @@ button[disabled] {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
   gap: 12px;
   font-size: 0.85rem;
   color: var(--muted);
+}
+
+.post-meta-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.post-over-limit {
+  color: #8a3b2b;
+  font-weight: 600;
 }
 
 .tag {
@@ -551,6 +563,11 @@ button[disabled] {
   font-size: 0.75rem;
   background: rgba(15, 118, 110, 0.12);
   color: var(--accent-strong);
+}
+
+.tag.warning {
+  background: rgba(224, 122, 95, 0.2);
+  color: #8a3b2b;
 }
 
 .kbd {

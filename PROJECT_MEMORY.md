@@ -45,8 +45,48 @@
   - Trusted: local repository code/tests, local command outputs.
   - Untrusted: market scan pages and external product docs.
 
+## Session Notes (2026-02-12 | Cycle 1 Session 2)
+- Goal: Ship the highest-value remaining Studio parity features for feed-set interoperability and draft-length editing guidance.
+- Success criteria:
+  - Studio feed sets can be exported/imported as OPML locally.
+  - Studio draft editor shows live over-max warnings and supports one-click trim-to-max.
+  - Tests are added/updated for OPML import/export behavior and trim helper behavior.
+  - Verification evidence is captured with exact command lines.
+- Non-goals:
+  - Browser E2E framework setup.
+  - Scheduler integration work.
+  - Large architectural refactor of `web/app.js`.
+- Brainstorming checkpoint (ranked, scored by impact/effort/fit/diff/risk/confidence):
+  1. Studio OPML import/export feed sets (5/4/5/1/2/4) -> selected.
+  2. Live over-max-char warnings + one-click trim (5/3/5/1/1/4) -> selected.
+  3. Browser E2E critical flow in CI (5/4/5/0/2/3) -> pending.
+  4. Fetch concurrent-limit control (4/3/4/0/2/3) -> pending.
+  5. Saved filter presets (4/3/4/1/1/3) -> pending.
+  6. Mute-domain quick action in Studio (4/3/4/2/1/3) -> pending.
+  7. Session-persistence edge-case tests (3/2/4/0/1/4) -> pending.
+  8. `web/app.js` modularization pass (4/4/5/0/2/3) -> pending.
+- Product phase checkpoint:
+  - Prompt: "Are we in a good product phase yet?" -> No.
+  - Best-in-market signal (untrusted web, bounded scan on 2026-02-12): Feedly/Inoreader emphasize OPML + feed grouping interoperability; Buffer emphasizes feed-to-channel automation constraints; Missinglettr emphasizes link-tagging/hashtag controls.
+  - Gap map:
+    - Missing: Studio OPML feed-set import/export; browser E2E critical-flow coverage.
+    - Weak: live over-limit draft editing guidance.
+    - Parity: fetch retry handling, URL-file ingestion, filters/rules, metadata exports.
+    - Differentiator: strict local-first workflow with private-host safeguards.
+- Locked task list for this session:
+  - Studio feed-set OPML import/export.
+  - Studio live over-max-char warnings + one-click trim.
+- Execution outcome:
+  - Completed: Studio feed-set OPML import/export.
+  - Completed: Studio live over-max-char warnings + one-click trim.
+- Trust labels:
+  - Trusted: local repo code/tests/commands.
+  - Untrusted: external market/reference pages.
+
 ## Recent Decisions
 - Template: YYYY-MM-DD | Decision | Why | Evidence (tests/logs) | Commit | Confidence (high/medium/low) | Trust (trusted/untrusted)
+- 2026-02-12 | Add Studio feed-set OPML import/export with collision-safe import naming | OPML import/export is a baseline interoperability expectation and unlocks migration to/from feed readers with low risk to local-first posture | `web/feedSets.js`, `web/app.js`, `test/feedSets.test.ts`, `npx vitest run test/feedSets.test.ts` | (pending) | high | trusted
+- 2026-02-12 | Add live over-limit draft editing warnings and one-click trim helper | Users needed immediate visibility and fast correction while manually editing drafts to channel character limits | `web/postEditing.js`, `web/app.js`, `test/postEditing.test.ts`, `npx vitest run test/postEditing.test.ts` | (pending) | high | trusted
 - 2026-02-12 | Add bounded retry/backoff to feed fetching for transient failures only | Multi-feed reliability was weak during temporary upstream failures; retries improve resilience without hiding persistent 4xx validation errors | `src/lib/feedFetch.ts`, `test/feedFetch.test.ts`, `FEED_JARVIS_CACHE_DIR=/tmp/feed-jarvis-cache-test npx vitest run test/feedFetch.test.ts` | 7a4f349 | high | trusted
 - 2026-02-12 | Add CLI `fetch --urls-file <path>` ingestion path | URL-list file import is a common feed-workflow parity expectation and low-risk extension of existing allowlist flow | `src/cli.ts`, `test/cli.test.ts`, `README.md`, `CHANGELOG.md`, local CLI run using `--urls-file` | 7a4f349 | high | trusted
 - 2026-02-12 | Enforce `http/https` URL validation for Studio pasted JSON and `/api/generate` items | Broken/non-web URL schemes were leaking into generation/export, reducing output quality and causing invalid links | `web/app.js`, `web/index.html`, `src/server.ts`, `test/server.test.ts` | 7a4f349 | high | trusted
@@ -86,18 +126,25 @@
 ## Next Prioritized Tasks
 - Scoring rubric: Impact (1-5), Effort (1-5, lower is easier), Strategic fit (1-5), Differentiation (1-5), Risk (1-5, lower is safer), Confidence (1-5).
 - Selected (completed in cycle 2026-02-12):
+- Studio feed-set OPML import/export for local interoperability (Impact 5, Effort 4, Fit 5, Diff 1, Risk 2, Conf 4).
+- Studio live over-limit edit guidance with one-click trim suggestions (Impact 5, Effort 3, Fit 5, Diff 1, Risk 1, Conf 4).
 - Feed fetcher bounded retry/backoff for transient failures (Impact 5, Effort 3, Fit 5, Diff 1, Risk 2, Conf 4).
 - CLI `fetch --urls-file <path>` ingestion with allowlist-preserved fetch path (Impact 4, Effort 2, Fit 5, Diff 0, Risk 1, Conf 5).
 - Studio pasted JSON URL validation (`http/https`) with clear feedback (Impact 4, Effort 2, Fit 5, Diff 0, Risk 1, Conf 5).
 - Remaining backlog:
 - Studio E2E (browser) critical flow in CI (Impact 5, Effort 4, Fit 5, Diff 0, Risk 2, Conf 3).
-- Studio import/export feed sets as OPML (Impact 5, Effort 4, Fit 5, Diff 1, Risk 2, Conf 3).
-- Studio live over-limit edit guidance with one-click trim suggestions (Impact 5, Effort 3, Fit 5, Diff 1, Risk 1, Conf 4).
 - Feed fetch concurrent-limit controls for large runs (Impact 4, Effort 3, Fit 4, Diff 0, Risk 2, Conf 3).
 - Save/load filter presets for repeat triage workflows (Impact 4, Effort 3, Fit 4, Diff 1, Risk 1, Conf 3).
 
 ## Verification Evidence
 - Template: YYYY-MM-DD | Command | Key output | Status (pass/fail)
+- 2026-02-12 | `make check` | lint/typecheck passed; test phase failed with sandbox `listen EPERM` + cache write EPERM restrictions on this host | fail (env)
+- 2026-02-12 | `npm run lint` | `Checked 40 files in 23ms. No fixes applied.` | pass
+- 2026-02-12 | `npm run typecheck` | `tsc -p tsconfig.json --noEmit` completed with no errors | pass
+- 2026-02-12 | `npm run build` | `tsc -p tsconfig.build.json` completed with no errors | pass
+- 2026-02-12 | `npx vitest run test/feedSets.test.ts test/postEditing.test.ts` | `Test Files 2 passed; Tests 11 passed` | pass
+- 2026-02-12 | `node dist/cli.js generate --input /tmp/feed-jarvis-smoke-items.json --persona Analyst --format jsonl --max-chars 160` | two JSONL drafts emitted for local smoke payload | pass
+- 2026-02-12 | `npm run smoke:web` | failed in sandbox with `listen EPERM ... tsx ... .pipe` | fail (env)
 - 2026-02-12 | `npm run lint` | `Checked 37 files ... No fixes applied.` | pass
 - 2026-02-12 | `npm run typecheck` | `tsc -p tsconfig.json --noEmit` completed with no errors | pass
 - 2026-02-12 | `npm run build` | `tsc -p tsconfig.build.json` completed with no errors | pass

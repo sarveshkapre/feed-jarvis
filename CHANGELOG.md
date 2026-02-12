@@ -1,6 +1,8 @@
 # CHANGELOG
 
 ## Unreleased
+- Studio UI: add feed-set OPML import/export (local-only) with dedupe-safe parsing and collision-safe set naming.
+- Studio UI: add live over-limit draft warnings (`current/max`) and one-click trim-to-max while editing.
 - Fetch: add bounded retry/backoff for transient network/timeouts and HTTP 408/429/5xx failures while preserving stale-cache fallback behavior.
 - CLI: `fetch` now supports `--urls-file <path>` (repeatable) for newline-delimited feed URL ingestion.
 - Studio UI: pasted JSON item import now validates URL protocol (`http/https`) and reports skipped invalid entries.

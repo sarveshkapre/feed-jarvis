@@ -8,8 +8,6 @@
 
 ## Candidate Features To Do
 - [ ] P1: Add browser-level E2E coverage for Studio critical flow (fetch -> generate -> export) in CI (Playwright). (Impact 5, Effort 4, Fit 5, Diff 0, Risk 2, Conf 3)
-- [ ] P1: Studio import/export feed sets as OPML (local-only) for interoperability with RSS readers. (Impact 5, Effort 4, Fit 5, Diff 1, Risk 2, Conf 3)
-- [ ] P1: Studio live "over max chars" warnings while editing drafts plus one-click trim suggestion. (Impact 5, Effort 3, Fit 5, Diff 1, Risk 1, Conf 4)
 - [ ] P2: Feed fetcher configurable concurrent-fetch limit for large multi-feed runs to reduce network spikes. (Impact 4, Effort 3, Fit 4, Diff 0, Risk 2, Conf 3)
 - [ ] P2: Studio saved filter presets (include/exclude/min-title) for repeatable triage workflows. (Impact 4, Effort 3, Fit 4, Diff 1, Risk 1, Conf 3)
 - [ ] P2: Studio per-item "mute domain" quick action that appends to filter exclusion terms locally. (Impact 4, Effort 3, Fit 4, Diff 2, Risk 1, Conf 3)
@@ -28,8 +26,12 @@
 - [ ] P3: Add persona-card search/filter in Studio for large persona packs (50+). (Impact 3, Effort 2, Fit 3, Diff 1, Risk 1, Conf 4)
 - [ ] P3: Add optional per-persona maxChars override for agent-feed generation workflows. (Impact 3, Effort 3, Fit 3, Diff 1, Risk 2, Conf 3)
 - [ ] P3: Add benchmark script for feed parse + generation throughput on 1k-item payloads. (Impact 2, Effort 3, Fit 3, Diff 1, Risk 1, Conf 3)
+- [ ] P3: Add feed-set migration helper when storage schema changes (with versioned upgrade path). (Impact 2, Effort 2, Fit 3, Diff 0, Risk 1, Conf 3)
+- [ ] P3: Add copy-ready "trimmed chars" analytics summary after post edits for QA review. (Impact 2, Effort 2, Fit 3, Diff 1, Risk 1, Conf 3)
 
 ## Implemented
+- [x] 2026-02-12 P1: Studio feed-set OPML import/export (local-only) with dedupe-safe parsing and collision-safe naming during import. Evidence: `web/feedSets.js`, `web/feedSets.d.ts`, `web/app.js`, `web/index.html`, `test/feedSets.test.ts`; verification: `npx vitest run test/feedSets.test.ts`, `npm run lint`, `npm run typecheck`, `npm run build`.
+- [x] 2026-02-12 P1: Studio live over-limit draft editing guidance (`current/max` + warning + one-click trim). Evidence: `web/postEditing.js`, `web/postEditing.d.ts`, `web/app.js`, `web/styles.css`, `test/postEditing.test.ts`; verification: `npx vitest run test/postEditing.test.ts`, `npm run lint`, `npm run typecheck`, `npm run build`, `node dist/cli.js generate --input /tmp/feed-jarvis-smoke-items.json --persona Analyst --format jsonl --max-chars 160`.
 - [x] 2026-02-12 P1: Feed fetcher bounded retry/backoff for transient failures (network/timeouts + HTTP 408/429/5xx), honoring existing timeout and stale-cache fallback behavior. Evidence: `src/lib/feedFetch.ts`, `test/feedFetch.test.ts`; verification: `FEED_JARVIS_CACHE_DIR=/tmp/feed-jarvis-cache-test npx vitest run test/feedFetch.test.ts`, `npm run lint`, `npm run typecheck`, `npm run build`.
 - [x] 2026-02-12 P1: CLI `fetch --urls-file <path>` support for newline-delimited URL ingestion with preserved allowlist + dedupe flow. Evidence: `src/cli.ts`, `test/cli.test.ts`, `README.md`, `CHANGELOG.md`; verification: `node dist/cli.js fetch --urls-file /tmp/feed-jarvis-urls.txt --allow-host example.org --no-cache --timeout-ms 1000` (expected network-restricted failure in sandbox after parsing file input), `npm run lint`, `npm run typecheck`, `npm run build`.
 - [x] 2026-02-12 P1: Studio pasted JSON URL validation (`http/https` only) plus server-side generation guardrails for non-http(s) URLs. Evidence: `web/app.js`, `web/index.html`, `src/server.ts`, `test/server.test.ts`, `README.md`, `CHANGELOG.md`; verification: `npm run lint`, `npm run typecheck`, `npm run build`.
@@ -62,13 +64,15 @@
 - [x] 2026-02-08 P2: Synced docs with shipped behavior changes. Evidence: `README.md`, `CHANGELOG.md`, `UPDATE.md`.
 
 ## Insights
+- OPML import/export is now parity-complete in Studio for local feed-set interoperability and migration.
+- Live over-limit feedback in draft editing materially reduces manual QA friction for channel-specific `maxChars` constraints.
 - Bounded retries should only apply to transient classes (network/timeouts + 408/429/5xx); 4xx validation errors should fail fast with no retry.
 - URL-file ingestion provides high-value interoperability with near-zero UX overhead and keeps the same allowlist/safety posture as direct URL inputs.
 - Studio JSON ingestion quality improved by validating URL schemes client-side and server-side, preventing malformed links from reaching exports.
 - Local `make check` output matched historical failing GitHub Actions runs exactly, so Biome drift was the root CI failure.
 - Studio fetch security needed a stricter default than CLI: server-side requests can be triggered from browser clients, so private-host blocking now defaults to on for Studio.
 - Disk cache can affect integration tests if URLs are reused; tests should prefer unique URLs or isolated cache settings.
-- Gap map (cycle1): Missing = browser-level Studio E2E and OPML import/export in Studio; Weak = no live over-limit editing guidance; Parity = local-first feed grouping/filters/rules + metadata exports; Differentiator = deterministic local-first workflow with strong private-host safeguards.
+- Gap map (cycle1): Missing = browser-level Studio E2E; Weak = test automation depth for browser path; Parity = local-first feed grouping with OPML import/export, filters/rules, metadata exports, live over-limit edit guidance; Differentiator = deterministic local-first workflow with strong private-host safeguards.
 - Market scan (untrusted web, cycle1): baseline feed-to-social UX consistently includes reusable content rules and lightweight feed automation/import paths; OPML support and reusable text rules are common interoperability/efficiency expectations.
 - Market scan (untrusted web): RSS-to-social tools emphasize (1) rules/filters (keywords, duplicates), (2) configurable post text (prepend/append, tags/UTMs), (3) queues/scheduling with optional review, and (4) downstream automation/export to schedulers.
 - Market scan (untrusted web, cycle4): auto-publish tools highlight scheduler queue integration and feed-to-channel mapping, with copy review as a differentiator for teams.

@@ -1,11 +1,14 @@
 import {
   FEED_SETS_STORAGE_KEY,
   parseFeedSets,
+  parseFeedSetsOpml,
   removeFeedSet,
   serializeFeedSets,
+  serializeFeedSetsAsOpml,
   upsertFeedSet,
 } from "./feedSets.js";
 import { applyItemFilters, normalizeItemFilters } from "./filters.js";
+import { getPostLengthStatus, trimPostToMaxChars } from "./postEditing.js";
 import {
   parseRulePresets,
   RULE_PRESETS_STORAGE_KEY,
@@ -54,8 +57,11 @@ const elements = {
   jsonPanel: document.querySelector("[data-panel='json']"),
   feedUrls: document.getElementById("feedUrls"),
   feedSetSelect: document.getElementById("feedSetSelect"),
+  feedSetsFile: document.getElementById("feedSetsFile"),
   loadFeedSetBtn: document.getElementById("loadFeedSetBtn"),
   saveFeedSetBtn: document.getElementById("saveFeedSetBtn"),
+  importFeedSetsBtn: document.getElementById("importFeedSetsBtn"),
+  exportFeedSetsBtn: document.getElementById("exportFeedSetsBtn"),
   deleteFeedSetBtn: document.getElementById("deleteFeedSetBtn"),
   feedSetStatus: document.getElementById("feedSetStatus"),
   maxItems: document.getElementById("maxItems"),
@@ -651,6 +657,119 @@ function deleteFeedSet() {
   persistSessionSnapshot();
 }
 
+function getCurrentMaxChars() {
+  return Math.max(1, Number(elements.maxChars.value) || 280);
+}
+
+function nextUniqueFeedSetName(existingSets, baseName) {
+  const existing = new Set(
+    (Array.isArray(existingSets) ? existingSets : [])
+      .map((entry) =>
+        typeof entry?.name === "string" ? entry.name.trim().toLowerCase() : "",
+      )
+      .filter((value) => value.length > 0),
+  );
+
+  const base = baseName?.trim() || "Imported feeds";
+  if (!existing.has(base.toLowerCase())) return base;
+
+  for (let i = 2; i < 500; i++) {
+    const candidate = `${base} (${i})`;
+    if (!existing.has(candidate.toLowerCase())) return candidate;
+  }
+
+  return `${base} (${Date.now()})`;
+}
+
+function mergeImportedFeedSets(existingSets, importedSets) {
+  let next = Array.isArray(existingSets) ? [...existingSets] : [];
+  let added = 0;
+  let skipped = 0;
+
+  for (const entry of Array.isArray(importedSets) ? importedSets : []) {
+    const nameRaw =
+      typeof entry?.name === "string" ? entry.name.trim() : "Imported feeds";
+    const urls = Array.isArray(entry?.urls)
+      ? entry.urls
+          .map((value) => (typeof value === "string" ? value.trim() : ""))
+          .filter((value) => value.length > 0)
+      : [];
+    if (!nameRaw || urls.length === 0) {
+      skipped += 1;
+      continue;
+    }
+
+    const name = nextUniqueFeedSetName(next, nameRaw);
+    const beforeCount = next.length;
+    next = upsertFeedSet(next, { name, urls });
+    if (next.length > beforeCount || next.some((set) => set.name === name)) {
+      added += 1;
+    } else {
+      skipped += 1;
+    }
+  }
+
+  return { sets: next, added, skipped };
+}
+
+function exportFeedSetsOpml() {
+  setStatus(elements.feedSetStatus, "");
+  if (!Array.isArray(state.feedSets) || state.feedSets.length === 0) {
+    setStatus(
+      elements.feedSetStatus,
+      "Save at least one feed set first.",
+      "error",
+    );
+    return;
+  }
+
+  const opml = serializeFeedSetsAsOpml(state.feedSets);
+  downloadFile("feed-jarvis-feed-sets.opml", opml);
+  setStatus(
+    elements.feedSetStatus,
+    `Exported ${state.feedSets.length} feed set(s) as OPML.`,
+  );
+}
+
+async function importFeedSetsOpml() {
+  setStatus(elements.feedSetStatus, "");
+  const file = elements.feedSetsFile?.files?.[0];
+  if (!file) return;
+
+  try {
+    const raw = await file.text();
+    const imported = parseFeedSetsOpml(raw);
+    if (imported.length === 0) {
+      throw new Error("No valid feed sets found in OPML.");
+    }
+
+    const { sets, added } = mergeImportedFeedSets(state.feedSets, imported);
+    if (added === 0) {
+      throw new Error("No new feed sets were imported.");
+    }
+
+    state.feedSets = sets;
+    writeFeedSets(state.feedSets);
+    refreshFeedSetSelect();
+    persistSessionSnapshot();
+    setStatus(
+      elements.feedSetStatus,
+      `Imported ${added} feed set(s) from OPML.`,
+    );
+  } catch (err) {
+    setStatus(
+      elements.feedSetStatus,
+      getErrorMessage(err, "Failed to import OPML feed sets."),
+      "error",
+    );
+  } finally {
+    if (elements.feedSetsFile) {
+      // Allow importing the same file repeatedly.
+      elements.feedSetsFile.value = "";
+    }
+  }
+}
+
 function refreshRulePresetSelect() {
   if (!elements.rulePresetSelect) return;
 
@@ -911,8 +1030,11 @@ function updatePostsPreview() {
     meta.className = "post-meta";
 
     const length = document.createElement("span");
-    length.textContent = `${post.length} chars`;
     length.className = "tag";
+
+    const warning = document.createElement("span");
+    warning.className = "post-over-limit";
+    warning.hidden = true;
 
     const copyBtn = document.createElement("button");
     copyBtn.className = "secondary";
@@ -920,12 +1042,42 @@ function updatePostsPreview() {
     copyBtn.textContent = "Copy";
     copyBtn.addEventListener("click", () => copyText(textarea.value));
 
+    const trimBtn = document.createElement("button");
+    trimBtn.className = "ghost";
+    trimBtn.type = "button";
+    trimBtn.textContent = "Trim to max";
+    trimBtn.hidden = true;
+    trimBtn.addEventListener("click", () => {
+      const trimmed = trimPostToMaxChars(textarea.value, getCurrentMaxChars());
+      textarea.value = trimmed;
+      state.posts[index] = trimmed;
+      updateLengthMeta();
+    });
+
+    const actions = document.createElement("div");
+    actions.className = "post-meta-actions";
+    actions.appendChild(copyBtn);
+    actions.appendChild(trimBtn);
+
+    function updateLengthMeta() {
+      const status = getPostLengthStatus(textarea.value, getCurrentMaxChars());
+      length.textContent = `${status.length}/${status.maxChars} chars`;
+      length.classList.toggle("warning", status.isOver);
+      warning.hidden = !status.isOver;
+      warning.textContent = status.isOver
+        ? `Over by ${status.overBy} chars.`
+        : "";
+      trimBtn.hidden = !status.isOver;
+    }
+
+    updateLengthMeta();
     meta.appendChild(length);
-    meta.appendChild(copyBtn);
+    meta.appendChild(warning);
+    meta.appendChild(actions);
 
     textarea.addEventListener("input", () => {
-      length.textContent = `${textarea.value.length} chars`;
       state.posts[index] = textarea.value;
+      updateLengthMeta();
     });
 
     wrapper.appendChild(textarea);
@@ -1677,6 +1829,14 @@ function wireEvents() {
   });
   elements.loadFeedSetBtn?.addEventListener("click", loadSelectedFeedSet);
   elements.saveFeedSetBtn?.addEventListener("click", saveFeedSet);
+  elements.importFeedSetsBtn?.addEventListener("click", () => {
+    setStatus(elements.feedSetStatus, "");
+    elements.feedSetsFile?.click();
+  });
+  elements.feedSetsFile?.addEventListener("change", () => {
+    importFeedSetsOpml();
+  });
+  elements.exportFeedSetsBtn?.addEventListener("click", exportFeedSetsOpml);
   elements.deleteFeedSetBtn?.addEventListener("click", deleteFeedSet);
   elements.rulePresetSelect?.addEventListener("change", () => {
     refreshRulePresetSelect();
@@ -1812,6 +1972,9 @@ function wireEvents() {
     if (next !== state.channelMaxCharsByChannel) {
       state.channelMaxCharsByChannel = next;
       writeChannelMaxCharsByChannel(next);
+    }
+    if (state.posts.length > 0) {
+      updatePostsPreview();
     }
   });
 

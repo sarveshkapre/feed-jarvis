@@ -72,15 +72,18 @@
               <div class="inline-row">
                 <label for="feedSetSelect">
                   Feed set
-                  <span>Save and recall groups of feed URLs (local-only).</span>
+                  <span>Save, import, and export groups of feed URLs (local-only).</span>
                 </label>
                 <select id="feedSetSelect">
                   <option value="">Choose a saved set…</option>
                 </select>
               </div>
               <div class="button-row">
+                <input id="feedSetsFile" type="file" accept=".opml,.xml,text/xml,application/xml" hidden />
                 <button class="ghost" id="loadFeedSetBtn" type="button" disabled>Load</button>
                 <button class="ghost" id="saveFeedSetBtn" type="button">Save</button>
+                <button class="ghost" id="importFeedSetsBtn" type="button">Import OPML</button>
+                <button class="ghost" id="exportFeedSetsBtn" type="button">Export OPML</button>
                 <button class="secondary" id="deleteFeedSetBtn" type="button" disabled>Delete</button>
               </div>
               <div class="status" id="feedSetStatus" role="status" aria-live="polite"></div>
