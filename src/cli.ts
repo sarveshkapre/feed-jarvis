@@ -6,6 +6,7 @@ import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { fetchFeed } from "./lib/feedFetch.js";
+import { generatePostsWithLlm } from "./lib/llm.js";
 import { parseOpmlUrls } from "./lib/opml.js";
 import {
   DEFAULT_PERSONAS,
@@ -26,6 +27,7 @@ import {
 type PackageJson = { name?: string; version?: string };
 const require = createRequire(import.meta.url);
 const pkg = require("../package.json") as PackageJson;
+const DEFAULT_LLM_MODEL = "gpt-4.1-mini";
 const bundledPersonasPath = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   "../personas",
@@ -72,6 +74,8 @@ Generate options:
   --max-chars <number>    Max characters per post (default: 280)
   --channel <x|linkedin|newsletter> Target channel style (default: x)
   --template <straight|takeaway|cta> Draft framing template (default: straight)
+  --llm                   Generate posts with OpenAI Responses API (requires OPENAI_API_KEY)
+  --llm-model <id>        OpenAI model for --llm (default: FEED_JARVIS_LLM_MODEL or gpt-4.1-mini)
   --prepend <text>        Optional text to prepend
   --append <text>         Optional text to append
   --hashtags <text>       Optional hashtags (space/comma separated)
@@ -286,6 +290,14 @@ async function main() {
   const personasPath = getOptionalStringFlag(args.flags, "--personas");
   const outPath = getOptionalStringFlag(args.flags, "--out");
   const stats = args.flags.has("--stats");
+  const llmRequested =
+    args.flags.has("--llm") ||
+    Boolean(getOptionalStringFlag(args.flags, "--llm-model"));
+  const llmModel = getStringFlag(
+    args.flags,
+    "--llm-model",
+    process.env.FEED_JARVIS_LLM_MODEL || DEFAULT_LLM_MODEL,
+  );
   if (
     format !== "text" &&
     format !== "json" &&
@@ -308,11 +320,21 @@ async function main() {
   const personas = mergePersonas(basePersonas, filePersonas);
   const persona = getPersona(personaName, personas);
   const resolvedItems = applyRulesToItems(items, rules);
-  const posts = generatePosts(resolvedItems, persona, maxChars, {
-    channel,
-    template,
-    rules,
-  });
+  const posts = llmRequested
+    ? await generatePostsWithLlmOrDie({
+        items: resolvedItems,
+        persona,
+        maxChars,
+        channel,
+        template,
+        rules,
+        model: llmModel,
+      })
+    : generatePosts(resolvedItems, persona, maxChars, {
+        channel,
+        template,
+        rules,
+      });
 
   if (stats) {
     console.error(
@@ -321,6 +343,8 @@ async function main() {
         template,
         persona,
         items: resolvedItems,
+        mode: llmRequested ? "llm" : "template",
+        llmModel: llmRequested ? llmModel : undefined,
       }),
     );
   }
@@ -557,6 +581,8 @@ type GenerateStatsContext = {
   persona: { name: string; prefix: string };
   channel: PostChannel;
   template: PostTemplate;
+  mode: "template" | "llm";
+  llmModel?: string;
 };
 
 function formatGenerateStats(
@@ -580,11 +606,45 @@ function formatGenerateStats(
     `- persona: ${context.persona.name}`,
     `- channel: ${context.channel}`,
     `- template: ${context.template}`,
+    `- mode: ${context.mode}`,
+    context.llmModel ? `- llm model: ${context.llmModel}` : undefined,
     `- items: ${context.items.length}`,
     `- posts: ${posts.length}`,
     `- chars: min ${min}, p50 ${p50}, p90 ${p90}, avg ${avg}, max ${max}`,
     `- over maxChars (${maxChars}): ${over}`,
   ].join("\n");
+}
+
+type LlmGenerateCliOptions = {
+  items: FeedItem[];
+  persona: Persona;
+  maxChars: number;
+  channel: PostChannel;
+  template: PostTemplate;
+  rules?: PostRules;
+  model: string;
+};
+
+async function generatePostsWithLlmOrDie(
+  options: LlmGenerateCliOptions,
+): Promise<string[]> {
+  const apiKey = process.env.OPENAI_API_KEY?.trim();
+  if (!apiKey) {
+    die("Missing OPENAI_API_KEY for --llm generation.");
+  }
+  try {
+    return await generatePostsWithLlm(options.items, options.persona, {
+      apiKey,
+      model: options.model,
+      maxChars: options.maxChars,
+      channel: options.channel,
+      template: options.template,
+      rules: options.rules,
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    die(`LLM generation failed: ${message}`);
+  }
 }
 
 function percentile(sorted: number[], p: number): number {

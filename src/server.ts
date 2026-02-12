@@ -4,6 +4,7 @@ import { createServer, type Server } from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { fetchFeed } from "./lib/feedFetch.js";
+import { generatePostsWithLlm } from "./lib/llm.js";
 import {
   DEFAULT_PERSONAS,
   getPersona,
@@ -26,6 +27,7 @@ const DEFAULT_CACHE_TTL_MS = 15 * 60 * 1000;
 const DEFAULT_TIMEOUT_MS = 12_000;
 const DEFAULT_MAX_BYTES = 1_000_000;
 const DEFAULT_ALLOW_PRIVATE_HOSTS = false;
+const DEFAULT_LLM_MODEL = "gpt-4.1-mini";
 const bundledPersonasPath = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   "../personas",
@@ -50,11 +52,19 @@ export type StudioServerOptions = {
   fetchFn?: typeof fetch;
   port?: number;
   personasPath?: string;
+  openaiApiKey?: string;
+  openaiBaseUrl?: string;
+  openaiFetchFn?: typeof fetch;
+  llmModel?: string;
 };
 
 type RuntimeOptions = {
   allowPrivateHosts: boolean;
   fetchFn?: typeof fetch;
+  openaiApiKey?: string;
+  openaiBaseUrl?: string;
+  openaiFetchFn?: typeof fetch;
+  llmModel: string;
 };
 
 function sendJson(
@@ -238,7 +248,11 @@ function resolvePersona(
   return getPersona(personaName, personas);
 }
 
-async function handleGenerate(body: unknown, personas: Persona[]) {
+async function handleGenerate(
+  body: unknown,
+  personas: Persona[],
+  runtime: RuntimeOptions,
+) {
   if (!body || typeof body !== "object") {
     throw new Error("Missing request body.");
   }
@@ -254,6 +268,36 @@ async function handleGenerate(body: unknown, personas: Persona[]) {
   const template = resolveTemplate(Reflect.get(body, "template"));
   const rules = resolveRules(Reflect.get(body, "rules"));
   const resolvedItems = applyRulesToItems(items, rules);
+  const mode = resolveGenerationMode(Reflect.get(body, "mode"));
+
+  if (mode === "llm") {
+    const apiKey = runtime.openaiApiKey?.trim();
+    if (!apiKey) {
+      throw new Error(
+        "LLM generation is not configured. Set OPENAI_API_KEY on the server.",
+      );
+    }
+    const model =
+      typeof Reflect.get(body, "llmModel") === "string" &&
+      String(Reflect.get(body, "llmModel")).trim()
+        ? String(Reflect.get(body, "llmModel")).trim()
+        : runtime.llmModel;
+    return {
+      posts: await generatePostsWithLlm(resolvedItems, persona, {
+        apiKey,
+        model,
+        maxChars,
+        channel,
+        template,
+        rules,
+        apiBaseUrl: runtime.openaiBaseUrl,
+        fetchFn: runtime.openaiFetchFn,
+      }),
+      items: resolvedItems,
+      mode: "llm",
+      llmModel: model,
+    };
+  }
 
   return {
     posts: generatePosts(resolvedItems, persona, maxChars, {
@@ -262,6 +306,7 @@ async function handleGenerate(body: unknown, personas: Persona[]) {
       rules,
     }),
     items: resolvedItems,
+    mode: "template",
   };
 }
 
@@ -334,6 +379,11 @@ function resolveRules(value: unknown): PostRules | undefined {
     hashtags: hashtags || undefined,
     utm: normalizedUtm,
   };
+}
+
+function resolveGenerationMode(value: unknown): "template" | "llm" {
+  if (value === "llm") return "llm";
+  return "template";
 }
 
 function applyRulesToItems(items: FeedItem[], rules?: PostRules): FeedItem[] {
@@ -436,6 +486,16 @@ export function createStudioServer(options: StudioServerOptions = {}): Server {
   const runtimeOptions: RuntimeOptions = {
     allowPrivateHosts: resolveAllowPrivateHosts(options.allowPrivateHosts),
     fetchFn: options.fetchFn,
+    openaiApiKey: options.openaiApiKey ?? process.env.OPENAI_API_KEY,
+    openaiBaseUrl:
+      options.openaiBaseUrl ??
+      process.env.OPENAI_BASE_URL ??
+      "https://api.openai.com/v1",
+    openaiFetchFn: options.openaiFetchFn,
+    llmModel:
+      options.llmModel ??
+      process.env.FEED_JARVIS_LLM_MODEL ??
+      DEFAULT_LLM_MODEL,
   };
   const personasPromise = loadRuntimePersonas(
     resolvePersonasPath(options.personasPath),
@@ -470,7 +530,7 @@ export function createStudioServer(options: StudioServerOptions = {}): Server {
       try {
         const body = await readJsonBody(req);
         const personas = await personasPromise;
-        const payload = await handleGenerate(body, personas);
+        const payload = await handleGenerate(body, personas, runtimeOptions);
         sendJson(res, 200, payload);
       } catch (err) {
         const message = err instanceof Error ? err.message : "Request failed.";

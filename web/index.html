@@ -214,6 +214,19 @@
               <option value="takeaway">Takeaway</option>
               <option value="cta">Call to action</option>
             </select>
+            <label for="generationModeSelect">
+              Engine
+              <span>Template runs locally. GPT mode uses the server OpenAI key.</span>
+            </label>
+            <select id="generationModeSelect">
+              <option value="template">Template (local)</option>
+              <option value="llm">GPT (OpenAI)</option>
+            </select>
+            <label for="llmModelInput">
+              GPT model
+              <span>Used only when Engine is GPT.</span>
+            </label>
+            <input id="llmModelInput" type="text" value="gpt-4.1-mini" autocomplete="off" />
             <div class="inline-row">
               <label for="maxChars">Max characters</label>
               <input id="maxChars" type="number" min="1" value="280" />

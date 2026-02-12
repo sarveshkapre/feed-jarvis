@@ -24,6 +24,7 @@ import {
 const STUDIO_SESSION_KEY = "feed-jarvis-studio:v1";
 const STUDIO_PERSONAS_KEY = "feed-jarvis-personas:v1";
 const STUDIO_CHANNEL_MAXCHARS_KEY = "feed-jarvis-studio:channel-maxchars:v1";
+const DEFAULT_LLM_MODEL = "gpt-4.1-mini";
 
 const state = {
   items: [],
@@ -38,6 +39,8 @@ const state = {
   personas: [],
   channel: "x",
   template: "straight",
+  generationMode: "template",
+  llmModel: DEFAULT_LLM_MODEL,
   restoredPersonaName: "",
   filters: normalizeItemFilters(),
   channelMaxCharsByChannel: {},
@@ -84,6 +87,8 @@ const elements = {
     document.querySelectorAll("#channelToggle button"),
   ),
   templateSelect: document.getElementById("templateSelect"),
+  generationModeSelect: document.getElementById("generationModeSelect"),
+  llmModelInput: document.getElementById("llmModelInput"),
   maxChars: document.getElementById("maxChars"),
   rulePrepend: document.getElementById("rulePrepend"),
   ruleAppend: document.getElementById("ruleAppend"),
@@ -368,6 +373,8 @@ function persistSessionSnapshot() {
     customPersonaPrefix: elements.customPersonaPrefix.value,
     channel: state.channel,
     template: elements.templateSelect.value,
+    generationMode: elements.generationModeSelect.value,
+    llmModel: elements.llmModelInput.value,
     maxChars: elements.maxChars.value,
     rulePresetName: elements.rulePresetSelect?.value ?? "",
     rulePrepend: elements.rulePrepend.value,
@@ -424,6 +431,18 @@ function restoreSessionSnapshot() {
   }
   if (typeof snapshot.template === "string") {
     elements.templateSelect.value = snapshot.template;
+  }
+  if (
+    typeof snapshot.generationMode === "string" &&
+    (snapshot.generationMode === "template" ||
+      snapshot.generationMode === "llm")
+  ) {
+    elements.generationModeSelect.value = snapshot.generationMode;
+    state.generationMode = snapshot.generationMode;
+  }
+  if (typeof snapshot.llmModel === "string" && snapshot.llmModel.trim()) {
+    elements.llmModelInput.value = snapshot.llmModel;
+    state.llmModel = snapshot.llmModel.trim();
   }
   if (
     typeof snapshot.rulePresetName === "string" &&
@@ -952,6 +971,8 @@ function buildDraftRows() {
     const item = state.generatedItems[i] ?? {};
     rows.push({
       channel: state.generatedMeta.channel,
+      mode: state.generatedMeta.mode ?? "template",
+      llmModel: state.generatedMeta.llmModel ?? "",
       template: state.generatedMeta.template,
       personaName: state.generatedMeta.persona?.name ?? "",
       personaPrefix: state.generatedMeta.persona?.prefix ?? "",
@@ -979,6 +1000,8 @@ function toDraftsCsv() {
   const rows = buildDraftRows();
   const header = [
     "channel",
+    "mode",
+    "llm_model",
     "template",
     "persona_name",
     "persona_prefix",
@@ -996,6 +1019,8 @@ function toDraftsCsv() {
   const lines = rows.map((row) => {
     return [
       escapeCsv(row.channel),
+      escapeCsv(row.mode),
+      escapeCsv(row.llmModel),
       escapeCsv(row.template),
       escapeCsv(row.personaName),
       escapeCsv(row.personaPrefix),
@@ -1277,14 +1302,20 @@ async function generatePosts() {
       }
     : selectedPersona;
   const template = elements.templateSelect.value;
+  const generationMode =
+    elements.generationModeSelect.value === "llm" ? "llm" : "template";
+  const llmModel = elements.llmModelInput.value.trim() || DEFAULT_LLM_MODEL;
   const rules = currentRules();
 
   const payload = {
+    mode: generationMode,
+    llmModel,
     items: generationItems,
     maxChars,
     channel: state.channel,
     template,
-    personaCustom: personaUsed,
+    personaName: useCustom ? undefined : selectedPersona.name,
+    personaCustom: useCustom ? personaUsed : undefined,
     rules,
   };
 
@@ -1315,12 +1346,21 @@ async function generatePosts() {
     state.generatedMeta = {
       channel: state.channel,
       template,
+      mode: generationMode,
+      llmModel: generationMode === "llm" ? llmModel : null,
       persona: personaUsed,
       maxChars,
       rules,
     };
     updatePostsPreview();
-    setStatus(elements.postsStatus, `Generated ${state.posts.length} drafts.`);
+    const modeLabel =
+      generationMode === "llm"
+        ? `via GPT (${llmModel})`
+        : "via template engine";
+    setStatus(
+      elements.postsStatus,
+      `Generated ${state.posts.length} drafts ${modeLabel}.`,
+    );
   } catch (err) {
     setStatus(
       elements.postsStatus,
@@ -1486,6 +1526,17 @@ function wireEvents() {
     });
   });
 
+  elements.generationModeSelect?.addEventListener("change", () => {
+    state.generationMode =
+      elements.generationModeSelect.value === "llm" ? "llm" : "template";
+    persistSessionSnapshot();
+  });
+
+  elements.llmModelInput?.addEventListener("input", () => {
+    state.llmModel = elements.llmModelInput.value.trim() || DEFAULT_LLM_MODEL;
+    persistSessionSnapshot();
+  });
+
   elements.maxChars.addEventListener("input", () => {
     const next = setMaxCharsForChannel(
       state.channelMaxCharsByChannel,
@@ -1511,6 +1562,8 @@ function wireEvents() {
     elements.customPersonaName,
     elements.customPersonaPrefix,
     elements.templateSelect,
+    elements.generationModeSelect,
+    elements.llmModelInput,
     elements.maxChars,
     elements.rulePresetSelect,
     elements.rulePrepend,

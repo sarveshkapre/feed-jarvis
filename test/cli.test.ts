@@ -168,6 +168,46 @@ describe("cli", () => {
     expect(String(res.stdout)).toMatch(/Macro Hawk/);
     expect(String(res.stdout)).toMatch(/Analysis:/);
   });
+
+  it("fails fast when --llm is used without OPENAI_API_KEY", () => {
+    const tmpDir = mkdtempSync(path.join(os.tmpdir(), "feed-jarvis-llm-"));
+    const inputPath = path.join(tmpDir, "items.json");
+
+    try {
+      writeFileSync(
+        inputPath,
+        JSON.stringify([
+          { title: "Release notes", url: "https://example.com/r1" },
+        ]),
+        "utf8",
+      );
+
+      const env = { ...process.env };
+      delete env.OPENAI_API_KEY;
+
+      const res = spawnSync(
+        "./node_modules/.bin/tsx",
+        [
+          "src/cli.ts",
+          "generate",
+          "--input",
+          inputPath,
+          "--persona",
+          "Analyst",
+          "--llm",
+        ],
+        {
+          encoding: "utf8",
+          env,
+        },
+      );
+
+      expect(res.status).toBe(1);
+      expect(String(res.stderr)).toMatch(/OPENAI_API_KEY/);
+    } finally {
+      rmSync(tmpDir, { recursive: true, force: true });
+    }
+  });
 });
 
 function runCli(

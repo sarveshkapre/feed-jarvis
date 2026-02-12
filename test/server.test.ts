@@ -134,6 +134,87 @@ describe("studio server", () => {
     });
   });
 
+  it("supports llm generation mode via /api/generate", async () => {
+    const openaiFetch: typeof fetch = async (_url, init) => {
+      const body =
+        init && typeof init === "object" && typeof init.body === "string"
+          ? JSON.parse(init.body)
+          : {};
+      expect(body.model).toBe("gpt-4.1-mini");
+      expect(typeof body.input).toBe("string");
+
+      return new Response(
+        JSON.stringify({
+          output: [
+            {
+              type: "message",
+              content: [
+                {
+                  type: "output_text",
+                  text: "Rate outlook turning dovish (confidence: 81/100)",
+                },
+              ],
+            },
+          ],
+        }),
+        {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        },
+      );
+    };
+
+    await withServer(
+      { openaiApiKey: "test-key", openaiFetchFn: openaiFetch },
+      async (baseUrl) => {
+        const res = await fetch(`${baseUrl}/api/generate`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            mode: "llm",
+            items: [
+              { title: "Rates are changing", url: "https://example.com/r1" },
+            ],
+            personaName: "Analyst",
+            channel: "x",
+            template: "straight",
+            maxChars: 240,
+          }),
+        });
+
+        expect(res.status).toBe(200);
+        const payload = await res.json();
+        expect(payload.mode).toBe("llm");
+        expect(payload.posts).toHaveLength(1);
+        expect(String(payload.posts[0])).toMatch(/confidence/i);
+        expect(String(payload.posts[0])).toMatch(/https:\/\/example\.com\/r1/);
+      },
+    );
+  });
+
+  it("returns a clear error when llm mode is requested without API key", async () => {
+    await withServer({}, async (baseUrl) => {
+      const res = await fetch(`${baseUrl}/api/generate`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          mode: "llm",
+          items: [
+            { title: "Rates are changing", url: "https://example.com/r1" },
+          ],
+          personaName: "Analyst",
+          channel: "x",
+          template: "straight",
+          maxChars: 240,
+        }),
+      });
+
+      expect(res.status).toBe(400);
+      const payload = await res.json();
+      expect(String(payload.error)).toMatch(/OPENAI_API_KEY/i);
+    });
+  });
+
   it("blocks localhost feed fetch by default", async () => {
     await withServer({}, async (baseUrl) => {
       const res = await fetch(`${baseUrl}/api/fetch`, {

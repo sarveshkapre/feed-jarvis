@@ -29,6 +29,11 @@ export type PostRules = {
   utm?: PostUtm;
 };
 
+export type ComposePostOptions = {
+  channel?: PostChannel;
+  rules?: PostRules;
+};
+
 function normalizeRuleText(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
 }
@@ -141,12 +146,24 @@ export function generatePost(
   maxChars = 280,
   options: PostOptions = {},
 ): string {
-  const rules = normalizeRules(options.rules);
   const base = formatBase(item.title, persona, options.template);
-  const head = [rules.prepend, base].filter(Boolean).join(" ").trim();
+  return composePost(base, item.url, maxChars, options);
+}
+
+export function composePost(
+  baseText: string,
+  rawUrl: string,
+  maxChars = 280,
+  options: ComposePostOptions = {},
+): string {
+  const rules = normalizeRules(options.rules);
+  const head = [rules.prepend, baseText.trim()]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
   const tail = [rules.append, rules.hashtags].filter(Boolean).join(" ").trim();
 
-  const url = applyUtmToUrl(item.url, rules.utm);
+  const url = applyUtmToUrl(rawUrl, rules.utm);
   let urlSuffix = "";
 
   if (url) {

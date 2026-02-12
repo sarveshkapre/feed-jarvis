@@ -9,6 +9,7 @@
 
 ## Recent Decisions
 - Template: YYYY-MM-DD | Decision | Why | Evidence (tests/logs) | Commit | Confidence (high/medium/low) | Trust (trusted/untrusted)
+- 2026-02-12 | Add GPT generation engine (Studio + CLI) backed by OpenAI Responses API with persona-conditioned concise prompts | Product direction requires LLM-generated posts with richer persona character than template-only drafting | `src/lib/llm.ts`, `test/llm.test.ts`, `test/server.test.ts`, `test/cli.test.ts`, `make check` | (pending) | high | trusted
 - 2026-02-12 | Ship bundled markdown persona pack (50+ files) and auto-load it in CLI/Studio when present | The product direction requires many distinct agent identities with per-file contracts; auto-loading removes setup friction and makes Studio immediately useful | `personas/` pack, `test/cli.test.ts`, `test/server.test.ts`, `make check` | (pending) | high | trusted
 - 2026-02-12 | Add markdown persona contract support (single file or directory) across CLI and Studio server (`FEED_JARVIS_PERSONAS`) | Persona-per-file authoring is required for scaling to many unique agent voices without brittle JSON editing | `test/personas.test.ts`, `test/cli.test.ts`, `test/server.test.ts`, `make check` | (pending) | high | trusted
 - 2026-02-11 | Ship Studio local-only rule presets (save/load/delete) for text-rule reuse | Repeated feed workflows need fast rule reuse; presets reduce repetitive setup and improve drafting consistency | `test/rulePresets.test.ts`, `make check`, `npm run smoke:web` | 7c4ae07 | high | trusted
@@ -52,6 +53,7 @@
 
 ## Verification Evidence
 - Template: YYYY-MM-DD | Command | Key output | Status (pass/fail)
+- 2026-02-12 | `make check` | `Test Files 12 passed (12); Tests 59 passed (59)` | pass
 - 2026-02-12 | `make check` | `Test Files 11 passed (11); Tests 54 passed (54)` | pass
 - 2026-02-12 | `make check` | `Test Files 11 passed (11); Tests 53 passed (53)` | pass
 - 2026-02-11 | `make check` | `Test Files 11 passed (11); Tests 49 passed (49)` | pass
