@@ -5,7 +5,7 @@
 
 ## Good Product Phase Status
 - Status: `No` (checkpoint run on 2026-02-12).
-- Why not yet: core local-first workflows are strong, but parity gaps remain in ingestion interoperability and reliability hardening for multi-feed runs.
+- Why not yet: core local-first workflows are strong, but parity gaps remain in large-run reliability controls and advanced repeat-workflow UX.
 
 ## Definition Of Done
 - Core Studio + CLI workflows are complete for repeated daily use.
@@ -23,6 +23,18 @@
 
 ## Current Milestone
 - M3 Reliability + Interop
+
+## Session Goal Checkpoint (2026-02-12 | Cycle 1 Session 3)
+- Goal: Ship production-grade browser E2E coverage for the Studio critical path so CI validates real user behavior (`fetch -> generate -> export`).
+- Success criteria:
+  - Deterministic browser E2E test covers feed fetch, draft generation, and draft export flows.
+  - CI runs the E2E check (with browser install) in addition to existing unit/integration/smoke checks.
+  - Export smoke assertions verify `.txt`, `.jsonl`, and `.csv` payload shape from the browser flow.
+  - Verification evidence and tracker updates are captured.
+- Non-goals:
+  - Full visual regression suite.
+  - New scheduler/publishing integrations.
+  - Large `web/app.js` modularization.
 
 ## Session Goal Checkpoint (2026-02-12 | Cycle 1 Session 2)
 - Goal: Close the highest-value remaining Studio parity gaps by shipping OPML feed-set interoperability and live over-limit editing guidance.
@@ -64,11 +76,34 @@
   - Missing: browser E2E for critical Studio flow.
   - Weak: none across current ingestion/draft-parity baseline; next gap is test automation breadth.
   - Parity: OPML feed-set interoperability, transient retry handling, URL-list ingestion, local feed sets/rules, item filters, metadata-rich exports, agent feed layouts.
-  - Differentiator: local-first end-to-end drafting with strict private-host safeguards.
+- Differentiator: local-first end-to-end drafting with strict private-host safeguards.
+
+## Product Phase Checkpoint (2026-02-12 | Session 3)
+- Prompt: "Are we in a good product phase yet?" -> `No`.
+- Best-in-market references (untrusted web, bounded scan):
+  - Feedly docs: OPML import/export interoperability and non-destructive imports (`https://docs.feedly.com/article/51-how-to-import-opml-into-feedly`, `https://docs.feedly.com/article/52-how-can-i-export-my-sources-and-feeds-through-opml`).
+  - Buffer support: feed-to-queue automation baselines and multi-channel constraints (`https://support.buffer.com/article/613-automating-rss-feeds-using-feedly-and-zapier`).
+  - Sprout support: RSS automation controls (check intervals, max items, append-text truncation behavior) (`https://support.sproutsocial.com/hc/en-us/articles/20299161205645-How-do-I-use-Automated-Feed-Publishing-on-the-Professional-and-Advanced-Plans`).
+  - Inoreader blog: rules/filters automation expectations for high-volume feed workflows (`https://jp.inoreader.com/uk/blog/2026/01/save-time-with-automations.html`).
+  - RSS.app help: keyword/domain filtering expectations for feed triage (`https://help.rss.app/en/articles/10271103-how-to-filter-rss-feeds`).
+- Core expected capabilities in this segment:
+  - Reliable ingestion + grouping interoperability (URL lists, OPML, safe dedupe).
+  - Fast noise reduction workflows (filters, rules, mute/blacklist controls).
+  - Real workflow verification (browser path checks for ingest -> draft -> export).
+  - Export/automation bridges with predictable format contracts.
+- Parity gap map:
+  - Missing: browser-level CI validation for Studio fetch/generate/export journey.
+  - Weak: export-contract verification under real browser interactions.
+  - Parity: OPML feed-set interoperability, URL-file ingestion, transient fetch retries, local-first draft controls.
+  - Differentiator: privacy-preserving local-first drafting + strict feed-host safety defaults.
 
 ## Locked Cycle Scope (2026-02-12 | Session 2)
 - [x] P1: Studio OPML import/export for saved feed sets (local-only interoperability).
 - [x] P1: Studio live over-max-char warnings while editing drafts + one-click trim suggestion.
+
+## Locked Cycle Scope (2026-02-12 | Session 3)
+- [x] P1: Browser-level Studio E2E coverage for critical path (`fetch -> generate -> export`) with deterministic fixtures.
+- [x] P2: Export smoke assertions in CI for `.txt`, `.jsonl`, and `.csv` from the browser-driven flow.
 
 ## Locked Cycle Scope (2026-02-12)
 - [x] P1: Feed fetcher bounded retry/backoff for transient 5xx/network/timeout failures (honor timeout + stale-if-error).
@@ -76,20 +111,21 @@
 - [x] P1: Studio pasted JSON URL validation (`http/https` only) with actionable user feedback.
 
 ## Pending Features (What Is Still Pending?)
-- P1: Browser-level Studio E2E coverage for critical flow (fetch -> generate -> export) in CI.
 - P2: Fetcher configurable concurrent-fetch limit for large multi-feed runs.
 - P2: Studio saved filter presets (include/exclude/min-title) for repeat triage workflows.
 - P2: Studio per-item quick action to mute a domain into exclusion filters.
 - P2: CLI `generate --dry-run` diagnostics (invalid items, duplicate URLs, truncation counts).
-- P2: CSV/JSONL export smoke assertions in CI (headers + metadata columns).
 - P2: Targeted session-persistence edge-case tests (invalid snapshots, stale keys, partial payloads).
 - P2: CLI regression tests for `EPIPE` across text/json/jsonl/csv output formats.
+- P2: Browser E2E coverage for Step 4 agent feed flow (`build -> copy -> download`) in CI.
 - P3: Refactor `web/app.js` into smaller modules (state/api/exporters/ui binding).
 - P3: Studio keyboard shortcuts for generation/export actions.
 - P3: Release checklist automation (version bump + changelog guard + artifact verify).
 - P3: Docs split: keep README compact and move deep recipes to `docs/`.
 
 ## Delivered Features (Recent)
+- 2026-02-12: Added browser-level Studio E2E smoke for critical flow (`fetch -> generate -> export`) with deterministic feed fixtures and export assertions (`.txt`, `.jsonl`, `.csv`).
+- 2026-02-12: CI now installs Playwright Chromium and runs `npm run e2e:web` after lint/typecheck/test/build + API smoke checks.
 - 2026-02-12: Added Studio feed-set OPML import/export (local-only) with parsing, dedupe, and collision-safe naming.
 - 2026-02-12: Added live over-max-char draft editing warnings with one-click trim-to-max helper.
 - 2026-02-12: Added transient fetch retry/backoff with bounded retries for network/timeouts and HTTP 408/429/5xx.
@@ -101,11 +137,11 @@
 - 2026-02-11: Added Studio local-only rule presets and CLI OPML fetch ingestion.
 
 ## Risks And Blockers
-- Risk: no browser-level CI coverage yet for the end-to-end Studio user journey (fetch -> generate -> export).
+- Risk: no browser-level CI coverage yet for Step 4 agent-feed journey (`build -> copy -> download`).
 - Risk: large pending UX work in `web/app.js` carries rising maintenance cost until modularized.
 - Active blockers: none currently.
 
 ## Next Cycle Goals
-- Complete remaining P1 parity item (Studio E2E critical flow coverage).
-- Reduce manual QA cost via expanded smoke and E2E checks.
+- Expand browser E2E from Step 3 flow to Step 4 agent-feed workflow.
+- Reduce manual QA cost via broader browser assertions and fewer environment-sensitive gaps.
 - Continue reliability hardening for large feed sets (concurrency controls and clearer diagnostics).

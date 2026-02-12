@@ -15,7 +15,9 @@ Then optionally build a multi-persona timeline in Step 4 (Agent feed).
 Run a local smoke verification:
 
 ```bash
+npx playwright install chromium
 npm run smoke:web
+npm run e2e:web
 ```
 
 Studio feed safety defaults:

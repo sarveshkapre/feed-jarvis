@@ -83,8 +83,52 @@
   - Trusted: local repo code/tests/commands.
   - Untrusted: external market/reference pages.
 
+## Session Notes (2026-02-12 | Cycle 1 Session 3)
+- Goal: Add production-grade browser E2E coverage for Studio’s highest-value user path and enforce it in CI.
+- Success criteria:
+  - Browser E2E validates `fetch -> generate -> export` in one deterministic run.
+  - CI installs browser dependencies and executes the new E2E command.
+  - Export checks assert `.txt`, `.jsonl`, `.csv` payloads from real browser interactions.
+  - Verification command evidence is captured in this file.
+- Non-goals:
+  - Full visual regression framework.
+  - Scheduler or external publishing integration work.
+  - Broad `web/app.js` modularization.
+- Brainstorming checkpoint (ranked; impact/effort/fit/diff/risk/confidence):
+  1. Browser E2E critical flow in CI (5/4/5/0/2/4) -> selected.
+  2. Browser-driven export payload assertions (.txt/.jsonl/.csv) in CI (4/2/5/0/1/4) -> selected.
+  3. Feed fetch concurrent-limit controls (4/3/4/0/2/3) -> pending.
+  4. Saved filter presets for repeat triage workflows (4/3/4/1/1/3) -> pending.
+  5. Mute-domain quick action in Studio (4/3/4/2/1/3) -> pending.
+  6. Session-persistence edge-case coverage expansion (3/2/4/0/1/4) -> pending.
+  7. CLI `generate --dry-run` diagnostics mode (4/3/4/1/1/3) -> pending.
+- Product phase checkpoint:
+  - Prompt: "Are we in a good product phase yet?" -> No.
+  - Best-in-market signal (untrusted web, bounded scan 2026-02-12): Feedly/Buffer/Sprout/RSS.app/Inoreader all reinforce that reliable automation products validate ingestion-to-output workflows end-to-end and preserve stable export contracts.
+  - Gap map:
+    - Missing: browser-level CI coverage for Studio critical path.
+    - Weak: export contract verification under real browser interactions.
+    - Parity: local feed ingestion interop (URL file + OPML), filtering/rules, draft editing guidance.
+    - Differentiator: local-first drafting + strict private-host safeguards.
+- What features are still pending?
+  - From `PRODUCT_ROADMAP.md`: browser E2E coverage remains the only P1 gap; multiple P2/P3 reliability and UX tasks remain.
+  - From `CLONE_FEATURES.md`: pending list remains >20 items and is prioritized around reliability/interop/UX.
+- Locked task list for this session:
+  - Browser E2E coverage for Studio critical path (`fetch -> generate -> export`) in CI.
+  - Browser-driven export smoke assertions for `.txt`, `.jsonl`, `.csv`.
+- Execution outcome:
+  - Completed: Browser E2E coverage for Studio critical path via Playwright (`scripts/e2e-web.ts`) with deterministic fixture-backed feed fetch.
+  - Completed: Browser-driven export assertions for `.txt`, `.jsonl`, `.csv`, and CI wiring (`.github/workflows/ci.yml`).
+- Signals:
+  - GitHub issue signals: disabled/unavailable.
+  - GitHub CI signals: disabled/unavailable.
+- Trust labels:
+  - Trusted: local code/tests/commands.
+  - Untrusted: external market/reference pages.
+
 ## Recent Decisions
 - Template: YYYY-MM-DD | Decision | Why | Evidence (tests/logs) | Commit | Confidence (high/medium/low) | Trust (trusted/untrusted)
+- 2026-02-12 | Add deterministic browser E2E critical-flow smoke (`fetch -> generate -> export`) and run it in CI with Playwright Chromium install | P1 parity required real browser coverage for the Studio journey and export wiring; deterministic fixtures keep it stable and actionable | `scripts/e2e-web.ts`, `.github/workflows/ci.yml`, `package.json`, `npm run lint`, `npm run typecheck`, `npm run build`, `npm run e2e:web` (`listen EPERM` in this sandbox) | (pending) | medium | trusted
 - 2026-02-12 | Add Studio feed-set OPML import/export with collision-safe import naming | OPML import/export is a baseline interoperability expectation and unlocks migration to/from feed readers with low risk to local-first posture | `web/feedSets.js`, `web/app.js`, `test/feedSets.test.ts`, `npx vitest run test/feedSets.test.ts` | 0c4ba7f | high | trusted
 - 2026-02-12 | Add live over-limit draft editing warnings and one-click trim helper | Users needed immediate visibility and fast correction while manually editing drafts to channel character limits | `web/postEditing.js`, `web/app.js`, `test/postEditing.test.ts`, `npx vitest run test/postEditing.test.ts` | 0c4ba7f | high | trusted
 - 2026-02-12 | Add bounded retry/backoff to feed fetching for transient failures only | Multi-feed reliability was weak during temporary upstream failures; retries improve resilience without hiding persistent 4xx validation errors | `src/lib/feedFetch.ts`, `test/feedFetch.test.ts`, `FEED_JARVIS_CACHE_DIR=/tmp/feed-jarvis-cache-test npx vitest run test/feedFetch.test.ts` | 7a4f349 | high | trusted
@@ -131,13 +175,22 @@
 - Feed fetcher bounded retry/backoff for transient failures (Impact 5, Effort 3, Fit 5, Diff 1, Risk 2, Conf 4).
 - CLI `fetch --urls-file <path>` ingestion with allowlist-preserved fetch path (Impact 4, Effort 2, Fit 5, Diff 0, Risk 1, Conf 5).
 - Studio pasted JSON URL validation (`http/https`) with clear feedback (Impact 4, Effort 2, Fit 5, Diff 0, Risk 1, Conf 5).
+- Browser E2E critical flow coverage in CI (`fetch -> generate -> export`) (Impact 5, Effort 4, Fit 5, Diff 0, Risk 2, Conf 4).
+- Browser-driven export smoke assertions for `.txt`, `.jsonl`, `.csv` (Impact 4, Effort 2, Fit 5, Diff 0, Risk 1, Conf 4).
 - Remaining backlog:
-- Studio E2E (browser) critical flow in CI (Impact 5, Effort 4, Fit 5, Diff 0, Risk 2, Conf 3).
 - Feed fetch concurrent-limit controls for large runs (Impact 4, Effort 3, Fit 4, Diff 0, Risk 2, Conf 3).
 - Save/load filter presets for repeat triage workflows (Impact 4, Effort 3, Fit 4, Diff 1, Risk 1, Conf 3).
+- Browser E2E for Step 4 agent-feed flow (`build -> copy -> download`) (Impact 4, Effort 3, Fit 4, Diff 1, Risk 1, Conf 3).
 
 ## Verification Evidence
 - Template: YYYY-MM-DD | Command | Key output | Status (pass/fail)
+- 2026-02-12 | `npx playwright --version && npx playwright install --list` | `Version 1.58.2` and local Chromium listed in Playwright cache | pass
+- 2026-02-12 | `npm run lint` | `Checked 41 files ... No fixes applied.` | pass
+- 2026-02-12 | `npm run typecheck` | `tsc -p tsconfig.json --noEmit` completed with no errors | pass
+- 2026-02-12 | `npm run build` | `tsc -p tsconfig.build.json` completed with no errors | pass
+- 2026-02-12 | `npm test` | 10 files passed; failures tied to sandbox `listen EPERM` and cache-path write restrictions | fail (env)
+- 2026-02-12 | `npm run smoke:web` | failed in sandbox before script run due `tsx` IPC pipe `listen EPERM` | fail (env)
+- 2026-02-12 | `npm run e2e:web` | failed in sandbox with socket bind restriction `listen EPERM: operation not permitted 127.0.0.1` | fail (env)
 - 2026-02-12 | `git push origin main` | `4a444f6..f739a49 main -> main` | pass
 - 2026-02-12 | `gh run list --branch main --limit 5` | `error connecting to api.github.com` in this environment | fail (env)
 - 2026-02-12 | `make check` | lint/typecheck passed; test phase failed with sandbox `listen EPERM` + cache write EPERM restrictions on this host | fail (env)

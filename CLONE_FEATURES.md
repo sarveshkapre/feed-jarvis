@@ -7,14 +7,12 @@
 - Gaps found during codebase exploration
 
 ## Candidate Features To Do
-- [ ] P1: Add browser-level E2E coverage for Studio critical flow (fetch -> generate -> export) in CI (Playwright). (Impact 5, Effort 4, Fit 5, Diff 0, Risk 2, Conf 3)
 - [ ] P2: Feed fetcher configurable concurrent-fetch limit for large multi-feed runs to reduce network spikes. (Impact 4, Effort 3, Fit 4, Diff 0, Risk 2, Conf 3)
 - [ ] P2: Studio saved filter presets (include/exclude/min-title) for repeatable triage workflows. (Impact 4, Effort 3, Fit 4, Diff 1, Risk 1, Conf 3)
 - [ ] P2: Studio per-item "mute domain" quick action that appends to filter exclusion terms locally. (Impact 4, Effort 3, Fit 4, Diff 2, Risk 1, Conf 3)
 - [ ] P2: Add Studio-side URL normalization helper for pasted feeds (strip whitespace/tracking junk safely). (Impact 3, Effort 2, Fit 4, Diff 0, Risk 2, Conf 3)
 - [ ] P2: Add server-side request id in API error payloads for better troubleshooting in Studio. (Impact 3, Effort 2, Fit 4, Diff 0, Risk 1, Conf 4)
 - [ ] P2: Add retries summary fields to `/api/fetch` response (`retryAttempts`, `retrySuccesses`) for UX visibility. (Impact 3, Effort 2, Fit 4, Diff 0, Risk 1, Conf 3)
-- [ ] P2: Add smoke path for CSV/JSONL export payload shape validation in CI (headers + metadata columns). (Impact 3, Effort 2, Fit 4, Diff 0, Risk 1, Conf 4)
 - [ ] P2: Add targeted unit coverage for session persistence edge cases (invalid snapshots, stale keys, partial payloads). (Impact 3, Effort 2, Fit 4, Diff 0, Risk 1, Conf 4)
 - [ ] P2: Add CLI regression tests for output piping behavior (`EPIPE`) across text/json/jsonl/csv formats. (Impact 3, Effort 2, Fit 4, Diff 0, Risk 1, Conf 4)
 - [ ] P2: Add optional `--dry-run` generation mode with richer diagnostics (invalid items, duplicate URLs, truncation counts). (Impact 4, Effort 3, Fit 4, Diff 1, Risk 1, Conf 3)
@@ -28,8 +26,11 @@
 - [ ] P3: Add benchmark script for feed parse + generation throughput on 1k-item payloads. (Impact 2, Effort 3, Fit 3, Diff 1, Risk 1, Conf 3)
 - [ ] P3: Add feed-set migration helper when storage schema changes (with versioned upgrade path). (Impact 2, Effort 2, Fit 3, Diff 0, Risk 1, Conf 3)
 - [ ] P3: Add copy-ready "trimmed chars" analytics summary after post edits for QA review. (Impact 2, Effort 2, Fit 3, Diff 1, Risk 1, Conf 3)
+- [ ] P3: Add browser E2E path for Step 4 agent feed (`build -> copy -> download`) to reduce regressions in multi-persona timeline UX. (Impact 3, Effort 3, Fit 4, Diff 1, Risk 1, Conf 3)
 
 ## Implemented
+- [x] 2026-02-12 P1: Added browser-level Studio E2E smoke for critical flow (`fetch -> generate -> export`) with deterministic feed fixtures. Evidence: `scripts/e2e-web.ts`, `package.json`, `.github/workflows/ci.yml`; verification: `npm run lint`, `npm run typecheck`, `npm run build`, `npm run e2e:web` (environment blocked in this sandbox: `listen EPERM`), `npx playwright install chromium`.
+- [x] 2026-02-12 P2: Added browser-driven export smoke assertions for `.txt`, `.jsonl`, `.csv` payloads and wired them into CI. Evidence: `scripts/e2e-web.ts`, `.github/workflows/ci.yml`, `CHANGELOG.md`, `README.md`; verification: `npm run lint`, `npm run typecheck`, `npm run build`, `npm run e2e:web` (environment blocked in this sandbox: `listen EPERM`).
 - [x] 2026-02-12 P1: Studio feed-set OPML import/export (local-only) with dedupe-safe parsing and collision-safe naming during import. Evidence: `web/feedSets.js`, `web/feedSets.d.ts`, `web/app.js`, `web/index.html`, `test/feedSets.test.ts`; verification: `npx vitest run test/feedSets.test.ts`, `npm run lint`, `npm run typecheck`, `npm run build`.
 - [x] 2026-02-12 P1: Studio live over-limit draft editing guidance (`current/max` + warning + one-click trim). Evidence: `web/postEditing.js`, `web/postEditing.d.ts`, `web/app.js`, `web/styles.css`, `test/postEditing.test.ts`; verification: `npx vitest run test/postEditing.test.ts`, `npm run lint`, `npm run typecheck`, `npm run build`, `node dist/cli.js generate --input /tmp/feed-jarvis-smoke-items.json --persona Analyst --format jsonl --max-chars 160`.
 - [x] 2026-02-12 P1: Feed fetcher bounded retry/backoff for transient failures (network/timeouts + HTTP 408/429/5xx), honoring existing timeout and stale-cache fallback behavior. Evidence: `src/lib/feedFetch.ts`, `test/feedFetch.test.ts`; verification: `FEED_JARVIS_CACHE_DIR=/tmp/feed-jarvis-cache-test npx vitest run test/feedFetch.test.ts`, `npm run lint`, `npm run typecheck`, `npm run build`.
@@ -64,6 +65,8 @@
 - [x] 2026-02-08 P2: Synced docs with shipped behavior changes. Evidence: `README.md`, `CHANGELOG.md`, `UPDATE.md`.
 
 ## Insights
+- Browser-level coverage is now practical and deterministic by stubbing feed fetches in a local test server and driving real DOM interactions via Playwright.
+- Export verification should stay browser-driven because it catches regressions in both payload construction and download wiring.
 - OPML import/export is now parity-complete in Studio for local feed-set interoperability and migration.
 - Live over-limit feedback in draft editing materially reduces manual QA friction for channel-specific `maxChars` constraints.
 - Bounded retries should only apply to transient classes (network/timeouts + 408/429/5xx); 4xx validation errors should fail fast with no retry.
@@ -72,7 +75,7 @@
 - Local `make check` output matched historical failing GitHub Actions runs exactly, so Biome drift was the root CI failure.
 - Studio fetch security needed a stricter default than CLI: server-side requests can be triggered from browser clients, so private-host blocking now defaults to on for Studio.
 - Disk cache can affect integration tests if URLs are reused; tests should prefer unique URLs or isolated cache settings.
-- Gap map (cycle1): Missing = browser-level Studio E2E; Weak = test automation depth for browser path; Parity = local-first feed grouping with OPML import/export, filters/rules, metadata exports, live over-limit edit guidance; Differentiator = deterministic local-first workflow with strong private-host safeguards.
+- Gap map (cycle1 update): Missing = browser E2E for Step 4 agent feed path; Weak = browser assertion depth beyond critical Step 3 flow; Parity = local-first feed grouping with OPML import/export, filters/rules, metadata exports, and Step 3 E2E; Differentiator = deterministic local-first workflow with strong private-host safeguards.
 - Market scan (untrusted web, cycle1): baseline feed-to-social UX consistently includes reusable content rules and lightweight feed automation/import paths; OPML support and reusable text rules are common interoperability/efficiency expectations.
 - Market scan (untrusted web): RSS-to-social tools emphasize (1) rules/filters (keywords, duplicates), (2) configurable post text (prepend/append, tags/UTMs), (3) queues/scheduling with optional review, and (4) downstream automation/export to schedulers.
 - Market scan (untrusted web, cycle4): auto-publish tools highlight scheduler queue integration and feed-to-channel mapping, with copy review as a differentiator for teams.

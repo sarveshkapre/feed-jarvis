@@ -1,6 +1,8 @@
 # CHANGELOG
 
 ## Unreleased
+- Testing: add browser-level Studio E2E smoke (`fetch -> generate -> export`) using Playwright with deterministic feed fixtures.
+- CI: install Chromium via Playwright and run `npm run e2e:web` after existing checks.
 - Studio UI: add feed-set OPML import/export (local-only) with dedupe-safe parsing and collision-safe set naming.
 - Studio UI: add live over-limit draft warnings (`current/max`) and one-click trim-to-max while editing.
 - Fetch: add bounded retry/backoff for transient network/timeouts and HTTP 408/429/5xx failures while preserving stale-cache fallback behavior.
