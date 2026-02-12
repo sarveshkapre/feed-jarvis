@@ -184,6 +184,8 @@
 
 ## Verification Evidence
 - Template: YYYY-MM-DD | Command | Key output | Status (pass/fail)
+- 2026-02-12 | `git push origin main` | `201d384..a3b6ac6 main -> main` | pass
+- 2026-02-12 | `gh run list --branch main --limit 5` | `error connecting to api.github.com` in this environment | fail (env)
 - 2026-02-12 | `npx playwright --version && npx playwright install --list` | `Version 1.58.2` and local Chromium listed in Playwright cache | pass
 - 2026-02-12 | `npm run lint` | `Checked 41 files ... No fixes applied.` | pass
 - 2026-02-12 | `npm run typecheck` | `tsc -p tsconfig.json --noEmit` completed with no errors | pass
