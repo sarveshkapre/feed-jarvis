@@ -14,6 +14,7 @@ import {
 import {
   applyUtmToUrl,
   type FeedItem,
+  generatePost,
   generatePosts,
   type PostChannel,
   type PostRules,
@@ -310,6 +311,113 @@ async function handleGenerate(
   };
 }
 
+async function handleAgentFeed(
+  body: unknown,
+  personas: Persona[],
+  runtime: RuntimeOptions,
+) {
+  if (!body || typeof body !== "object") {
+    throw new Error("Missing request body.");
+  }
+
+  const items = ensureFeedItems(Reflect.get(body, "items"));
+  if (items.length === 0) {
+    throw new Error("Provide at least one item.");
+  }
+
+  const maxCharsRaw = Number(Reflect.get(body, "maxChars"));
+  const maxChars =
+    Number.isFinite(maxCharsRaw) && maxCharsRaw > 0
+      ? Math.floor(maxCharsRaw)
+      : 280;
+  const channel = resolveChannel(Reflect.get(body, "channel"));
+  const template = resolveTemplate(Reflect.get(body, "template"));
+  const rules = resolveRules(Reflect.get(body, "rules"));
+  const resolvedItems = applyRulesToItems(items, rules);
+  const mode = resolveGenerationMode(Reflect.get(body, "mode"));
+  const personaNames = normalizeStringList(Reflect.get(body, "personaNames"));
+  const personaLimitRaw = Number(Reflect.get(body, "personaLimit"));
+  const personaLimit =
+    Number.isFinite(personaLimitRaw) && personaLimitRaw > 0
+      ? Math.min(100, Math.floor(personaLimitRaw))
+      : 12;
+
+  const selectedPersonas =
+    personaNames.length > 0
+      ? personaNames.map((name) => getPersona(name, personas))
+      : personas.slice(0, personaLimit);
+
+  if (selectedPersonas.length === 0) {
+    throw new Error("No personas available for feed generation.");
+  }
+
+  if (mode === "llm") {
+    const apiKey = runtime.openaiApiKey?.trim();
+    if (!apiKey) {
+      throw new Error(
+        "LLM generation is not configured. Set OPENAI_API_KEY on the server.",
+      );
+    }
+    const model =
+      typeof Reflect.get(body, "llmModel") === "string" &&
+      String(Reflect.get(body, "llmModel")).trim()
+        ? String(Reflect.get(body, "llmModel")).trim()
+        : runtime.llmModel;
+
+    const feed = [];
+    for (let i = 0; i < selectedPersonas.length; i++) {
+      const persona = selectedPersonas[i];
+      if (!persona) continue;
+      const item = resolvedItems[i % resolvedItems.length];
+      if (!item) continue;
+      const posts = await generatePostsWithLlm([item], persona, {
+        apiKey,
+        model,
+        maxChars,
+        channel,
+        template,
+        rules,
+        apiBaseUrl: runtime.openaiBaseUrl,
+        fetchFn: runtime.openaiFetchFn,
+      });
+      feed.push({
+        personaName: persona.name,
+        personaPrefix: persona.prefix,
+        itemTitle: item.title,
+        itemUrl: item.url,
+        post: posts[0] ?? "",
+      });
+    }
+
+    return {
+      feed,
+      mode: "llm",
+      llmModel: model,
+      personasUsed: selectedPersonas.map((persona) => persona.name),
+    };
+  }
+
+  const feed = selectedPersonas.map((persona, index) => {
+    const item = resolvedItems[index % resolvedItems.length];
+    const post = item
+      ? generatePost(item, persona, maxChars, { channel, template, rules })
+      : "";
+    return {
+      personaName: persona.name,
+      personaPrefix: persona.prefix,
+      itemTitle: item?.title ?? "",
+      itemUrl: item?.url ?? "",
+      post,
+    };
+  });
+
+  return {
+    feed,
+    mode: "template",
+    personasUsed: selectedPersonas.map((persona) => persona.name),
+  };
+}
+
 function resolveChannel(value: unknown): PostChannel {
   if (value === "x" || value === "linkedin" || value === "newsletter") {
     return value;
@@ -384,6 +492,13 @@ function resolveRules(value: unknown): PostRules | undefined {
 function resolveGenerationMode(value: unknown): "template" | "llm" {
   if (value === "llm") return "llm";
   return "template";
+}
+
+function normalizeStringList(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((entry) => (typeof entry === "string" ? entry.trim() : ""))
+    .filter(Boolean);
 }
 
 function applyRulesToItems(items: FeedItem[], rules?: PostRules): FeedItem[] {
@@ -531,6 +646,19 @@ export function createStudioServer(options: StudioServerOptions = {}): Server {
         const body = await readJsonBody(req);
         const personas = await personasPromise;
         const payload = await handleGenerate(body, personas, runtimeOptions);
+        sendJson(res, 200, payload);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Request failed.";
+        sendJson(res, 400, { error: message });
+      }
+      return;
+    }
+
+    if (requestUrl.pathname === "/api/agent-feed" && method === "POST") {
+      try {
+        const body = await readJsonBody(req);
+        const personas = await personasPromise;
+        const payload = await handleAgentFeed(body, personas, runtimeOptions);
         sendJson(res, 200, payload);
       } catch (err) {
         const message = err instanceof Error ? err.message : "Request failed.";

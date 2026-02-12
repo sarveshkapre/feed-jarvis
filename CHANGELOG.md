@@ -6,6 +6,7 @@
 - Personas: `--personas` now accepts JSON, a single markdown persona file, or a markdown directory; Studio server can load the same set via `FEED_JARVIS_PERSONAS`.
 - Personas: add a bundled markdown persona pack (`personas/`) with 50+ unique voices/topics; CLI and Studio auto-load it when present.
 - Generation: add GPT mode for Studio + CLI (`--llm`, `--llm-model`) using OpenAI Responses API with concise persona-conditioned prompts.
+- Studio/API: add multi-persona `agent feed` timeline generation (`/api/agent-feed`) with template or GPT mode.
 - Studio UI: save/load named feed sets (local-only presets) for faster repeat workflows.
 - Studio UI: export the filtered item list as `feed-jarvis-items.json` (download + copy to clipboard).
 - CLI: `generate --stats` prints post count + character-length distribution to stderr for quick validation.

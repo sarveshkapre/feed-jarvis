@@ -304,6 +304,43 @@
             <div class="posts" id="postsList"></div>
           </div>
         </article>
+
+        <article class="card" id="step-agent-feed">
+          <div class="card-header">
+            <div>
+              <div class="step-chip">Step 4 · Agent timeline</div>
+              <h2>Build a multi-persona feed</h2>
+              <p>Generate a Twitter-like stream from many personas over your current item set.</p>
+            </div>
+          </div>
+          <div class="controls">
+            <div class="inline-row">
+              <label for="agentPersonaLimit">Persona count</label>
+              <input id="agentPersonaLimit" type="number" min="1" max="100" value="12" />
+            </div>
+            <label for="agentPersonaNames">
+              Persona names (optional)
+              <span>Comma-separated exact names to pin specific agents. Leave empty for top N.</span>
+            </label>
+            <textarea
+              id="agentPersonaNames"
+              placeholder="Macro Hawk, AI Researcher, News Wire"
+            ></textarea>
+            <div class="button-row">
+              <button class="primary" id="buildAgentFeedBtn" type="button">Build agent feed</button>
+              <button class="secondary" id="copyAgentFeedBtn" type="button" disabled>Copy feed</button>
+              <button class="ghost" id="downloadAgentFeedBtn" type="button" disabled>
+                Download feed .json
+              </button>
+            </div>
+            <div class="status" id="agentFeedStatus" role="status" aria-live="polite"></div>
+          </div>
+          <div class="preview">
+            <h3>Agent feed</h3>
+            <div class="empty" id="agentFeedEmpty">Build the agent feed to see the timeline.</div>
+            <div class="posts" id="agentFeedList"></div>
+          </div>
+        </article>
       </section>
 
       <section class="footer">

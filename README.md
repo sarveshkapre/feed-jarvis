@@ -10,6 +10,7 @@ npm run dev:web
 ```
 
 Open `http://localhost:4321` and walk through the three-step flow: load items, choose a persona, export multi-channel drafts.
+Then optionally build a multi-persona timeline in Step 4 (Agent feed).
 
 Run a local smoke verification:
 
@@ -95,6 +96,7 @@ npm run dev -- fetch --opml feeds.opml --allow-host example.com --allow-host new
 - Studio items export: download/copy the filtered item list as `items.json` to move between Studio and CLI.
 - Studio text rules: optional prepend/append/hashtags plus basic UTM tagging while always honoring `maxChars`.
 - Studio generation engines: local template mode or GPT mode (server-side OpenAI key required for GPT).
+- Studio agent feed: build a Twitter-like multi-persona timeline from filtered items (`/api/agent-feed`).
 - Personas: consistent voice with editable prefixes (Studio supports local-only JSON import/export; CLI/Studio server support markdown persona files).
 - Outputs: Studio exports `.txt`, `.jsonl`, and `.csv` drafts (JSONL/CSV include source metadata); CLI supports text/JSON/JSONL/CSV.
 

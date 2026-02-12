@@ -32,6 +32,8 @@ const state = {
   posts: [],
   generatedItems: [],
   generatedMeta: null,
+  agentFeed: [],
+  agentFeedMeta: null,
   feedSets: [],
   rulePresets: [],
   personasBase: [],
@@ -111,6 +113,14 @@ const elements = {
   downloadTxtBtn: document.getElementById("downloadTxtBtn"),
   downloadJsonBtn: document.getElementById("downloadJsonBtn"),
   downloadCsvBtn: document.getElementById("downloadCsvBtn"),
+  agentPersonaLimit: document.getElementById("agentPersonaLimit"),
+  agentPersonaNames: document.getElementById("agentPersonaNames"),
+  buildAgentFeedBtn: document.getElementById("buildAgentFeedBtn"),
+  copyAgentFeedBtn: document.getElementById("copyAgentFeedBtn"),
+  downloadAgentFeedBtn: document.getElementById("downloadAgentFeedBtn"),
+  agentFeedStatus: document.getElementById("agentFeedStatus"),
+  agentFeedList: document.getElementById("agentFeedList"),
+  agentFeedEmpty: document.getElementById("agentFeedEmpty"),
 };
 
 const channelDefaults = {
@@ -376,6 +386,8 @@ function persistSessionSnapshot() {
     generationMode: elements.generationModeSelect.value,
     llmModel: elements.llmModelInput.value,
     maxChars: elements.maxChars.value,
+    agentPersonaLimit: elements.agentPersonaLimit.value,
+    agentPersonaNames: elements.agentPersonaNames.value,
     rulePresetName: elements.rulePresetSelect?.value ?? "",
     rulePrepend: elements.rulePrepend.value,
     ruleAppend: elements.ruleAppend.value,
@@ -484,6 +496,12 @@ function restoreSessionSnapshot() {
       snapshot.maxChars,
     );
     writeChannelMaxCharsByChannel(state.channelMaxCharsByChannel);
+  }
+  if (typeof snapshot.agentPersonaLimit === "string") {
+    elements.agentPersonaLimit.value = snapshot.agentPersonaLimit;
+  }
+  if (typeof snapshot.agentPersonaNames === "string") {
+    elements.agentPersonaNames.value = snapshot.agentPersonaNames;
   }
 
   if (typeof snapshot.personaName === "string") {
@@ -907,13 +925,58 @@ function updatePostsPreview() {
   });
 }
 
-function copyText(text) {
+function updateAgentFeedPreview() {
+  elements.agentFeedList.innerHTML = "";
+  if (!Array.isArray(state.agentFeed) || state.agentFeed.length === 0) {
+    elements.agentFeedEmpty.style.display = "block";
+    elements.copyAgentFeedBtn.disabled = true;
+    elements.downloadAgentFeedBtn.disabled = true;
+    return;
+  }
+
+  elements.agentFeedEmpty.style.display = "none";
+  elements.copyAgentFeedBtn.disabled = false;
+  elements.downloadAgentFeedBtn.disabled = false;
+
+  state.agentFeed.forEach((entry) => {
+    const wrapper = document.createElement("div");
+    wrapper.className = "post-card";
+
+    const source = document.createElement("div");
+    source.className = "post-source";
+
+    const title = document.createElement("div");
+    title.className = "post-source-title";
+    title.textContent = `${entry.personaName ?? "Agent"} · ${entry.itemTitle ?? ""}`;
+    source.appendChild(title);
+
+    const parsed = safeHttpUrl(String(entry.itemUrl ?? ""));
+    if (parsed) {
+      const link = document.createElement("a");
+      link.className = "post-source-link";
+      link.href = parsed.toString();
+      link.target = "_blank";
+      link.rel = "noreferrer noopener";
+      link.textContent = parsed.hostname;
+      source.appendChild(link);
+    }
+
+    const body = document.createElement("div");
+    body.textContent = String(entry.post ?? "");
+
+    wrapper.appendChild(source);
+    wrapper.appendChild(body);
+    elements.agentFeedList.appendChild(wrapper);
+  });
+}
+
+function copyText(text, statusElement = elements.postsStatus) {
   if (!text) return;
   navigator.clipboard.writeText(text).then(
-    () => setStatus(elements.postsStatus, "Copied to clipboard."),
+    () => setStatus(statusElement, "Copied to clipboard."),
     () =>
       setStatus(
-        elements.postsStatus,
+        statusElement,
         "Copy failed. Select the text manually.",
         "error",
       ),
@@ -953,6 +1016,13 @@ function resetDrafts() {
   state.generatedMeta = null;
   updatePostsPreview();
   setStatus(elements.postsStatus, "");
+}
+
+function resetAgentFeed() {
+  state.agentFeed = [];
+  state.agentFeedMeta = null;
+  updateAgentFeedPreview();
+  setStatus(elements.agentFeedStatus, "");
 }
 
 function escapeCsv(value) {
@@ -1037,6 +1107,17 @@ function toDraftsCsv() {
   });
 
   return `${[header, ...lines].join("\n")}\n`;
+}
+
+function toAgentFeedJson() {
+  return `${JSON.stringify(
+    {
+      meta: state.agentFeedMeta ?? {},
+      feed: state.agentFeed ?? [],
+    },
+    null,
+    2,
+  )}\n`;
 }
 
 function mergePersonas(base, overrides) {
@@ -1221,6 +1302,7 @@ async function fetchItems() {
     state.items = Array.isArray(items) ? items : [];
     refreshFilteredItems();
     resetDrafts();
+    resetAgentFeed();
 
     const summary =
       data && typeof data === "object" ? Reflect.get(data, "summary") : null;
@@ -1260,6 +1342,7 @@ function loadItemsFromJson() {
     state.items = items;
     refreshFilteredItems();
     resetDrafts();
+    resetAgentFeed();
     setStatus(elements.jsonStatus, `Loaded ${items.length} items.`);
   } catch (err) {
     setStatus(
@@ -1372,6 +1455,95 @@ async function generatePosts() {
   }
 }
 
+function parsePersonaNames(raw) {
+  if (typeof raw !== "string") return [];
+  return raw
+    .split(",")
+    .map((value) => value.trim())
+    .filter((value) => value.length > 0);
+}
+
+async function buildAgentFeed() {
+  setStatus(elements.agentFeedStatus, "");
+  if (state.items.length === 0) {
+    setStatus(elements.agentFeedStatus, "Load items first.", "error");
+    return;
+  }
+  if (state.filteredItems.length === 0) {
+    setStatus(
+      elements.agentFeedStatus,
+      "No items match your filters. Adjust filters, then try again.",
+      "error",
+    );
+    return;
+  }
+
+  const generationMode =
+    elements.generationModeSelect.value === "llm" ? "llm" : "template";
+  const llmModel = elements.llmModelInput.value.trim() || DEFAULT_LLM_MODEL;
+  const personaLimit = Math.max(
+    1,
+    Math.min(100, Number(elements.agentPersonaLimit.value) || 12),
+  );
+  const personaNames = parsePersonaNames(elements.agentPersonaNames.value);
+  const rules = currentRules();
+  const maxChars = Math.max(1, Number(elements.maxChars.value) || 280);
+  const template = elements.templateSelect.value;
+
+  const payload = {
+    mode: generationMode,
+    llmModel,
+    items: state.filteredItems,
+    personaLimit,
+    personaNames,
+    maxChars,
+    channel: state.channel,
+    template,
+    rules,
+  };
+
+  setButtonLoading(elements.buildAgentFeedBtn, true, "Building...");
+
+  try {
+    const res = await fetch("/api/agent-feed", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const payloadResult = await readApiPayload(res);
+    if (!res.ok) {
+      throw new Error(getApiError(res, payloadResult, "Agent feed failed"));
+    }
+    if (payloadResult.kind !== "json") {
+      throw new Error("Unexpected response while building agent feed.");
+    }
+
+    const data = payloadResult.value;
+    const feed =
+      data && typeof data === "object" ? Reflect.get(data, "feed") : [];
+    state.agentFeed = Array.isArray(feed) ? feed : [];
+    state.agentFeedMeta = {
+      mode: generationMode,
+      llmModel: generationMode === "llm" ? llmModel : null,
+      personaLimit,
+      personaNames,
+    };
+    updateAgentFeedPreview();
+    setStatus(
+      elements.agentFeedStatus,
+      `Built ${state.agentFeed.length} feed post(s).`,
+    );
+  } catch (err) {
+    setStatus(
+      elements.agentFeedStatus,
+      getErrorMessage(err, "Agent feed failed."),
+      "error",
+    );
+  } finally {
+    setButtonLoading(elements.buildAgentFeedBtn, false);
+  }
+}
+
 function wireEvents() {
   elements.sourceButtons.forEach((button) => {
     button.addEventListener("click", () => {
@@ -1454,6 +1626,7 @@ function wireEvents() {
   elements.fetchBtn.addEventListener("click", fetchItems);
   elements.loadJsonBtn.addEventListener("click", loadItemsFromJson);
   elements.generateBtn.addEventListener("click", generatePosts);
+  elements.buildAgentFeedBtn.addEventListener("click", buildAgentFeed);
 
   elements.copyAllBtn.addEventListener("click", () => {
     copyText(state.posts.join("\n"));
@@ -1480,6 +1653,36 @@ function wireEvents() {
       return;
     }
     downloadFile(`feed-jarvis-${state.channel}-drafts.csv`, toDraftsCsv());
+  });
+
+  elements.copyAgentFeedBtn.addEventListener("click", () => {
+    if (!Array.isArray(state.agentFeed) || state.agentFeed.length === 0) {
+      setStatus(
+        elements.agentFeedStatus,
+        "Build the agent feed first.",
+        "error",
+      );
+      return;
+    }
+    copyText(
+      state.agentFeed
+        .map((entry) => `${entry.personaName}: ${entry.post}`)
+        .join("\n"),
+      elements.agentFeedStatus,
+    );
+  });
+
+  elements.downloadAgentFeedBtn.addEventListener("click", () => {
+    if (!Array.isArray(state.agentFeed) || state.agentFeed.length === 0) {
+      setStatus(
+        elements.agentFeedStatus,
+        "Build the agent feed first.",
+        "error",
+      );
+      return;
+    }
+    downloadFile("feed-jarvis-agent-feed.json", toAgentFeedJson());
+    setStatus(elements.agentFeedStatus, "Downloaded feed JSON.");
   });
 
   elements.downloadItemsBtn?.addEventListener("click", () => {
@@ -1565,6 +1768,8 @@ function wireEvents() {
     elements.generationModeSelect,
     elements.llmModelInput,
     elements.maxChars,
+    elements.agentPersonaLimit,
+    elements.agentPersonaNames,
     elements.rulePresetSelect,
     elements.rulePrepend,
     elements.ruleAppend,
@@ -1589,6 +1794,7 @@ function wireEvents() {
   ].forEach((element) => {
     element.addEventListener("input", () => {
       refreshFilteredItems();
+      resetAgentFeed();
       persistSessionSnapshot();
     });
   });
@@ -1605,4 +1811,5 @@ refreshRulePresetSelect();
 wireEvents();
 loadPersonas();
 refreshFilteredItems({ updateStatus: false });
+updateAgentFeedPreview();
 persistSessionSnapshot();

@@ -215,6 +215,86 @@ describe("studio server", () => {
     });
   });
 
+  it("builds a multi-persona agent feed in template mode", async () => {
+    await withServer({}, async (baseUrl) => {
+      const res = await fetch(`${baseUrl}/api/agent-feed`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          items: [
+            { title: "Rates cool off", url: "https://example.com/rates" },
+            { title: "AI infra spend rises", url: "https://example.com/infra" },
+          ],
+          personaLimit: 4,
+          channel: "x",
+          template: "takeaway",
+          maxChars: 220,
+        }),
+      });
+
+      expect(res.status).toBe(200);
+      const payload = await res.json();
+      expect(payload.mode).toBe("template");
+      expect(Array.isArray(payload.feed)).toBe(true);
+      expect(payload.feed).toHaveLength(4);
+      expect(payload.feed[0]).toMatchObject({
+        personaName: expect.any(String),
+        post: expect.stringContaining("https://example.com/"),
+      });
+    });
+  });
+
+  it("builds a multi-persona agent feed in llm mode", async () => {
+    const openaiFetch: typeof fetch = async () => {
+      return new Response(
+        JSON.stringify({
+          output: [
+            {
+              type: "message",
+              content: [
+                {
+                  type: "output_text",
+                  text: "Signal update (confidence: 84/100)",
+                },
+              ],
+            },
+          ],
+        }),
+        {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        },
+      );
+    };
+
+    await withServer(
+      { openaiApiKey: "test-key", openaiFetchFn: openaiFetch },
+      async (baseUrl) => {
+        const res = await fetch(`${baseUrl}/api/agent-feed`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            mode: "llm",
+            items: [
+              { title: "Rates cool off", url: "https://example.com/rates" },
+            ],
+            personaNames: ["Analyst", "Macro Hawk"],
+            llmModel: "gpt-4.1-mini",
+            channel: "x",
+            template: "straight",
+            maxChars: 220,
+          }),
+        });
+
+        expect(res.status).toBe(200);
+        const payload = await res.json();
+        expect(payload.mode).toBe("llm");
+        expect(payload.feed).toHaveLength(2);
+        expect(String(payload.feed[0].post)).toMatch(/confidence/i);
+      },
+    );
+  });
+
   it("blocks localhost feed fetch by default", async () => {
     await withServer({}, async (baseUrl) => {
       const res = await fetch(`${baseUrl}/api/fetch`, {
