@@ -295,6 +295,35 @@ describe("studio server", () => {
     );
   });
 
+  it("supports consensus layout for agent feed", async () => {
+    await withServer({}, async (baseUrl) => {
+      const res = await fetch(`${baseUrl}/api/agent-feed`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          layout: "consensus",
+          items: [
+            { title: "Top event", url: "https://example.com/top" },
+            { title: "Second event", url: "https://example.com/second" },
+          ],
+          personaLimit: 3,
+          channel: "x",
+          template: "straight",
+          maxChars: 220,
+        }),
+      });
+
+      expect(res.status).toBe(200);
+      const payload = await res.json();
+      expect(payload.layout).toBe("consensus");
+      expect(payload.feed).toHaveLength(3);
+      const titles = payload.feed.map(
+        (entry: { itemTitle: string }) => entry.itemTitle,
+      );
+      expect(new Set(titles)).toEqual(new Set(["Top event"]));
+    });
+  });
+
   it("blocks localhost feed fetch by default", async () => {
     await withServer({}, async (baseUrl) => {
       const res = await fetch(`${baseUrl}/api/fetch`, {

@@ -115,6 +115,7 @@ const elements = {
   downloadCsvBtn: document.getElementById("downloadCsvBtn"),
   agentPersonaLimit: document.getElementById("agentPersonaLimit"),
   agentPersonaNames: document.getElementById("agentPersonaNames"),
+  agentLayoutSelect: document.getElementById("agentLayoutSelect"),
   buildAgentFeedBtn: document.getElementById("buildAgentFeedBtn"),
   copyAgentFeedBtn: document.getElementById("copyAgentFeedBtn"),
   downloadAgentFeedBtn: document.getElementById("downloadAgentFeedBtn"),
@@ -388,6 +389,7 @@ function persistSessionSnapshot() {
     maxChars: elements.maxChars.value,
     agentPersonaLimit: elements.agentPersonaLimit.value,
     agentPersonaNames: elements.agentPersonaNames.value,
+    agentLayout: elements.agentLayoutSelect.value,
     rulePresetName: elements.rulePresetSelect?.value ?? "",
     rulePrepend: elements.rulePrepend.value,
     ruleAppend: elements.ruleAppend.value,
@@ -502,6 +504,13 @@ function restoreSessionSnapshot() {
   }
   if (typeof snapshot.agentPersonaNames === "string") {
     elements.agentPersonaNames.value = snapshot.agentPersonaNames;
+  }
+  if (
+    typeof snapshot.agentLayout === "string" &&
+    (snapshot.agentLayout === "rotating" ||
+      snapshot.agentLayout === "consensus")
+  ) {
+    elements.agentLayoutSelect.value = snapshot.agentLayout;
   }
 
   if (typeof snapshot.personaName === "string") {
@@ -1486,6 +1495,8 @@ async function buildAgentFeed() {
     Math.min(100, Number(elements.agentPersonaLimit.value) || 12),
   );
   const personaNames = parsePersonaNames(elements.agentPersonaNames.value);
+  const layout =
+    elements.agentLayoutSelect.value === "consensus" ? "consensus" : "rotating";
   const rules = currentRules();
   const maxChars = Math.max(1, Number(elements.maxChars.value) || 280);
   const template = elements.templateSelect.value;
@@ -1496,6 +1507,7 @@ async function buildAgentFeed() {
     items: state.filteredItems,
     personaLimit,
     personaNames,
+    layout,
     maxChars,
     channel: state.channel,
     template,
@@ -1527,11 +1539,12 @@ async function buildAgentFeed() {
       llmModel: generationMode === "llm" ? llmModel : null,
       personaLimit,
       personaNames,
+      layout,
     };
     updateAgentFeedPreview();
     setStatus(
       elements.agentFeedStatus,
-      `Built ${state.agentFeed.length} feed post(s).`,
+      `Built ${state.agentFeed.length} feed post(s) (${layout}).`,
     );
   } catch (err) {
     setStatus(
@@ -1770,6 +1783,7 @@ function wireEvents() {
     elements.maxChars,
     elements.agentPersonaLimit,
     elements.agentPersonaNames,
+    elements.agentLayoutSelect,
     elements.rulePresetSelect,
     elements.rulePrepend,
     elements.ruleAppend,

@@ -336,6 +336,7 @@ async function handleAgentFeed(
   const resolvedItems = applyRulesToItems(items, rules);
   const mode = resolveGenerationMode(Reflect.get(body, "mode"));
   const personaNames = normalizeStringList(Reflect.get(body, "personaNames"));
+  const layout = resolveAgentFeedLayout(Reflect.get(body, "layout"));
   const personaLimitRaw = Number(Reflect.get(body, "personaLimit"));
   const personaLimit =
     Number.isFinite(personaLimitRaw) && personaLimitRaw > 0
@@ -368,7 +369,7 @@ async function handleAgentFeed(
     for (let i = 0; i < selectedPersonas.length; i++) {
       const persona = selectedPersonas[i];
       if (!persona) continue;
-      const item = resolvedItems[i % resolvedItems.length];
+      const item = pickAgentFeedItem(resolvedItems, i, layout);
       if (!item) continue;
       const posts = await generatePostsWithLlm([item], persona, {
         apiKey,
@@ -393,12 +394,13 @@ async function handleAgentFeed(
       feed,
       mode: "llm",
       llmModel: model,
+      layout,
       personasUsed: selectedPersonas.map((persona) => persona.name),
     };
   }
 
   const feed = selectedPersonas.map((persona, index) => {
-    const item = resolvedItems[index % resolvedItems.length];
+    const item = pickAgentFeedItem(resolvedItems, index, layout);
     const post = item
       ? generatePost(item, persona, maxChars, { channel, template, rules })
       : "";
@@ -414,6 +416,7 @@ async function handleAgentFeed(
   return {
     feed,
     mode: "template",
+    layout,
     personasUsed: selectedPersonas.map((persona) => persona.name),
   };
 }
@@ -499,6 +502,21 @@ function normalizeStringList(value: unknown): string[] {
   return value
     .map((entry) => (typeof entry === "string" ? entry.trim() : ""))
     .filter(Boolean);
+}
+
+function resolveAgentFeedLayout(value: unknown): "rotating" | "consensus" {
+  if (value === "consensus") return "consensus";
+  return "rotating";
+}
+
+function pickAgentFeedItem(
+  items: FeedItem[],
+  index: number,
+  layout: "rotating" | "consensus",
+): FeedItem | undefined {
+  if (items.length === 0) return undefined;
+  if (layout === "consensus") return items[0];
+  return items[index % items.length];
 }
 
 function applyRulesToItems(items: FeedItem[], rules?: PostRules): FeedItem[] {

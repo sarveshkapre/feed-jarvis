@@ -326,6 +326,14 @@
               id="agentPersonaNames"
               placeholder="Macro Hawk, AI Researcher, News Wire"
             ></textarea>
+            <label for="agentLayoutSelect">
+              Feed layout
+              <span>Rotating covers more events. Consensus compares many personas on one event.</span>
+            </label>
+            <select id="agentLayoutSelect">
+              <option value="rotating">Rotating events</option>
+              <option value="consensus">Consensus on top event</option>
+            </select>
             <div class="button-row">
               <button class="primary" id="buildAgentFeedBtn" type="button">Build agent feed</button>
               <button class="secondary" id="copyAgentFeedBtn" type="button" disabled>Copy feed</button>
