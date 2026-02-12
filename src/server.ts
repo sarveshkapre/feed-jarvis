@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { readFile, stat } from "node:fs/promises";
 import { createServer, type Server } from "node:http";
 import path from "node:path";
@@ -25,6 +26,10 @@ const DEFAULT_CACHE_TTL_MS = 15 * 60 * 1000;
 const DEFAULT_TIMEOUT_MS = 12_000;
 const DEFAULT_MAX_BYTES = 1_000_000;
 const DEFAULT_ALLOW_PRIVATE_HOSTS = false;
+const bundledPersonasPath = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "../personas",
+);
 
 const webRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -403,7 +408,9 @@ function resolvePersonasPath(configured?: string): string | undefined {
   const direct = configured?.trim();
   if (direct) return direct;
   const fromEnv = process.env.FEED_JARVIS_PERSONAS?.trim();
-  return fromEnv || undefined;
+  if (fromEnv) return fromEnv;
+  if (existsSync(bundledPersonasPath)) return bundledPersonasPath;
+  return undefined;
 }
 
 async function loadRuntimePersonas(personasPath?: string): Promise<Persona[]> {

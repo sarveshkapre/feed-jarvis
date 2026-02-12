@@ -48,6 +48,10 @@ npm run dev -- personas --personas personas/
 npm run dev -- generate --input events.json --persona "Macro Hawk" --personas personas/
 ```
 
+Bundled persona pack:
+- Repository includes `personas/` with 50+ unique persona contracts.
+- CLI and Studio auto-load this bundled pack when present.
+
 Fetch from an RSS/Atom feed (requires explicit allowlist):
 
 ```bash
@@ -76,7 +80,7 @@ npm run dev -- fetch --opml feeds.opml --allow-host example.com --allow-host new
 - Outputs: Studio exports `.txt`, `.jsonl`, and `.csv` drafts (JSONL/CSV include source metadata); CLI supports text/JSON/JSONL/CSV.
 
 Tip: load/override personas via `--personas` from JSON, a single `.md` persona file, or a directory of `.md` persona files.
-Tip: set `FEED_JARVIS_PERSONAS=/absolute/path/to/personas` to have Studio server load personas from markdown files.
+Tip: set `FEED_JARVIS_PERSONAS=/absolute/path/to/personas` to override Studio personas.
 Tip: write posts to a file with `--out posts.txt` or `--format jsonl` for one JSON string per line.
 
 ## Docs

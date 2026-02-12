@@ -156,6 +156,18 @@ describe("cli", () => {
       rmSync(tmpDir, { recursive: true, force: true });
     }
   });
+
+  it("loads bundled markdown personas by default", () => {
+    const res = spawnSync(
+      "./node_modules/.bin/tsx",
+      ["src/cli.ts", "personas"],
+      { encoding: "utf8" },
+    );
+
+    expect(res.status).toBe(0);
+    expect(String(res.stdout)).toMatch(/Macro Hawk/);
+    expect(String(res.stdout)).toMatch(/Analysis:/);
+  });
 });
 
 function runCli(

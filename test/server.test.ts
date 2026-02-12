@@ -45,6 +45,7 @@ describe("studio server", () => {
       expect(personasRes.status).toBe(200);
       const personasPayload = await personasRes.json();
       expect(Array.isArray(personasPayload.personas)).toBe(true);
+      expect(personasPayload.personas.length).toBeGreaterThan(20);
       expect(
         personasPayload.personas.some((persona: { name: string }) => {
           return persona.name === "Analyst";

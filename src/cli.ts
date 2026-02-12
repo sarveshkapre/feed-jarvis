@@ -1,7 +1,10 @@
 #!/usr/bin/env node
 
+import { existsSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { fetchFeed } from "./lib/feedFetch.js";
 import { parseOpmlUrls } from "./lib/opml.js";
 import {
@@ -9,6 +12,7 @@ import {
   getPersona,
   loadPersonasPath,
   mergePersonas,
+  type Persona,
 } from "./lib/personas.js";
 import {
   applyUtmToUrl,
@@ -22,6 +26,10 @@ import {
 type PackageJson = { name?: string; version?: string };
 const require = createRequire(import.meta.url);
 const pkg = require("../package.json") as PackageJson;
+const bundledPersonasPath = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "../personas",
+);
 
 process.stdout.on("error", (err: unknown) => {
   // Common when users pipe output into tools like `head`.
@@ -40,7 +48,7 @@ Usage:
 Commands:
   fetch      Fetch RSS/Atom and output events JSON
   generate   Generate posts from an input feed
-  personas   List built-in personas
+  personas   List available personas
 
 Fetch options:
   --url <url>               RSS/Atom feed URL (repeatable; required unless --opml provided)
@@ -144,15 +152,16 @@ async function main() {
     }
 
     const personasPath = getOptionalStringFlag(args.flags, "--personas");
+    const basePersonas = await loadBasePersonas();
     const filePersonas = personasPath
       ? await loadPersonasOrDie(personasPath)
       : [];
-    const personas = mergePersonas(DEFAULT_PERSONAS, filePersonas);
+    const personas = mergePersonas(basePersonas, filePersonas);
 
     console.log(
       personasPath
-        ? `Personas (built-in + ${personasPath}):`
-        : "Built-in personas:",
+        ? `Personas (bundled + ${personasPath}):`
+        : `Personas (${describeBasePersonasSource(basePersonas)}):`,
     );
     for (const persona of personas) {
       console.log(`- ${persona.name} (prefix: ${persona.prefix})`);
@@ -292,10 +301,11 @@ async function main() {
     inputPath === "-" ? await readStdin() : await readFile(inputPath, "utf8");
   const items = parseFeedItems(raw);
 
+  const basePersonas = await loadBasePersonas();
   const filePersonas = personasPath
     ? await loadPersonasOrDie(personasPath)
     : [];
-  const personas = mergePersonas(DEFAULT_PERSONAS, filePersonas);
+  const personas = mergePersonas(basePersonas, filePersonas);
   const persona = getPersona(personaName, personas);
   const resolvedItems = applyRulesToItems(items, rules);
   const posts = generatePosts(resolvedItems, persona, maxChars, {
@@ -490,6 +500,28 @@ async function loadPersonasOrDie(path: string) {
     const message = err instanceof Error ? err.message : String(err);
     die(`Invalid personas file '${path}': ${message}`);
   }
+}
+
+async function loadBasePersonas(): Promise<Persona[]> {
+  if (!existsSync(bundledPersonasPath)) {
+    return DEFAULT_PERSONAS;
+  }
+  try {
+    const bundled = await loadPersonasPath(bundledPersonasPath);
+    return mergePersonas(DEFAULT_PERSONAS, bundled);
+  } catch {
+    return DEFAULT_PERSONAS;
+  }
+}
+
+function describeBasePersonasSource(base: Persona[]): string {
+  if (
+    base.length > DEFAULT_PERSONAS.length &&
+    existsSync(bundledPersonasPath)
+  ) {
+    return `bundled markdown pack (${base.length})`;
+  }
+  return `built-in (${base.length})`;
 }
 
 async function loadOpmlUrlsOrDie(paths: string[]): Promise<string[]> {
