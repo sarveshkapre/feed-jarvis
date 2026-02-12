@@ -156,7 +156,22 @@ function ensureFeedItems(raw: unknown): FeedItem[] {
     if (!trimmedTitle || !trimmedUrl) {
       throw new Error(`Invalid item at index ${index}.`);
     }
-    return { title: trimmedTitle, url: trimmedUrl };
+    let parsedUrl: URL;
+    try {
+      parsedUrl = new URL(trimmedUrl);
+    } catch {
+      throw new Error(
+        `Invalid item at index ${index}: url must be an absolute http/https URL.`,
+      );
+    }
+
+    if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
+      throw new Error(
+        `Invalid item at index ${index}: url must use http or https.`,
+      );
+    }
+
+    return { title: trimmedTitle, url: parsedUrl.toString() };
   });
 }
 

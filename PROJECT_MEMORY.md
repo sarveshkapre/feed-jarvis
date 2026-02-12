@@ -7,8 +7,49 @@
 
 ## Open Problems
 
+## Session Notes (2026-02-12 | Cycle 1)
+- Goal: Ship the highest-impact reliability and ingestion parity improvements for Feed Jarvis Studio + CLI.
+- Success criteria:
+  - Bounded retry/backoff is added for transient feed fetch failures with test coverage.
+  - CLI supports `fetch --urls-file <path>` and preserves allowlist/dedupe behavior.
+  - Studio pasted JSON ingestion rejects non-HTTP(S) URLs with clear per-item feedback.
+  - Verification commands and outputs are recorded in this file.
+- Non-goals:
+  - Scheduler or auto-publish integrations.
+  - Hosted/cloud deployment workflows.
+  - Broad UI redesign beyond touched ingestion/editing flows.
+- Brainstorming checkpoint (ranked, scored by impact/effort/fit/diff/risk/confidence):
+  1. Feed fetch bounded retry/backoff for transient failures (5/3/5/1/2/4) -> selected.
+  2. Studio pasted JSON URL validation (`http/https`) (4/2/5/0/1/5) -> selected.
+  3. CLI `fetch --urls-file` ingestion (4/2/5/0/1/5) -> selected.
+  4. Studio OPML import/export feed sets (5/4/5/1/2/3) -> pending.
+  5. Browser E2E critical flow in CI (5/4/5/0/2/3) -> pending.
+  6. Studio live over-limit edit warnings + trim helper (5/3/5/1/1/4) -> pending.
+  7. Fetch concurrent limit control (4/3/4/0/2/3) -> pending.
+  8. Save/load filter presets (4/3/4/1/1/3) -> pending.
+  9. Refactor `web/app.js` into modules (4/4/5/0/2/3) -> pending.
+  10. Export schema/version metadata for downstream tooling (3/2/3/1/1/3) -> pending.
+- Product phase checkpoint:
+  - Prompt: "Are we in a good product phase yet?" -> No.
+  - Best-in-market signal (untrusted web): Feedly/Inoreader/Buffer/Missinglettr highlight ingestion interoperability, rules/filtering, retry/automation resilience, and export/queue bridges as baseline.
+  - Gap map:
+    - Missing: Studio OPML feed-set interoperability, browser E2E critical-flow coverage.
+    - Weak: fetch transient-failure handling, pasted JSON URL validation.
+    - Parity: local rules/filters/presets, metadata exports, multi-persona generation.
+    - Differentiator: local-first workflow + strict private-host safeguards.
+- Locked task list for this cycle:
+  - Feed fetcher bounded retry/backoff.
+  - CLI `fetch --urls-file`.
+  - Studio pasted JSON URL validation.
+- Trust labels:
+  - Trusted: local repository code/tests, local command outputs.
+  - Untrusted: market scan pages and external product docs.
+
 ## Recent Decisions
 - Template: YYYY-MM-DD | Decision | Why | Evidence (tests/logs) | Commit | Confidence (high/medium/low) | Trust (trusted/untrusted)
+- 2026-02-12 | Add bounded retry/backoff to feed fetching for transient failures only | Multi-feed reliability was weak during temporary upstream failures; retries improve resilience without hiding persistent 4xx validation errors | `src/lib/feedFetch.ts`, `test/feedFetch.test.ts`, `FEED_JARVIS_CACHE_DIR=/tmp/feed-jarvis-cache-test npx vitest run test/feedFetch.test.ts` | (pending) | high | trusted
+- 2026-02-12 | Add CLI `fetch --urls-file <path>` ingestion path | URL-list file import is a common feed-workflow parity expectation and low-risk extension of existing allowlist flow | `src/cli.ts`, `test/cli.test.ts`, `README.md`, `CHANGELOG.md`, local CLI run using `--urls-file` | (pending) | high | trusted
+- 2026-02-12 | Enforce `http/https` URL validation for Studio pasted JSON and `/api/generate` items | Broken/non-web URL schemes were leaking into generation/export, reducing output quality and causing invalid links | `web/app.js`, `web/index.html`, `src/server.ts`, `test/server.test.ts` | (pending) | high | trusted
 - 2026-02-12 | Add agent-feed layout modes (`rotating` and `consensus`) across API + Studio UI | Users need both broad scanning and same-event comparison to extract higher-value signal from many personas | `test/server.test.ts` (consensus coverage), `web/index.html` layout selector, `make check` | 7191ccd | high | trusted
 - 2026-02-12 | Add multi-persona agent timeline generation in Studio + server (`/api/agent-feed`) with template/GPT modes | Core product direction is an agent-only high-value feed; timeline generation is the first concrete experience beyond single-persona drafting | `test/server.test.ts` (agent feed coverage), `web/index.html` Step 4, `make check` | 02bab7b | high | trusted
 - 2026-02-12 | Add GPT generation engine (Studio + CLI) backed by OpenAI Responses API with persona-conditioned concise prompts | Product direction requires LLM-generated posts with richer persona character than template-only drafting | `src/lib/llm.ts`, `test/llm.test.ts`, `test/server.test.ts`, `test/cli.test.ts`, `make check` | 2d00147 | high | trusted
@@ -44,17 +85,27 @@
 
 ## Next Prioritized Tasks
 - Scoring rubric: Impact (1-5), Effort (1-5, lower is easier), Strategic fit (1-5), Differentiation (1-5), Risk (1-5, lower is safer), Confidence (1-5).
-- Selected (shipped 2026-02-11):
-- Studio local-only rule presets for text rules (Impact 5, Effort 2, Fit 5, Diff 1, Risk 1, Conf 5).
-- CLI `fetch --opml <path>` ingestion with allowlist-preserved fetch path (Impact 4, Effort 3, Fit 4, Diff 1, Risk 2, Conf 4).
+- Selected (completed in cycle 2026-02-12):
+- Feed fetcher bounded retry/backoff for transient failures (Impact 5, Effort 3, Fit 5, Diff 1, Risk 2, Conf 4).
+- CLI `fetch --urls-file <path>` ingestion with allowlist-preserved fetch path (Impact 4, Effort 2, Fit 5, Diff 0, Risk 1, Conf 5).
+- Studio pasted JSON URL validation (`http/https`) with clear feedback (Impact 4, Effort 2, Fit 5, Diff 0, Risk 1, Conf 5).
 - Remaining backlog:
-- Studio E2E (browser) critical flow in CI (Impact 4, Effort 4, Fit 5, Diff 1, Risk 2, Conf 3).
-- Studio import/export feed sets as OPML (Impact 4, Effort 4, Fit 4, Diff 1, Risk 2, Conf 3).
-- Studio live over-limit edit guidance with one-click trim suggestions (Impact 4, Effort 3, Fit 5, Diff 1, Risk 1, Conf 4).
-- Optional `--llm` generation backend (Impact 4, Effort 4, Fit 4, Diff 3, Risk 4, Conf 2).
+- Studio E2E (browser) critical flow in CI (Impact 5, Effort 4, Fit 5, Diff 0, Risk 2, Conf 3).
+- Studio import/export feed sets as OPML (Impact 5, Effort 4, Fit 5, Diff 1, Risk 2, Conf 3).
+- Studio live over-limit edit guidance with one-click trim suggestions (Impact 5, Effort 3, Fit 5, Diff 1, Risk 1, Conf 4).
+- Feed fetch concurrent-limit controls for large runs (Impact 4, Effort 3, Fit 4, Diff 0, Risk 2, Conf 3).
+- Save/load filter presets for repeat triage workflows (Impact 4, Effort 3, Fit 4, Diff 1, Risk 1, Conf 3).
 
 ## Verification Evidence
 - Template: YYYY-MM-DD | Command | Key output | Status (pass/fail)
+- 2026-02-12 | `npm run lint` | `Checked 37 files ... No fixes applied.` | pass
+- 2026-02-12 | `npm run typecheck` | `tsc -p tsconfig.json --noEmit` completed with no errors | pass
+- 2026-02-12 | `npm run build` | `tsc -p tsconfig.build.json` completed with no errors | pass
+- 2026-02-12 | `FEED_JARVIS_CACHE_DIR=/tmp/feed-jarvis-cache-test npx vitest run test/feedFetch.test.ts` | `Test Files 1 passed; Tests 11 passed` | pass
+- 2026-02-12 | `node dist/cli.js generate --input /tmp/feed-jarvis-smoke-items.json --persona Analyst --format jsonl --max-chars 180` | one JSONL draft emitted (`"Analysis: Release notes shipped ..."` ) | pass
+- 2026-02-12 | `node dist/cli.js fetch --urls-file /tmp/feed-jarvis-urls.txt --allow-host example.org --no-cache --timeout-ms 1000` | parsed new flag path, then failed with `Fetch request failed: fetch failed` due network restrictions | fail (env)
+- 2026-02-12 | `FEED_JARVIS_CACHE_DIR=/tmp/feed-jarvis-cache-test npm run check` | lint/typecheck passed; tests failed in sandbox with `listen EPERM` (server + tsx CLI tests) | fail (env)
+- 2026-02-12 | `curl -I --max-time 5 https://example.com` | `Could not resolve host` | fail (env)
 - 2026-02-12 | `npm run smoke:web` | `Smoke check passed: personas 200, fetch 200, generate 200, index 200.` | pass
 - 2026-02-12 | `make check` | `Test Files 12 passed (12); Tests 62 passed (62)` | pass
 - 2026-02-12 | `make check` | `Test Files 12 passed (12); Tests 61 passed (61)` | pass

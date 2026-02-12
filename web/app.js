@@ -1339,19 +1339,26 @@ function loadItemsFromJson() {
   }
   try {
     const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) throw new Error("Expected a JSON array.");
-    const items = parsed
-      .map((item) => ({
-        title: typeof item.title === "string" ? item.title.trim() : "",
-        url: typeof item.url === "string" ? item.url.trim() : "",
-      }))
-      .filter((item) => item.title && item.url);
-
-    if (items.length === 0) throw new Error("No valid items found.");
+    const { items, invalid } = parseItemsJsonPayload(parsed);
+    if (items.length === 0) {
+      throw new Error(
+        invalid.length > 0
+          ? `No valid items found. ${formatInvalidItemsSummary(invalid)}`
+          : "No valid items found.",
+      );
+    }
     state.items = items;
     refreshFilteredItems();
     resetDrafts();
     resetAgentFeed();
+    if (invalid.length > 0) {
+      setStatus(
+        elements.jsonStatus,
+        `Loaded ${items.length} item(s). Skipped ${invalid.length} invalid item(s). ${formatInvalidItemsSummary(invalid)}`,
+        "error",
+      );
+      return;
+    }
     setStatus(elements.jsonStatus, `Loaded ${items.length} items.`);
   } catch (err) {
     setStatus(
@@ -1360,6 +1367,49 @@ function loadItemsFromJson() {
       "error",
     );
   }
+}
+
+function parseItemsJsonPayload(parsed) {
+  if (!Array.isArray(parsed)) {
+    throw new Error("Expected a JSON array.");
+  }
+
+  const items = [];
+  const invalid = [];
+  for (let i = 0; i < parsed.length; i++) {
+    const raw = parsed[i];
+    if (!raw || typeof raw !== "object") {
+      invalid.push({ index: i, reason: "expected an object with title + url" });
+      continue;
+    }
+
+    const title = typeof raw.title === "string" ? raw.title.trim() : "";
+    const urlRaw = typeof raw.url === "string" ? raw.url.trim() : "";
+    if (!title || !urlRaw) {
+      invalid.push({ index: i, reason: "missing title or url" });
+      continue;
+    }
+
+    const url = safeHttpUrl(urlRaw);
+    if (!url) {
+      invalid.push({ index: i, reason: "url must use http:// or https://" });
+      continue;
+    }
+
+    items.push({ title, url: url.toString() });
+  }
+
+  return { items, invalid };
+}
+
+function formatInvalidItemsSummary(invalid) {
+  if (!Array.isArray(invalid) || invalid.length === 0) return "";
+  const preview = invalid
+    .slice(0, 3)
+    .map((entry) => `#${entry.index + 1}: ${entry.reason}`)
+    .join("; ");
+  const remaining = invalid.length - 3;
+  return remaining > 0 ? `${preview}; +${remaining} more.` : `${preview}.`;
 }
 
 async function generatePosts() {

@@ -1,6 +1,10 @@
 # CHANGELOG
 
 ## Unreleased
+- Fetch: add bounded retry/backoff for transient network/timeouts and HTTP 408/429/5xx failures while preserving stale-cache fallback behavior.
+- CLI: `fetch` now supports `--urls-file <path>` (repeatable) for newline-delimited feed URL ingestion.
+- Studio UI: pasted JSON item import now validates URL protocol (`http/https`) and reports skipped invalid entries.
+- Studio/API: `/api/generate` now rejects non-http(s) item URLs to prevent broken export output.
 - Studio UI: add local-only rule presets (save/load/delete) for optional text rules (`prepend`/`append`/`hashtags`/UTM fields).
 - CLI: `fetch` now supports `--opml <path>` (repeatable) to read feed URLs from local OPML files while preserving host allowlist checks.
 - Personas: `--personas` now accepts JSON, a single markdown persona file, or a markdown directory; Studio server can load the same set via `FEED_JARVIS_PERSONAS`.

@@ -54,6 +54,7 @@ Commands:
 
 Fetch options:
   --url <url>               RSS/Atom feed URL (repeatable; required unless --opml provided)
+  --urls-file <path>        Local newline-delimited URL file (repeatable)
   --opml <path>             Local OPML file with feed URLs (repeatable)
   --allow-host <host>       Allowed host (repeatable; required)
   --out <path|->            Output events JSON path (default: stdout)
@@ -93,6 +94,7 @@ Examples:
   feed-jarvis personas --personas personas.json
   feed-jarvis fetch --url https://example.com/rss.xml --allow-host example.com > events.json
   feed-jarvis fetch --url https://a.com/rss.xml --url https://b.com/atom.xml --allow-host a.com --allow-host b.com > events.json
+  feed-jarvis fetch --urls-file feeds.txt --allow-host example.com > events.json
   feed-jarvis fetch --opml feeds.opml --allow-host example.com --allow-host news.example.com > events.json
   feed-jarvis generate --input events.json --persona Analyst --personas personas.json --out posts.txt
   cat events.json | feed-jarvis generate --input - --persona Builder --format json
@@ -188,12 +190,17 @@ async function main() {
     }
 
     const directUrls = getStringArrayFlag(args.flags, "--url");
+    const urlFilePaths = getStringArrayFlag(args.flags, "--urls-file");
+    const fileUrls =
+      urlFilePaths.length > 0 ? await loadUrlsFilesOrDie(urlFilePaths) : [];
     const opmlPaths = getStringArrayFlag(args.flags, "--opml");
     const opmlUrls =
       opmlPaths.length > 0 ? await loadOpmlUrlsOrDie(opmlPaths) : [];
-    const urls = dedupeStrings([...directUrls, ...opmlUrls]);
+    const urls = dedupeStrings([...directUrls, ...fileUrls, ...opmlUrls]);
     if (urls.length === 0) {
-      dieUsage("Provide one or more --url values or at least one --opml file.");
+      dieUsage(
+        "Provide one or more --url values, --urls-file paths, or at least one --opml file.",
+      );
     }
     const allowHosts = getStringArrayFlag(args.flags, "--allow-host");
     const outPath = getOptionalStringFlag(args.flags, "--out");
@@ -247,6 +254,9 @@ async function main() {
           "Feed Jarvis fetch stats:",
           opmlPaths.length > 0
             ? `- opml files: ${opmlPaths.length} (${opmlUrls.length} url(s))`
+            : undefined,
+          urlFilePaths.length > 0
+            ? `- url files: ${urlFilePaths.length} (${fileUrls.length} url(s))`
             : undefined,
           `- feeds: ${results.length} (${cacheCount} cache, ${networkCount} network)`,
           `- items: ${items.length}`,
@@ -562,6 +572,29 @@ async function loadOpmlUrlsOrDie(paths: string[]): Promise<string[]> {
     const parsedUrls = parseOpmlUrls(raw, 1000);
     if (parsedUrls.length === 0) {
       die(`No valid feed URLs found in OPML file '${path}'.`);
+    }
+    urls.push(...parsedUrls);
+  }
+  return dedupeStrings(urls);
+}
+
+async function loadUrlsFilesOrDie(paths: string[]): Promise<string[]> {
+  const urls: string[] = [];
+  for (const path of paths) {
+    let raw = "";
+    try {
+      raw = await readFile(path, "utf8");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      die(`Unable to read URL file '${path}': ${message}`);
+    }
+
+    const parsedUrls = raw
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0 && !line.startsWith("#"));
+    if (parsedUrls.length === 0) {
+      die(`No valid feed URLs found in URL file '${path}'.`);
     }
     urls.push(...parsedUrls);
   }

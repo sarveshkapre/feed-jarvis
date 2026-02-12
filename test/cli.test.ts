@@ -110,6 +110,59 @@ describe("cli", () => {
     }
   });
 
+  it("supports fetch --urls-file input", async () => {
+    const xml = `<?xml version="1.0"?>\n<rss version="2.0"><channel><item><title>File item</title><link>http://127.0.0.1/item</link></item></channel></rss>`;
+
+    const server = createServer((_req, res) => {
+      res.writeHead(200, { "content-type": "application/rss+xml" });
+      res.end(xml);
+    });
+    await new Promise<void>((resolve) => {
+      server.listen(0, "127.0.0.1", () => resolve());
+    });
+
+    const address = server.address();
+    if (!address || typeof address === "string") {
+      throw new Error("Failed to resolve test server address.");
+    }
+
+    const tmpDir = mkdtempSync(path.join(os.tmpdir(), "feed-jarvis-urls-"));
+    const urlsPath = path.join(tmpDir, "feeds.txt");
+    const feedUrl = `http://127.0.0.1:${address.port}/feed.xml`;
+    writeFileSync(
+      urlsPath,
+      `# comment line\n${feedUrl}\n${feedUrl}\n\n`,
+      "utf8",
+    );
+
+    try {
+      const cli = "./node_modules/.bin/tsx";
+      const args = [
+        "src/cli.ts",
+        "fetch",
+        "--urls-file",
+        urlsPath,
+        "--allow-host",
+        "127.0.0.1",
+        "--no-cache",
+      ];
+
+      const res = await runCli(cli, args);
+
+      expect(res.status).toBe(0);
+      const parsed = JSON.parse(res.stdout);
+      expect(parsed).toEqual([
+        {
+          title: "File item",
+          url: "http://127.0.0.1/item",
+        },
+      ]);
+    } finally {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+      rmSync(tmpDir, { recursive: true, force: true });
+    }
+  });
+
   it("supports markdown persona directories via --personas", () => {
     const tmpDir = mkdtempSync(path.join(os.tmpdir(), "feed-jarvis-personas-"));
     const personasDir = path.join(tmpDir, "personas");

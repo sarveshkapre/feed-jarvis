@@ -103,6 +103,26 @@ describe("studio server", () => {
     });
   });
 
+  it("rejects non-http item urls via /api/generate", async () => {
+    await withServer({}, async (baseUrl) => {
+      const res = await fetch(`${baseUrl}/api/generate`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          items: [{ title: "Release notes", url: "javascript:alert(1)" }],
+          personaName: "Analyst",
+          channel: "x",
+          template: "straight",
+          maxChars: 200,
+        }),
+      });
+
+      expect(res.status).toBe(400);
+      const payload = await res.json();
+      expect(String(payload.error)).toMatch(/http|https/i);
+    });
+  });
+
   it("applies generation rules via /api/generate", async () => {
     await withServer({}, async (baseUrl) => {
       const res = await fetch(`${baseUrl}/api/generate`, {

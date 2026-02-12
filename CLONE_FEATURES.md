@@ -7,26 +7,32 @@
 - Gaps found during codebase exploration
 
 ## Candidate Features To Do
-- [ ] P2: Add browser-level E2E coverage for Studio critical flow (fetch -> generate -> export) in CI (Playwright). (Impact 4, Effort 4, Fit 5, Diff 0, Risk 2, Conf 3)
-- [ ] P2: Studio: import/export feed sets as OPML (local-only) for interoperability with RSS readers. (Impact 4, Effort 4, Fit 4, Diff 1, Risk 2, Conf 3)
-- [ ] P2: Studio: show live "over max chars" warnings while editing generated drafts and expose one-click trim suggestions. (Impact 4, Effort 3, Fit 5, Diff 1, Risk 1, Conf 4)
-- [ ] P2: Studio: validate pasted JSON item URLs (`http/https` only) before generation/export to prevent broken output links. (Impact 4, Effort 2, Fit 4, Diff 0, Risk 1, Conf 5)
-- [ ] P2: CLI: add `fetch --urls-file <path>` for newline-delimited feed URLs with existing allowlist + dedupe behavior. (Impact 3, Effort 2, Fit 4, Diff 0, Risk 1, Conf 4)
-- [ ] P2: Feed fetcher: add bounded retry/backoff for transient 5xx/network failures (still honoring timeout + stale-if-error). (Impact 4, Effort 3, Fit 4, Diff 1, Risk 2, Conf 3)
-- [ ] P2: Feed fetcher: add a configurable concurrent-fetch limit for large multi-feed runs to reduce network spikes. (Impact 3, Effort 3, Fit 4, Diff 0, Risk 2, Conf 3)
-- [ ] P2: Studio: add saved filter presets (include/exclude/min-title) for repeatable triage workflows. (Impact 3, Effort 3, Fit 4, Diff 1, Risk 1, Conf 3)
-- [ ] P2: Studio: add per-item "mute domain" quick action that appends to filter exclusion terms locally. (Impact 3, Effort 3, Fit 4, Diff 2, Risk 1, Conf 3)
-- [ ] P3: Refactor `web/app.js` into focused modules (state, API client, exporters, UI bindings) to reduce maintenance risk. (Impact 3, Effort 4, Fit 5, Diff 0, Risk 2, Conf 3)
-- [ ] P3: Add targeted unit coverage for session persistence edge cases (invalid snapshots, stale keys, partial payloads). (Impact 3, Effort 2, Fit 4, Diff 0, Risk 1, Conf 4)
-- [ ] P3: Add CLI regression tests for output piping behavior (`EPIPE`) across `text/json/jsonl/csv` formats. (Impact 3, Effort 2, Fit 4, Diff 0, Risk 1, Conf 4)
-- [ ] P3: Add smoke path for CSV/JSONL export payload shape validation in CI (headers + metadata columns). (Impact 3, Effort 2, Fit 4, Diff 0, Risk 1, Conf 4)
-- [ ] P3: Document deep command recipes under `docs/` and keep README constrained to quickstart + links (1-2 screens). (Impact 2, Effort 2, Fit 4, Diff 0, Risk 1, Conf 5)
+- [ ] P1: Add browser-level E2E coverage for Studio critical flow (fetch -> generate -> export) in CI (Playwright). (Impact 5, Effort 4, Fit 5, Diff 0, Risk 2, Conf 3)
+- [ ] P1: Studio import/export feed sets as OPML (local-only) for interoperability with RSS readers. (Impact 5, Effort 4, Fit 5, Diff 1, Risk 2, Conf 3)
+- [ ] P1: Studio live "over max chars" warnings while editing drafts plus one-click trim suggestion. (Impact 5, Effort 3, Fit 5, Diff 1, Risk 1, Conf 4)
+- [ ] P2: Feed fetcher configurable concurrent-fetch limit for large multi-feed runs to reduce network spikes. (Impact 4, Effort 3, Fit 4, Diff 0, Risk 2, Conf 3)
+- [ ] P2: Studio saved filter presets (include/exclude/min-title) for repeatable triage workflows. (Impact 4, Effort 3, Fit 4, Diff 1, Risk 1, Conf 3)
+- [ ] P2: Studio per-item "mute domain" quick action that appends to filter exclusion terms locally. (Impact 4, Effort 3, Fit 4, Diff 2, Risk 1, Conf 3)
+- [ ] P2: Add Studio-side URL normalization helper for pasted feeds (strip whitespace/tracking junk safely). (Impact 3, Effort 2, Fit 4, Diff 0, Risk 2, Conf 3)
+- [ ] P2: Add server-side request id in API error payloads for better troubleshooting in Studio. (Impact 3, Effort 2, Fit 4, Diff 0, Risk 1, Conf 4)
+- [ ] P2: Add retries summary fields to `/api/fetch` response (`retryAttempts`, `retrySuccesses`) for UX visibility. (Impact 3, Effort 2, Fit 4, Diff 0, Risk 1, Conf 3)
+- [ ] P2: Add smoke path for CSV/JSONL export payload shape validation in CI (headers + metadata columns). (Impact 3, Effort 2, Fit 4, Diff 0, Risk 1, Conf 4)
+- [ ] P2: Add targeted unit coverage for session persistence edge cases (invalid snapshots, stale keys, partial payloads). (Impact 3, Effort 2, Fit 4, Diff 0, Risk 1, Conf 4)
+- [ ] P2: Add CLI regression tests for output piping behavior (`EPIPE`) across text/json/jsonl/csv formats. (Impact 3, Effort 2, Fit 4, Diff 0, Risk 1, Conf 4)
+- [ ] P2: Add optional `--dry-run` generation mode with richer diagnostics (invalid items, duplicate URLs, truncation counts). (Impact 4, Effort 3, Fit 4, Diff 1, Risk 1, Conf 3)
+- [ ] P2: Add optional output schema versioning metadata in JSON/JSONL exports for stable downstream imports. (Impact 3, Effort 2, Fit 3, Diff 1, Risk 1, Conf 3)
+- [ ] P3: Refactor `web/app.js` into focused modules (state, API client, exporters, UI bindings) to reduce maintenance risk. (Impact 4, Effort 4, Fit 5, Diff 0, Risk 2, Conf 3)
+- [ ] P3: Add Studio keyboard shortcuts for generate/export actions to speed high-volume review loops. (Impact 3, Effort 2, Fit 3, Diff 1, Risk 1, Conf 4)
 - [ ] P3: Add release checklist automation script (version bump + changelog guard + build artifact verification). (Impact 2, Effort 3, Fit 3, Diff 0, Risk 2, Conf 3)
-- [ ] P3: Add optional `--dry-run` generation mode with richer diagnostics (invalid items, duplicate URLs, truncation counts). (Impact 3, Effort 3, Fit 4, Diff 1, Risk 1, Conf 3)
-- [ ] P3: Add Studio keyboard shortcuts for generate/export actions to speed high-volume review loops. (Impact 2, Effort 2, Fit 3, Diff 1, Risk 1, Conf 4)
-- [ ] P3: Implement optional LLM-backed generation behind explicit `--llm` opt-in (roadmap item, default off). (Impact 4, Effort 4, Fit 4, Diff 3, Risk 4, Conf 2)
+- [ ] P3: Document deep command recipes under `docs/` and keep README constrained to quickstart + links (1-2 screens). (Impact 2, Effort 2, Fit 4, Diff 0, Risk 1, Conf 5)
+- [ ] P3: Add persona-card search/filter in Studio for large persona packs (50+). (Impact 3, Effort 2, Fit 3, Diff 1, Risk 1, Conf 4)
+- [ ] P3: Add optional per-persona maxChars override for agent-feed generation workflows. (Impact 3, Effort 3, Fit 3, Diff 1, Risk 2, Conf 3)
+- [ ] P3: Add benchmark script for feed parse + generation throughput on 1k-item payloads. (Impact 2, Effort 3, Fit 3, Diff 1, Risk 1, Conf 3)
 
 ## Implemented
+- [x] 2026-02-12 P1: Feed fetcher bounded retry/backoff for transient failures (network/timeouts + HTTP 408/429/5xx), honoring existing timeout and stale-cache fallback behavior. Evidence: `src/lib/feedFetch.ts`, `test/feedFetch.test.ts`; verification: `FEED_JARVIS_CACHE_DIR=/tmp/feed-jarvis-cache-test npx vitest run test/feedFetch.test.ts`, `npm run lint`, `npm run typecheck`, `npm run build`.
+- [x] 2026-02-12 P1: CLI `fetch --urls-file <path>` support for newline-delimited URL ingestion with preserved allowlist + dedupe flow. Evidence: `src/cli.ts`, `test/cli.test.ts`, `README.md`, `CHANGELOG.md`; verification: `node dist/cli.js fetch --urls-file /tmp/feed-jarvis-urls.txt --allow-host example.org --no-cache --timeout-ms 1000` (expected network-restricted failure in sandbox after parsing file input), `npm run lint`, `npm run typecheck`, `npm run build`.
+- [x] 2026-02-12 P1: Studio pasted JSON URL validation (`http/https` only) plus server-side generation guardrails for non-http(s) URLs. Evidence: `web/app.js`, `web/index.html`, `src/server.ts`, `test/server.test.ts`, `README.md`, `CHANGELOG.md`; verification: `npm run lint`, `npm run typecheck`, `npm run build`.
 - [x] 2026-02-11 P1: Studio: add local-only rule presets (save/load/delete) for optional text rules (`prepend`/`append`/`hashtags`/UTM). Evidence: `web/index.html`, `web/app.js`, `web/styles.css`, `web/rulePresets.js`, `test/rulePresets.test.ts`; verification: `make check`, `npm run smoke:web`.
 - [x] 2026-02-11 P2: CLI: add `fetch --opml <path>` support for local OPML feed URL ingestion with existing host allowlist enforcement. Evidence: `src/cli.ts`, `src/lib/opml.ts`, `test/opml.test.ts`, `test/cli.test.ts`; verification: `make check`, local smoke command (CLI OPML fetch via local HTTP server).
 - [x] 2026-02-10 P2: CLI: `generate --stats` prints post counts + character-length distribution to stderr. Evidence: `src/cli.ts`, `test/cli.test.ts`; verification: `make check`.
@@ -56,6 +62,9 @@
 - [x] 2026-02-08 P2: Synced docs with shipped behavior changes. Evidence: `README.md`, `CHANGELOG.md`, `UPDATE.md`.
 
 ## Insights
+- Bounded retries should only apply to transient classes (network/timeouts + 408/429/5xx); 4xx validation errors should fail fast with no retry.
+- URL-file ingestion provides high-value interoperability with near-zero UX overhead and keeps the same allowlist/safety posture as direct URL inputs.
+- Studio JSON ingestion quality improved by validating URL schemes client-side and server-side, preventing malformed links from reaching exports.
 - Local `make check` output matched historical failing GitHub Actions runs exactly, so Biome drift was the root CI failure.
 - Studio fetch security needed a stricter default than CLI: server-side requests can be triggered from browser clients, so private-host blocking now defaults to on for Studio.
 - Disk cache can affect integration tests if URLs are reused; tests should prefer unique URLs or isolated cache settings.

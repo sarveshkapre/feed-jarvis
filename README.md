@@ -80,6 +80,12 @@ npm run dev -- fetch --url https://example.com/rss.xml --allow-host example.com 
 npm run dev -- generate --input events.json --persona Analyst
 ```
 
+Fetch from a newline-delimited URL file:
+
+```bash
+npm run dev -- fetch --urls-file feeds.txt --allow-host example.com --allow-host news.example.com > events.json
+```
+
 Fetch from a local OPML file (still requires explicit allowlist hosts):
 
 ```bash
@@ -90,6 +96,7 @@ npm run dev -- fetch --opml feeds.opml --allow-host example.com --allow-host new
 - Studio: three-step workspace to fetch items, pick a persona, and edit/export drafts.
 - Local-first: feeds and drafts never leave your machine.
 - Studio persistence: remembers your input mode and form settings across refreshes.
+- Studio JSON input: validates URLs as `http/https` and reports skipped invalid entries.
 - Studio feed sets: save/load named groups of feed URLs (local-only).
 - Studio rule presets: save/load named text-rule bundles (prepend/append/hashtags/UTM) for repeat runs.
 - Studio filters: optionally include/exclude keywords and enforce a minimum title length before generation/export.
@@ -100,6 +107,7 @@ npm run dev -- fetch --opml feeds.opml --allow-host example.com --allow-host new
 - Agent feed layouts: `Rotating events` for broad coverage or `Consensus on top event` for many takes on one event.
 - Personas: consistent voice with editable prefixes (Studio supports local-only JSON import/export; CLI/Studio server support markdown persona files).
 - Outputs: Studio exports `.txt`, `.jsonl`, and `.csv` drafts (JSONL/CSV include source metadata); CLI supports text/JSON/JSONL/CSV.
+- CLI fetch ingestion: supports direct `--url`, newline-delimited `--urls-file`, and OPML (`--opml`) inputs.
 
 Tip: load/override personas via `--personas` from JSON, a single `.md` persona file, or a directory of `.md` persona files.
 Tip: set `FEED_JARVIS_PERSONAS=/absolute/path/to/personas` to override Studio personas.

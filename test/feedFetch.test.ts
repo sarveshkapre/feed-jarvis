@@ -260,4 +260,102 @@ describe("fetchFeed", () => {
       { title: "A", url: "https://good.example/a" },
     ]);
   });
+
+  it("retries transient 5xx failures with bounded backoff", async () => {
+    const xml = `<?xml version="1.0"?>
+<rss version="2.0"><channel>
+  <item><title>A</title><link>https://good.example/a</link></item>
+</channel></rss>`;
+
+    const fetchFn = makeFetch([
+      new Response("upstream failure", { status: 503, statusText: "Busy" }),
+      new Response(xml, { status: 200 }),
+    ]);
+
+    const delays: number[] = [];
+    const result = await fetchFeed("https://good.example/feed.xml", {
+      allowHosts: ["good.example"],
+      cache: false,
+      cacheTtlMs: 0,
+      maxBytes: 1_000_000,
+      maxItems: 10,
+      timeoutMs: 1000,
+      fetchFn,
+      now: () => 0,
+      retryAttempts: 2,
+      retryBackoffMs: 7,
+      sleepFn: async (ms) => {
+        delays.push(ms);
+      },
+    });
+
+    expect(result.source).toBe("network");
+    expect(result.items).toEqual([
+      { title: "A", url: "https://good.example/a" },
+    ]);
+    expect(delays).toEqual([7]);
+  });
+
+  it("retries transient network errors and succeeds", async () => {
+    const xml = `<?xml version="1.0"?>
+<rss version="2.0"><channel>
+  <item><title>A</title><link>https://good.example/a</link></item>
+</channel></rss>`;
+
+    let calls = 0;
+    const fetchFn: typeof fetch = async () => {
+      calls++;
+      if (calls === 1) {
+        throw new Error("network timeout");
+      }
+      return new Response(xml, { status: 200 });
+    };
+
+    const delays: number[] = [];
+    const result = await fetchFeed("https://good.example/feed.xml", {
+      allowHosts: ["good.example"],
+      cache: false,
+      cacheTtlMs: 0,
+      maxBytes: 1_000_000,
+      maxItems: 10,
+      timeoutMs: 1000,
+      fetchFn,
+      now: () => 0,
+      retryAttempts: 2,
+      retryBackoffMs: 11,
+      sleepFn: async (ms) => {
+        delays.push(ms);
+      },
+    });
+
+    expect(result.source).toBe("network");
+    expect(result.items[0]?.title).toBe("A");
+    expect(calls).toBe(2);
+    expect(delays).toEqual([11]);
+  });
+
+  it("does not retry non-transient client errors", async () => {
+    let calls = 0;
+    const fetchFn: typeof fetch = async () => {
+      calls++;
+      return new Response("nope", { status: 404, statusText: "Not Found" });
+    };
+
+    await expect(
+      fetchFeed("https://good.example/feed.xml", {
+        allowHosts: ["good.example"],
+        cache: false,
+        cacheTtlMs: 0,
+        maxBytes: 1_000_000,
+        maxItems: 10,
+        timeoutMs: 1000,
+        fetchFn,
+        now: () => 0,
+        retryAttempts: 3,
+        retryBackoffMs: 1,
+      }),
+    ).rejects.toThrow(/404 Not Found/i);
+
+    expect(calls).toBe(1);
+  });
 });

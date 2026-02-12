@@ -23,6 +23,9 @@ export type FetchFeedOptions = {
   now?: () => number;
   fetchFn?: typeof fetch;
   staleIfError?: boolean;
+  retryAttempts?: number;
+  retryBackoffMs?: number;
+  sleepFn?: (ms: number) => Promise<void>;
 };
 
 export type FetchFeedResult = {
@@ -38,6 +41,9 @@ export async function fetchFeed(
   const fetchFn = options.fetchFn ?? fetch;
   const allowPrivateHosts = options.allowPrivateHosts ?? true;
   const dnsLookupFn = options.dnsLookupFn ?? defaultDnsLookupFn;
+  const retryAttempts = normalizeRetryAttempts(options.retryAttempts);
+  const retryBackoffMs = normalizeRetryBackoffMs(options.retryBackoffMs);
+  const sleepFn = options.sleepFn ?? defaultSleep;
   const parsedUrl = new URL(url);
   if (parsedUrl.protocol !== "https:" && parsedUrl.protocol !== "http:") {
     throw new Error(`Unsupported URL protocol: ${parsedUrl.protocol}`);
@@ -73,16 +79,19 @@ export async function fetchFeed(
     notModified?: boolean;
   };
   try {
-    fetchResult = await fetchXml(
+    fetchResult = await fetchXmlWithRetry({
       url,
-      options.allowHosts,
+      allowHosts: options.allowHosts,
       allowPrivateHosts,
       dnsLookupFn,
-      options.maxBytes,
-      options.timeoutMs,
+      maxBytes: options.maxBytes,
+      timeoutMs: options.timeoutMs,
       fetchFn,
-      cached,
-    );
+      cacheEntry: cached,
+      retryAttempts,
+      retryBackoffMs,
+      sleepFn,
+    });
   } catch (err) {
     if (options.staleIfError && cached) {
       return {
@@ -107,6 +116,51 @@ export async function fetchFeed(
     items: parseFeedXml(fetchResult.xml, options.maxItems),
     source: fetchResult.notModified ? "cache" : "network",
   };
+}
+
+type FetchXmlWithRetryOptions = {
+  url: string;
+  allowHosts: string[];
+  allowPrivateHosts: boolean;
+  dnsLookupFn: DnsLookupFn;
+  maxBytes: number;
+  timeoutMs: number;
+  fetchFn: typeof fetch;
+  cacheEntry?: CacheEntry | null;
+  retryAttempts: number;
+  retryBackoffMs: number;
+  sleepFn: (ms: number) => Promise<void>;
+};
+
+async function fetchXmlWithRetry(options: FetchXmlWithRetryOptions): Promise<{
+  xml: string;
+  etag?: string;
+  lastModified?: string;
+  notModified?: boolean;
+}> {
+  let attempt = 0;
+  while (true) {
+    try {
+      return await fetchXml(
+        options.url,
+        options.allowHosts,
+        options.allowPrivateHosts,
+        options.dnsLookupFn,
+        options.maxBytes,
+        options.timeoutMs,
+        options.fetchFn,
+        options.cacheEntry,
+      );
+    } catch (err) {
+      const canRetry = isRetryableError(err) && attempt < options.retryAttempts;
+      if (!canRetry) throw err;
+      const delayMs = calculateBackoffDelayMs(options.retryBackoffMs, attempt);
+      attempt++;
+      if (delayMs > 0) {
+        await options.sleepFn(delayMs);
+      }
+    }
+  }
 }
 
 function enforceAllowlist(url: URL, allowHosts: string[]): void {
@@ -224,11 +278,20 @@ async function fetchXml(
     if (cacheEntry?.lastModified)
       headers["if-modified-since"] = cacheEntry.lastModified;
 
-    const res = await fetchFn(currentUrl.toString(), {
-      redirect: "manual",
-      signal: AbortSignal.timeout(timeoutMs),
-      headers,
-    });
+    let res: Response;
+    try {
+      res = await fetchFn(currentUrl.toString(), {
+        redirect: "manual",
+        signal: AbortSignal.timeout(timeoutMs),
+        headers,
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      throw createFetchError(
+        `Fetch request failed: ${message}`,
+        isTransientNetworkError(err),
+      );
+    }
 
     if (res.status === 304) {
       if (!cacheEntry) {
@@ -252,7 +315,10 @@ async function fetchXml(
     }
 
     if (!res.ok) {
-      throw new Error(`Fetch failed: ${res.status} ${res.statusText}`);
+      throw createFetchError(
+        `Fetch failed: ${res.status} ${res.statusText}`,
+        isRetryableStatus(res.status),
+      );
     }
 
     const etag = res.headers.get("etag") ?? undefined;
@@ -300,6 +366,67 @@ async function fetchXml(
   }
 
   throw new Error("Too many redirects");
+}
+
+type RetryableError = Error & { retryable?: boolean };
+
+function createFetchError(message: string, retryable: boolean): Error {
+  const error = new Error(message) as RetryableError;
+  if (retryable) error.retryable = true;
+  return error;
+}
+
+function isRetryableError(err: unknown): boolean {
+  if (!err || typeof err !== "object") return false;
+  return Reflect.get(err, "retryable") === true;
+}
+
+function isRetryableStatus(status: number): boolean {
+  return status === 408 || status === 429 || status >= 500;
+}
+
+function isTransientNetworkError(err: unknown): boolean {
+  if (!err || typeof err !== "object") return false;
+  const code = Reflect.get(err, "code");
+  if (
+    code === "ETIMEDOUT" ||
+    code === "ECONNRESET" ||
+    code === "ECONNREFUSED" ||
+    code === "EAI_AGAIN"
+  ) {
+    return true;
+  }
+  const name = Reflect.get(err, "name");
+  if (name === "TimeoutError" || name === "AbortError") {
+    return true;
+  }
+  const message = String(Reflect.get(err, "message") ?? "").toLowerCase();
+  return (
+    message.includes("fetch failed") ||
+    message.includes("timeout") ||
+    message.includes("timed out") ||
+    message.includes("network")
+  );
+}
+
+function normalizeRetryAttempts(value: number | undefined): number {
+  if (!Number.isFinite(value)) return 2;
+  return Math.min(5, Math.max(0, Math.floor(value ?? 0)));
+}
+
+function normalizeRetryBackoffMs(value: number | undefined): number {
+  if (!Number.isFinite(value)) return 250;
+  return Math.max(0, Math.floor(value ?? 0));
+}
+
+function calculateBackoffDelayMs(baseMs: number, attempt: number): number {
+  if (baseMs <= 0) return 0;
+  const multiplier = 2 ** Math.max(0, attempt);
+  return baseMs * multiplier;
+}
+
+async function defaultSleep(ms: number): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 const defaultDnsLookupFn: DnsLookupFn = async (hostname) => {
