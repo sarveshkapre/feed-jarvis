@@ -1,8 +1,90 @@
 # Project Memory
 
-## Historical Summary
-- 2026-02-13T05:12:15Z: compacted memory from 507 lines. Full snapshot archived at /Users/sarvesh/code/feed-jarvis/.clone_memory_archive/PROJECT_MEMORY-20260213T051214Z.md
+## Objective
+- Keep feed-jarvis production-ready. Current focus: Feed Jarvis Studio (`feed-jarvis`). Find the highest-impact pending work, implement it, test it, and push to main.
 
+## Architecture Snapshot
+
+## Open Problems
+
+## Session Notes (2026-02-13 | Global Cycle 4 Session 1)
+- Goal: Deliver production-grade preflight diagnostics for CLI generation and close the highest-value adjacent reliability test gaps.
+- Success criteria:
+  - `feed-jarvis generate --dry-run` reports `valid/invalid/duplicate URL/estimated truncation` diagnostics and exits without post output.
+  - CLI tests cover dry-run behavior and `EPIPE` handling for `text/json/jsonl/csv`.
+  - Session persistence edge-case tests cover invalid snapshots, stale keys, and partial payload fallback behavior.
+  - Verification evidence and tracker updates are recorded.
+- Non-goals:
+  - Scheduler/publishing integrations.
+  - `web/app.js` modularization.
+  - New API surfaces unrelated to this diagnostics/reliability scope.
+- Brainstorming checkpoint (ranked; impact/effort/fit/diff/risk/confidence):
+  1. CLI `generate --dry-run` diagnostics with structured stderr summary (5/3/5/1/1/4) -> selected.
+  2. CLI `EPIPE` regression coverage across all output formats (4/2/5/0/1/4) -> selected.
+  3. Session snapshot edge-case tests (invalid JSON/stale keys/partial payloads) (4/2/5/0/1/4) -> selected.
+  4. `/api/fetch` retry-attempt telemetry in summary payload (3/2/4/0/1/3) -> pending.
+  5. `/api/fetch` latency telemetry (`durationMs`/`slowestFeedMs`) (3/2/4/0/1/3) -> pending.
+  6. Studio persona-card search/filter for 50+ personas (3/2/3/1/1/4) -> pending.
+  7. `web/app.js` modularization pass (4/4/5/0/2/3) -> pending.
+  8. Release checklist automation script (2/3/3/0/2/3) -> pending.
+- Product phase checkpoint:
+  - Prompt: "Are we in a good product phase yet?" -> No.
+  - Best-in-market signal (untrusted web, bounded scan 2026-02-13): Buffer, Sprout, dlvr.it, and Zapier-integrated RSS workflows emphasize preflight confidence, repeatable automation controls, and clear diagnostics before/after publish automation.
+  - Gap map:
+    - Missing: CLI preflight dry-run diagnostics.
+    - Weak: test-depth around pipe-close behavior and session snapshot edge cases.
+    - Parity: ingestion interoperability, bounded retries/concurrency, Studio triage presets and mute controls, metadata exports.
+    - Differentiator: private local-first drafting with multi-persona timeline generation.
+- What features are still pending?
+  - From `PRODUCT_ROADMAP.md`: dry-run diagnostics, session-persistence edge-case coverage, and CLI piping regression tests are immediate reliability priorities.
+  - From `CLONE_FEATURES.md`: candidate backlog remains above the 20-item depth target after cycle-4 replenishment.
+- Locked task list for this session:
+  - Implement CLI `generate --dry-run` diagnostics path.
+  - Add CLI `EPIPE` regression tests for all output formats.
+  - Add session persistence edge-case tests with deterministic assertions.
+- Execution outcome:
+  - Completed: Added `--dry-run` to CLI `generate` and introduced structured preflight diagnostics (`valid/invalid`, duplicate URL counts, estimated truncation counts) with no output writes.
+  - Completed: Added CLI regression coverage for `EPIPE` across `text/json/jsonl/csv` and switched CLI test launch strategy to `node --import tsx` for sandbox compatibility.
+  - Completed: Added `parseStudioSessionSnapshot` sanitization and tests for invalid JSON snapshots, stale key dropping, and partial payload restores.
+  - Completed: Updated `README.md`, `CHANGELOG.md`, `PRODUCT_ROADMAP.md`, and `CLONE_FEATURES.md` to reflect shipped behavior and remaining backlog.
+- Post-ship product phase checkpoint:
+  - Prompt: "Are we in a good product phase yet?" -> No.
+  - Missing now: `/api/fetch` retries/latency diagnostics and API request-id error tracing are the next highest-value reliability/parity items.
+- Signals:
+  - GitHub issue signals: disabled/unavailable.
+  - GitHub CI signals: disabled/unavailable.
+- Quick code review sweep:
+  - `rg TODO|FIXME|HACK|XXX` returned no markers in `src/`, `web/`, `test/`, and docs roots.
+  - Highest-maintenance hotspot remains `web/app.js`; this session keeps UI-touch minimal and test-focused.
+- Trust labels:
+  - Trusted: local repository code/tests/commands.
+  - Untrusted: external market/reference pages.
+
+## Session Notes (2026-02-13 | Global Cycle 3 Session 1)
+- Goal: Close the highest-impact repeat-triage parity gaps by shipping saved filter presets and one-click domain muting in Studio Step 1.
+- Success criteria:
+  - Step 1 supports local save/load/delete for named filter presets (`include`, `exclude`, `minTitleLength`).
+  - Items preview exposes a per-item mute-domain action that updates exclusion filters and immediately re-applies filters.
+  - Filtering supports explicit domain exclusion tokens for URL-host muting without breaking keyword filtering.
+  - Verification commands and outcomes are recorded.
+- Non-goals:
+  - Scheduler/queue publishing integrations.
+  - Large `web/app.js` modularization.
+  - New server endpoint work not required for Step 1 triage UX.
+- Brainstorming checkpoint (ranked; impact/effort/fit/diff/risk/confidence):
+  1. Saved filter presets (`include`/`exclude`/`minTitleLength`) with local persistence + UI controls (5/3/5/1/1/4) -> selected.
+  2. Per-item mute-domain quick action that appends domain exclusion token and re-filters list (5/2/5/2/1/4) -> selected.
+  3. Filter helper module for preset parse/upsert/remove with tests (4/2/5/0/1/5) -> selected.
+  4. Filter telemetry/status enrichment (3/2/4/0/1/3) -> pending.
+  5. CLI `generate --dry-run` diagnostics mode (4/3/4/1/1/3) -> pending.
+  6. Session persistence edge-case tests (3/2/4/0/1/4) -> pending.
+  7. API request-id in error payloads (3/2/4/0/1/4) -> pending.
+  8. `web/app.js` modularization (4/4/5/0/2/3) -> pending.
+- Product phase checkpoint:
+  - Prompt: "Are we in a good product phase yet?" -> No.
+  - Best-in-market signal (untrusted web, bounded scan 2026-02-13): Feedly/Inoreader/RSS.app/Buffer emphasize repeatable filtering and fast muting controls for high-volume feed workflows.
+  - Gap map:
+    - Missing: saved filter presets and item-level mute-domain quick action.
     - Weak: repeat-run triage speed due manual filter re-entry.
     - Parity: OPML + URL-file ingestion, retry/backoff, bounded concurrency, Step 3/4 E2E.
     - Differentiator: private local-first persona-driven drafting.
