@@ -1,9 +1,100 @@
 const CHANNELS = new Set(["x", "linkedin", "newsletter"]);
+const SESSION_SOURCES = new Set(["feed", "json"]);
+const SESSION_TEMPLATES = new Set(["straight", "takeaway", "cta"]);
+const SESSION_MODES = new Set(["template", "llm"]);
+const SESSION_AGENT_LAYOUTS = new Set(["rotating", "consensus"]);
+const SESSION_STRING_FIELDS = [
+  "feedUrls",
+  "feedSetName",
+  "maxItems",
+  "fetchConcurrency",
+  "jsonItems",
+  "filterInclude",
+  "filterExclude",
+  "filterMinTitleLength",
+  "filterPresetName",
+  "personaName",
+  "customPersonaName",
+  "customPersonaPrefix",
+  "maxChars",
+  "agentPersonaLimit",
+  "agentPersonaNames",
+  "rulePresetName",
+  "rulePrepend",
+  "ruleAppend",
+  "ruleHashtags",
+  "utmSource",
+  "utmMedium",
+  "utmCampaign",
+  "llmModel",
+];
 
 function coercePositiveInt(value) {
   const num = typeof value === "number" ? value : Number(value);
   if (!Number.isFinite(num) || num <= 0) return null;
   return Math.floor(num);
+}
+
+function parseEnum(raw, allowed) {
+  if (typeof raw !== "string") return undefined;
+  return allowed.has(raw) ? raw : undefined;
+}
+
+export function parseStudioSessionSnapshot(raw) {
+  if (typeof raw !== "string" || !raw.trim()) return null;
+  let parsed = null;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return null;
+  }
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    return null;
+  }
+
+  const snapshot = {};
+
+  const source = parseEnum(Reflect.get(parsed, "source"), SESSION_SOURCES);
+  if (source) snapshot.source = source;
+
+  const channel = parseEnum(Reflect.get(parsed, "channel"), CHANNELS);
+  if (channel) snapshot.channel = channel;
+
+  const template = parseEnum(
+    Reflect.get(parsed, "template"),
+    SESSION_TEMPLATES,
+  );
+  if (template) snapshot.template = template;
+
+  const generationMode = parseEnum(
+    Reflect.get(parsed, "generationMode"),
+    SESSION_MODES,
+  );
+  if (generationMode) snapshot.generationMode = generationMode;
+
+  const agentLayout = parseEnum(
+    Reflect.get(parsed, "agentLayout"),
+    SESSION_AGENT_LAYOUTS,
+  );
+  if (agentLayout) snapshot.agentLayout = agentLayout;
+
+  for (const key of SESSION_STRING_FIELDS) {
+    const value = Reflect.get(parsed, key);
+    if (typeof value === "string") {
+      snapshot[key] = value;
+    }
+  }
+
+  const dedupe = Reflect.get(parsed, "dedupe");
+  if (typeof dedupe === "boolean") snapshot.dedupe = dedupe;
+  const useCustomPersona = Reflect.get(parsed, "useCustomPersona");
+  if (typeof useCustomPersona === "boolean") {
+    snapshot.useCustomPersona = useCustomPersona;
+  }
+  const utmEnabled = Reflect.get(parsed, "utmEnabled");
+  if (typeof utmEnabled === "boolean") snapshot.utmEnabled = utmEnabled;
+
+  return snapshot;
 }
 
 export function parseChannelMaxChars(raw) {

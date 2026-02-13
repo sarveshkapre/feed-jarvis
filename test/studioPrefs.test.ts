@@ -3,6 +3,7 @@ import {
   formatFetchSummary,
   getMaxCharsForChannel,
   parseChannelMaxChars,
+  parseStudioSessionSnapshot,
   serializeChannelMaxChars,
   setMaxCharsForChannel,
 } from "../web/studioPrefs.js";
@@ -75,5 +76,55 @@ describe("studioPrefs", () => {
     ).toBe(
       "Loaded 6 item(s) from 3 feed(s). (0 cache, 3 network, concurrency 4)",
     );
+  });
+
+  test("returns null for invalid or non-object session snapshots", () => {
+    expect(parseStudioSessionSnapshot("not json")).toBeNull();
+    expect(parseStudioSessionSnapshot(JSON.stringify(["bad"]))).toBeNull();
+    expect(parseStudioSessionSnapshot("")).toBeNull();
+  });
+
+  test("drops stale keys and invalid enum values from session snapshots", () => {
+    const snapshot = parseStudioSessionSnapshot(
+      JSON.stringify({
+        source: "desktop",
+        channel: "mastodon",
+        template: "unknown",
+        generationMode: "auto",
+        agentLayout: "grid",
+        staleKey: "stale",
+        dedupe: true,
+        filterInclude: "ai",
+      }),
+    );
+
+    expect(snapshot).toEqual({
+      dedupe: true,
+      filterInclude: "ai",
+    });
+  });
+
+  test("keeps valid partial snapshot fields", () => {
+    const snapshot = parseStudioSessionSnapshot(
+      JSON.stringify({
+        source: "json",
+        channel: "linkedin",
+        template: "takeaway",
+        generationMode: "llm",
+        agentLayout: "consensus",
+        maxChars: "600",
+        useCustomPersona: false,
+      }),
+    );
+
+    expect(snapshot).toEqual({
+      source: "json",
+      channel: "linkedin",
+      template: "takeaway",
+      generationMode: "llm",
+      agentLayout: "consensus",
+      maxChars: "600",
+      useCustomPersona: false,
+    });
   });
 });

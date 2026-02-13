@@ -76,6 +76,7 @@ Generate options:
   --input <path|->        Path to events JSON, or '-' for stdin (required)
   --persona <name>        Persona name (required)
   --personas <path>       Optional personas source: JSON, markdown file, or markdown directory
+  --dry-run               Validate input and print diagnostics without writing post output
   --max-chars <number>    Max characters per post (default: 280)
   --channel <x|linkedin|newsletter> Target channel style (default: x)
   --template <straight|takeaway|cta> Draft framing template (default: straight)
@@ -100,6 +101,7 @@ Examples:
   feed-jarvis fetch --url https://a.com/rss.xml --url https://b.com/atom.xml --allow-host a.com --allow-host b.com > events.json
   feed-jarvis fetch --urls-file feeds.txt --allow-host example.com > events.json
   feed-jarvis fetch --opml feeds.opml --allow-host example.com --allow-host news.example.com > events.json
+  feed-jarvis generate --input events.json --persona Analyst --dry-run --max-chars 280
   feed-jarvis generate --input events.json --persona Analyst --personas personas.json --out posts.txt
   cat events.json | feed-jarvis generate --input - --persona Builder --format json
 
@@ -303,6 +305,7 @@ async function main() {
 
   const inputPath = getRequiredFlag(args.flags, "--input");
   const personaName = getRequiredFlag(args.flags, "--persona");
+  const dryRun = args.flags.has("--dry-run");
   const maxChars = getNumberFlag(args.flags, "--max-chars", 280, { min: 1 });
   const channel = resolveChannel(getStringFlag(args.flags, "--channel", "x"));
   const template = resolveTemplate(
@@ -334,7 +337,15 @@ async function main() {
 
   const raw =
     inputPath === "-" ? await readStdin() : await readFile(inputPath, "utf8");
-  const items = parseFeedItems(raw);
+  const parsedItems = parseFeedItems(raw);
+  if (!dryRun && parsedItems.invalid.length > 0) {
+    const first = parsedItems.invalid[0];
+    if (first) {
+      die(`Invalid item at index ${first.index}: ${first.reason}`);
+    }
+    die("Invalid input: no valid feed items.");
+  }
+  const items = parsedItems.items;
 
   const basePersonas = await loadBasePersonas();
   const filePersonas = personasPath
@@ -343,6 +354,43 @@ async function main() {
   const personas = mergePersonas(basePersonas, filePersonas);
   const persona = getPersona(personaName, personas);
   const resolvedItems = applyRulesToItems(items, rules);
+
+  if (dryRun) {
+    const duplicateStats = collectDuplicateUrlStats(items);
+    const baselinePosts = generatePosts(resolvedItems, persona, 10_000, {
+      channel,
+      template,
+      rules,
+    });
+    const constrainedPosts = generatePosts(resolvedItems, persona, maxChars, {
+      channel,
+      template,
+      rules,
+    });
+    const truncated = constrainedPosts.filter((post, index) => {
+      const baseline = baselinePosts[index] ?? "";
+      return post.length < baseline.length;
+    }).length;
+
+    console.error(
+      formatDryRunDiagnostics({
+        inputItems: parsedItems.total,
+        validItems: items.length,
+        invalidItems: parsedItems.invalid,
+        duplicateStats,
+        estimatedPosts: constrainedPosts.length,
+        estimatedTruncatedPosts: truncated,
+        maxChars,
+        channel,
+        template,
+        format,
+        outPath,
+        llmRequested,
+      }),
+    );
+    return;
+  }
+
   const posts = llmRequested
     ? await generatePostsWithLlmOrDie({
         items: resolvedItems,
@@ -513,7 +561,18 @@ function getStringArrayFlag(
     .filter((v) => v.length > 0);
 }
 
-function parseFeedItems(raw: string): FeedItem[] {
+type InvalidFeedItem = {
+  index: number;
+  reason: string;
+};
+
+type ParsedFeedItems = {
+  total: number;
+  items: FeedItem[];
+  invalid: InvalidFeedItem[];
+};
+
+function parseFeedItems(raw: string): ParsedFeedItems {
   let parsed: unknown;
   try {
     parsed = JSON.parse(raw);
@@ -525,25 +584,61 @@ function parseFeedItems(raw: string): FeedItem[] {
     die("Invalid input: expected a JSON array of {title, url} items.");
   }
 
+  const invalid: InvalidFeedItem[] = [];
   const items: FeedItem[] = [];
   for (let i = 0; i < parsed.length; i++) {
     const item = parsed[i];
     if (!item || typeof item !== "object") {
-      die(`Invalid item at index ${i}: expected an object.`);
+      invalid.push({
+        index: i,
+        reason: "expected an object with title and url strings.",
+      });
+      continue;
     }
 
     const title = Reflect.get(item, "title");
     const url = Reflect.get(item, "url");
     if (typeof title !== "string" || typeof url !== "string") {
-      die(`Invalid item at index ${i}: expected string 'title' and 'url'.`);
+      invalid.push({
+        index: i,
+        reason: "expected string 'title' and 'url'.",
+      });
+      continue;
     }
-    if (title.trim().length === 0 || url.trim().length === 0) {
-      die(`Invalid item at index ${i}: 'title' and 'url' must be non-empty.`);
+    const trimmedTitle = title.trim();
+    const trimmedUrl = url.trim();
+    if (trimmedTitle.length === 0 || trimmedUrl.length === 0) {
+      invalid.push({
+        index: i,
+        reason: "'title' and 'url' must be non-empty.",
+      });
+      continue;
     }
-    items.push({ title, url });
+    const normalizedUrl = parseHttpUrl(trimmedUrl);
+    if (!normalizedUrl) {
+      invalid.push({
+        index: i,
+        reason: "url must be an absolute http/https URL.",
+      });
+      continue;
+    }
+    items.push({ title: trimmedTitle, url: normalizedUrl });
   }
 
-  return items;
+  return { total: parsed.length, items, invalid };
+}
+
+function parseHttpUrl(raw: string): string | null {
+  let parsed: URL;
+  try {
+    parsed = new URL(raw);
+  } catch {
+    return null;
+  }
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+    return null;
+  }
+  return parsed.toString();
 }
 
 async function loadPersonasOrDie(path: string) {
@@ -637,6 +732,27 @@ type GenerateStatsContext = {
   llmModel?: string;
 };
 
+type DuplicateUrlStats = {
+  duplicateCount: number;
+  uniqueCount: number;
+  samples: string[];
+};
+
+type DryRunDiagnosticsContext = {
+  inputItems: number;
+  validItems: number;
+  invalidItems: InvalidFeedItem[];
+  duplicateStats: DuplicateUrlStats;
+  estimatedPosts: number;
+  estimatedTruncatedPosts: number;
+  maxChars: number;
+  channel: PostChannel;
+  template: PostTemplate;
+  format: string;
+  outPath?: string;
+  llmRequested: boolean;
+};
+
 function formatGenerateStats(
   posts: string[],
   maxChars: number,
@@ -665,6 +781,76 @@ function formatGenerateStats(
     `- chars: min ${min}, p50 ${p50}, p90 ${p90}, avg ${avg}, max ${max}`,
     `- over maxChars (${maxChars}): ${over}`,
   ].join("\n");
+}
+
+function collectDuplicateUrlStats(items: FeedItem[]): DuplicateUrlStats {
+  const counts = new Map<string, number>();
+  for (const item of items) {
+    const key = item.url.trim();
+    if (!key) continue;
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+
+  let duplicateCount = 0;
+  const samples: string[] = [];
+  for (const [url, count] of counts.entries()) {
+    if (count <= 1) continue;
+    duplicateCount += count - 1;
+    if (samples.length < 3) {
+      samples.push(`${url} (x${count})`);
+    }
+  }
+
+  return {
+    duplicateCount,
+    uniqueCount: counts.size,
+    samples,
+  };
+}
+
+function formatDryRunDiagnostics(context: DryRunDiagnosticsContext): string {
+  const invalidSample =
+    context.invalidItems.length > 0
+      ? context.invalidItems
+          .slice(0, 3)
+          .map((entry) => `#${entry.index + 1}: ${entry.reason}`)
+          .join("; ")
+      : "";
+  const remainingInvalid = Math.max(0, context.invalidItems.length - 3);
+  const invalidPreview =
+    invalidSample.length > 0
+      ? remainingInvalid > 0
+        ? `${invalidSample}; +${remainingInvalid} more`
+        : invalidSample
+      : undefined;
+  const duplicatePreview =
+    context.duplicateStats.samples.length > 0
+      ? context.duplicateStats.samples.join("; ")
+      : undefined;
+
+  return [
+    "Feed Jarvis dry run:",
+    context.llmRequested
+      ? "- mode requested: llm (API call skipped in dry run)"
+      : "- mode requested: template",
+    `- input items: ${context.inputItems}`,
+    `- valid items: ${context.validItems}`,
+    `- invalid items: ${context.invalidItems.length}`,
+    `- duplicate urls: ${context.duplicateStats.duplicateCount}`,
+    `- unique urls: ${context.duplicateStats.uniqueCount}`,
+    `- estimated posts: ${context.estimatedPosts}`,
+    `- estimated truncations at maxChars ${context.maxChars}: ${context.estimatedTruncatedPosts}`,
+    `- channel/template: ${context.channel}/${context.template}`,
+    `- output format: ${context.format}`,
+    `- output target: ${
+      !context.outPath || context.outPath === "-" ? "stdout" : context.outPath
+    }`,
+    "- output writes: disabled (--dry-run)",
+    invalidPreview ? `- invalid sample: ${invalidPreview}` : undefined,
+    duplicatePreview ? `- duplicate sample: ${duplicatePreview}` : undefined,
+  ]
+    .filter(Boolean)
+    .join("\n");
 }
 
 type LlmGenerateCliOptions = {

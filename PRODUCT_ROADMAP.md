@@ -24,6 +24,18 @@
 ## Current Milestone
 - M3 Reliability + Interop
 
+## Session Goal Checkpoint (2026-02-13 | Global Cycle 4 Session 1)
+- Goal: Ship preflight CLI diagnostics parity by adding `generate --dry-run` insight mode and close adjacent reliability test gaps.
+- Success criteria:
+  - CLI `generate --dry-run` reports input diagnostics (`valid`, `invalid`, `duplicate URL`, estimated truncation counts) without writing post output.
+  - CLI regression tests cover dry-run behavior and `EPIPE` handling across `text/json/jsonl/csv` output formats.
+  - Session-persistence edge-case tests cover invalid snapshots, stale keys, and partial payload fallbacks.
+  - Verification evidence and tracker updates are captured.
+- Non-goals:
+  - Scheduler/publishing integrations.
+  - `web/app.js` modularization.
+  - New API routes unrelated to diagnostics/reliability.
+
 ## Session Goal Checkpoint (2026-02-13 | Global Cycle 3 Session 1)
 - Goal: Ship repeat-workflow triage parity by adding saved filter presets and one-click domain muting in Studio Step 1.
 - Success criteria:
@@ -175,6 +187,30 @@
   - Remaining highest-value missing parity item: CLI dry-run diagnostics for invalid/duplicate/truncation visibility before publish/export.
   - Remaining weak areas: session-persistence edge-case resilience and large-file maintainability in `web/app.js`.
 
+## Product Phase Checkpoint (2026-02-13 | Global Cycle 4 Session 1)
+- Prompt: "Are we in a good product phase yet?" -> `No`.
+- Best-in-market references (untrusted web, bounded scan):
+  - Buffer Help: RSS automation baseline with feed-to-queue controls (`https://support.buffer.com/article/613-automating-rss-feeds-using-feedly-and-zapier`).
+  - Sprout Social Help: automated feed publishing controls and guardrails (`https://support.sproutsocial.com/hc/en-us/articles/20299161205645-How-do-I-use-Automated-Feed-Publishing-on-the-Professional-and-Advanced-Plans`).
+  - dlvr.it product docs/site: repeat RSS-to-social autopost workflow posture (`https://dlvrit.com/`).
+  - Zapier app integration baseline for RSS -> Buffer automation (`https://zapier.com/apps/buffer/integrations/rss`).
+- Core expected capabilities in this segment:
+  - Preflight confidence before publish/export (preview and diagnostics).
+  - High-signal failure handling for repeated automated runs.
+  - Stable output contracts and safe dry-run checks for tooling pipelines.
+- Parity gap map:
+  - Missing: CLI dry-run diagnostics for invalid/duplicate/truncation visibility.
+  - Weak: resilience coverage for session snapshot parsing and CLI pipe-close behavior.
+  - Parity: feed ingestion interoperability, bounded fetch concurrency/retries, Studio triage controls, metadata-rich exports.
+  - Differentiator: local-first drafting + multi-persona timeline with private-host safeguards.
+
+## Product Phase Checkpoint (2026-02-13 | Global Cycle 4 Session 1 Post-Ship)
+- Prompt: "Are we in a good product phase yet?" -> `No`.
+- Outcome after this session:
+  - Closed missing parity item: CLI preflight dry-run diagnostics for invalid/duplicate/truncation visibility.
+  - Closed weak reliability gaps: session snapshot edge-case coverage and CLI `EPIPE` regression coverage across output formats.
+  - Remaining highest-value parity/reliability items: fetch retry/latency diagnostics in `/api/fetch` summary and targeted API request-id support for troubleshooting.
+
 ## Product Phase Checkpoint (2026-02-12 | Session 3)
 - Prompt: "Are we in a good product phase yet?" -> `No`.
 - Best-in-market references (untrusted web, bounded scan):
@@ -207,6 +243,11 @@
 - [x] P1: Add per-item mute-domain quick action that appends a domain exclusion token and re-filters immediately.
 - [x] P1: Add coverage for filter preset helpers and domain-token filtering behavior.
 
+## Locked Cycle Scope (2026-02-13 | Global Cycle 4 Session 1)
+- [x] P1: Add CLI `generate --dry-run` diagnostics (invalid items, duplicate URLs, truncation counts) without writing post output.
+- [x] P2: Add CLI regression tests for pipe-close (`EPIPE`) behavior across `text/json/jsonl/csv` output formats.
+- [x] P2: Add targeted session-persistence edge-case tests for invalid snapshots, stale keys, and partial payload defaults.
+
 ## Locked Cycle Scope (2026-02-12 | Session 3)
 - [x] P1: Browser-level Studio E2E coverage for critical path (`fetch -> generate -> export`) with deterministic fixtures.
 - [x] P2: Export smoke assertions in CI for `.txt`, `.jsonl`, and `.csv` from the browser-driven flow.
@@ -222,15 +263,18 @@
 - [x] P1: Studio pasted JSON URL validation (`http/https` only) with actionable user feedback.
 
 ## Pending Features (What Is Still Pending?)
-- P2: CLI `generate --dry-run` diagnostics (invalid items, duplicate URLs, truncation counts).
-- P2: Targeted session-persistence edge-case tests (invalid snapshots, stale keys, partial payloads).
-- P2: CLI regression tests for `EPIPE` across text/json/jsonl/csv output formats.
+- P2: Add server-side request id in API error payloads for faster troubleshooting in Studio.
+- P2: Add `/api/fetch` retry summary fields (`retryAttempts`, `retrySuccesses`) for better large-run diagnostics.
+- P2: Add `/api/fetch` latency summary fields (`durationMs`, `slowestFeedMs`) for troubleshooting slow feed batches.
 - P3: Refactor `web/app.js` into smaller modules (state/api/exporters/ui binding).
 - P3: Studio keyboard shortcuts for generation/export actions.
 - P3: Release checklist automation (version bump + changelog guard + artifact verify).
 - P3: Docs split: keep README compact and move deep recipes to `docs/`.
 
 ## Delivered Features (Recent)
+- 2026-02-13: Added CLI `generate --dry-run` preflight diagnostics (`valid/invalid`, duplicate URL counts, estimated truncation counts) with no output writes.
+- 2026-02-13: Added CLI regression coverage for output pipe-close (`EPIPE`) behavior across `text/json/jsonl/csv` formats.
+- 2026-02-13: Added session-persistence snapshot sanitization + tests for invalid JSON, stale keys, and partial payload restore paths.
 - 2026-02-13: Added Studio filter presets (save/load/delete) for Step 1 include/exclude/min-title triage settings with local persistence and session restore support.
 - 2026-02-13: Added Step 1 per-item "Mute domain" action that appends `site:<domain>` exclusions and re-applies filtering immediately.
 - 2026-02-13: Added filter coverage for preset parse/upsert/remove helpers and `site:` domain-token filtering behavior.
@@ -255,6 +299,6 @@
 - Active blockers: none currently.
 
 ## Next Cycle Goals
-- Ship CLI `generate --dry-run` diagnostics for invalid/duplicate/truncation insight before output.
-- Add targeted session-persistence edge-case coverage for invalid snapshots and stale keys.
-- Continue reliability hardening for large feed sets (clearer diagnostics and per-feed latency visibility).
+- Add `/api/fetch` retries/latency diagnostics in summary payloads for large-run troubleshooting.
+- Add API request-id support in error payloads to improve supportability from Studio UI errors.
+- Continue reliability hardening for large feed sets while reducing maintenance risk in `web/app.js`.

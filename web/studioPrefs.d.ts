@@ -2,6 +2,10 @@ export function parseChannelMaxChars(
   raw: string | null | undefined,
 ): Record<string, number>;
 
+export function parseStudioSessionSnapshot(
+  raw: string | null | undefined,
+): Record<string, string | boolean> | null;
+
 export function serializeChannelMaxChars(
   map: Record<string, unknown> | null | undefined,
 ): string;

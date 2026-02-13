@@ -5,11 +5,16 @@ import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
+const CLI_CMD = "node";
+const CLI_BOOTSTRAP_ARGS = ["--import", "tsx", "src/cli.ts"];
+
+function cliArgs(args: string[]): string[] {
+  return [...CLI_BOOTSTRAP_ARGS, ...args];
+}
+
 describe("cli", () => {
   it("supports stdin input via --input -", () => {
-    const cli = "./node_modules/.bin/tsx";
     const args = [
-      "src/cli.ts",
       "generate",
       "--input",
       "-",
@@ -22,7 +27,7 @@ describe("cli", () => {
       { title: "Release notes", url: "https://example.com/r1" },
     ]);
 
-    const res = spawnSync(cli, args, {
+    const res = spawnSync(CLI_CMD, cliArgs(args), {
       input,
       encoding: "utf8",
     });
@@ -33,9 +38,7 @@ describe("cli", () => {
   });
 
   it("prints generate stats to stderr with --stats", () => {
-    const cli = "./node_modules/.bin/tsx";
     const args = [
-      "src/cli.ts",
       "generate",
       "--input",
       "-",
@@ -50,7 +53,7 @@ describe("cli", () => {
       { title: "Launch post", url: "https://example.com/r2" },
     ]);
 
-    const res = spawnSync(cli, args, {
+    const res = spawnSync(CLI_CMD, cliArgs(args), {
       input,
       encoding: "utf8",
     });
@@ -58,6 +61,84 @@ describe("cli", () => {
     expect(res.status).toBe(0);
     expect(String(res.stderr)).toMatch(/Feed Jarvis generate stats:/);
     expect(String(res.stderr)).toMatch(/- posts: 2/);
+  });
+
+  it("reports diagnostics with --dry-run and does not write posts", () => {
+    const args = [
+      "generate",
+      "--input",
+      "-",
+      "--persona",
+      "Analyst",
+      "--max-chars",
+      "40",
+      "--dry-run",
+      "--format",
+      "jsonl",
+    ];
+    const input = JSON.stringify([
+      {
+        title:
+          "A long release note headline that should be truncated for diagnostics",
+        url: "https://example.com/a",
+      },
+      {
+        title: "Duplicate URL",
+        url: "https://example.com/a",
+      },
+      {
+        title: "Missing URL should be invalid",
+        url: "",
+      },
+      {
+        title: "Invalid protocol",
+        url: "ftp://example.com/invalid",
+      },
+    ]);
+
+    const res = spawnSync(CLI_CMD, cliArgs(args), {
+      input,
+      encoding: "utf8",
+    });
+
+    expect(res.status).toBe(0);
+    expect(String(res.stdout)).toBe("");
+    expect(String(res.stderr)).toMatch(/Feed Jarvis dry run:/);
+    expect(String(res.stderr)).toMatch(/- valid items: 2/);
+    expect(String(res.stderr)).toMatch(/- invalid items: 2/);
+    expect(String(res.stderr)).toMatch(/- duplicate urls: 1/);
+    expect(String(res.stderr)).toMatch(
+      /- estimated truncations at maxChars 40: [1-9]\d*/,
+    );
+    expect(String(res.stderr)).toContain(
+      "- output writes: disabled (--dry-run)",
+    );
+  });
+
+  it("handles EPIPE cleanly across output formats", () => {
+    const tmpDir = mkdtempSync(path.join(os.tmpdir(), "feed-jarvis-epipe-"));
+    const inputPath = path.join(tmpDir, "items.json");
+    const items = Array.from({ length: 40 }, (_unused, index) => ({
+      title: `News item ${index.toString(10)} with long title for pipe test`,
+      url: `https://example.com/${index.toString(10)}`,
+    }));
+    writeFileSync(inputPath, JSON.stringify(items), "utf8");
+
+    try {
+      const formats = ["text", "json", "jsonl", "csv"] as const;
+      for (const format of formats) {
+        const command = [
+          "set -o pipefail",
+          `cat ${shellEscape(inputPath)} | node --import tsx src/cli.ts generate --input - --persona Analyst --max-chars 120 --format ${format} | head -n 1 > /dev/null`,
+        ].join("; ");
+        const res = spawnSync("bash", ["-lc", command], {
+          encoding: "utf8",
+        });
+        expect(res.status, `format=${format}\n${res.stderr}`).toBe(0);
+      }
+    } finally {
+      rmSync(tmpDir, { recursive: true, force: true });
+    }
   });
 
   it("supports fetch --opml input", async () => {
@@ -83,9 +164,7 @@ describe("cli", () => {
     writeFileSync(opmlPath, opml, "utf8");
 
     try {
-      const cli = "./node_modules/.bin/tsx";
       const args = [
-        "src/cli.ts",
         "fetch",
         "--opml",
         opmlPath,
@@ -94,7 +173,7 @@ describe("cli", () => {
         "--no-cache",
       ];
 
-      const res = await runCli(cli, args);
+      const res = await runCli(args);
 
       expect(res.status).toBe(0);
       const parsed = JSON.parse(res.stdout);
@@ -136,9 +215,7 @@ describe("cli", () => {
     );
 
     try {
-      const cli = "./node_modules/.bin/tsx";
       const args = [
-        "src/cli.ts",
         "fetch",
         "--urls-file",
         urlsPath,
@@ -147,7 +224,7 @@ describe("cli", () => {
         "--no-cache",
       ];
 
-      const res = await runCli(cli, args);
+      const res = await runCli(args);
 
       expect(res.status).toBe(0);
       const parsed = JSON.parse(res.stdout);
@@ -199,8 +276,7 @@ describe("cli", () => {
     writeFileSync(urlsPath, `${urls.join("\n")}\n`, "utf8");
 
     try {
-      const res = await runCli("./node_modules/.bin/tsx", [
-        "src/cli.ts",
+      const res = await runCli([
         "fetch",
         "--urls-file",
         urlsPath,
@@ -250,9 +326,8 @@ describe("cli", () => {
       );
 
       const res = spawnSync(
-        "./node_modules/.bin/tsx",
-        [
-          "src/cli.ts",
+        CLI_CMD,
+        cliArgs([
           "generate",
           "--input",
           inputPath,
@@ -262,7 +337,7 @@ describe("cli", () => {
           personasDir,
           "--max-chars",
           "220",
-        ],
+        ]),
         { encoding: "utf8" },
       );
 
@@ -274,11 +349,7 @@ describe("cli", () => {
   });
 
   it("loads bundled markdown personas by default", () => {
-    const res = spawnSync(
-      "./node_modules/.bin/tsx",
-      ["src/cli.ts", "personas"],
-      { encoding: "utf8" },
-    );
+    const res = spawnSync(CLI_CMD, cliArgs(["personas"]), { encoding: "utf8" });
 
     expect(res.status).toBe(0);
     expect(String(res.stdout)).toMatch(/Macro Hawk/);
@@ -302,16 +373,15 @@ describe("cli", () => {
       delete env.OPENAI_API_KEY;
 
       const res = spawnSync(
-        "./node_modules/.bin/tsx",
-        [
-          "src/cli.ts",
+        CLI_CMD,
+        cliArgs([
           "generate",
           "--input",
           inputPath,
           "--persona",
           "Analyst",
           "--llm",
-        ],
+        ]),
         {
           encoding: "utf8",
           env,
@@ -327,11 +397,10 @@ describe("cli", () => {
 });
 
 function runCli(
-  cmd: string,
   args: string[],
 ): Promise<{ status: number | null; stdout: string; stderr: string }> {
   return new Promise((resolve, reject) => {
-    const child = spawn(cmd, args, {
+    const child = spawn(CLI_CMD, cliArgs(args), {
       stdio: ["ignore", "pipe", "pipe"],
     });
 
@@ -354,4 +423,8 @@ function runCli(
       });
     });
   });
+}
+
+function shellEscape(value: string): string {
+  return `'${value.replace(/'/g, `'\\''`)}'`;
 }

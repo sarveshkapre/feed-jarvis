@@ -27,6 +27,7 @@ import {
   formatFetchSummary,
   getMaxCharsForChannel,
   parseChannelMaxChars,
+  parseStudioSessionSnapshot,
   serializeChannelMaxChars,
   setMaxCharsForChannel,
 } from "./studioPrefs.js";
@@ -398,10 +399,7 @@ function setChannel(channel, { syncMaxChars = true, persist = true } = {}) {
 function readSessionSnapshot() {
   try {
     const raw = window.localStorage.getItem(STUDIO_SESSION_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    if (!parsed || typeof parsed !== "object") return null;
-    return parsed;
+    return parseStudioSessionSnapshot(raw);
   } catch {
     return null;
   }

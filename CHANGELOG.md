@@ -1,6 +1,9 @@
 # CHANGELOG
 
 ## Unreleased
+- CLI: add `generate --dry-run` preflight diagnostics mode (valid/invalid item counts, duplicate URL counts, estimated truncation counts) with no output writes.
+- Testing: add CLI regression coverage for `EPIPE` output piping behavior across `text/json/jsonl/csv` formats.
+- Testing: add session persistence edge-case coverage for invalid snapshots, stale keys, and partial snapshot payloads.
 - Studio UI: add local-only Step 1 filter presets (save/load/delete) for include/exclude/min-title triage settings.
 - Studio UI: add per-item "Mute domain" quick action in item preview and support `site:`/`domain:` exclusion tokens.
 - Testing: add filter preset helper coverage and domain-token filtering tests.

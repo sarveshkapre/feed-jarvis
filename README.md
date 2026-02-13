@@ -54,6 +54,14 @@ cat events.json | npm run dev -- generate --input - --persona Analyst --format c
   --utm-source feed-jarvis --utm-medium social > drafts.csv
 ```
 
+Run a preflight diagnostics pass before generating/exporting drafts:
+
+```bash
+npm run dev -- generate --input events.json --persona Analyst --dry-run --max-chars 280
+```
+
+`--dry-run` validates input and prints diagnostics for valid/invalid items, duplicate URLs, and estimated truncation counts without writing post output.
+
 Generate posts with OpenAI (GPT) instead of template rules:
 
 ```bash

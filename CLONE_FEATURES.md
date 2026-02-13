@@ -11,10 +11,10 @@
 - [ ] P2: Add server-side request id in API error payloads for better troubleshooting in Studio. (Impact 3, Effort 2, Fit 4, Diff 0, Risk 1, Conf 4)
 - [ ] P2: Add retries summary fields to `/api/fetch` response (`retryAttempts`, `retrySuccesses`) for UX visibility. (Impact 3, Effort 2, Fit 4, Diff 0, Risk 1, Conf 3)
 - [ ] P2: Add fetch latency telemetry fields to `/api/fetch` summary (`durationMs`, `slowestFeedMs`) for large-run troubleshooting. (Impact 3, Effort 2, Fit 4, Diff 0, Risk 1, Conf 3)
-- [ ] P2: Add targeted unit coverage for session persistence edge cases (invalid snapshots, stale keys, partial payloads). (Impact 3, Effort 2, Fit 4, Diff 0, Risk 1, Conf 4)
-- [ ] P2: Add CLI regression tests for output piping behavior (`EPIPE`) across text/json/jsonl/csv formats. (Impact 3, Effort 2, Fit 4, Diff 0, Risk 1, Conf 4)
-- [ ] P2: Add optional `--dry-run` generation mode with richer diagnostics (invalid items, duplicate URLs, truncation counts). (Impact 4, Effort 3, Fit 4, Diff 1, Risk 1, Conf 3)
 - [ ] P2: Add optional output schema versioning metadata in JSON/JSONL exports for stable downstream imports. (Impact 3, Effort 2, Fit 3, Diff 1, Risk 1, Conf 3)
+- [ ] P2: Add `--diagnostics-json` machine-readable dry-run output for CI/pipeline ingestion. (Impact 3, Effort 2, Fit 4, Diff 1, Risk 1, Conf 3)
+- [ ] P3: Add Studio quick action to insert a valid sample `items.json` payload into Step 1 JSON mode. (Impact 2, Effort 1, Fit 3, Diff 0, Risk 1, Conf 4)
+- [ ] P3: Add CLI troubleshooting doc page in `docs/` (invalid input, dry-run, stdin/pipes, private-host fetch limits). (Impact 2, Effort 2, Fit 4, Diff 0, Risk 1, Conf 5)
 - [ ] P3: Refactor `web/app.js` into focused modules (state, API client, exporters, UI bindings) to reduce maintenance risk. (Impact 4, Effort 4, Fit 5, Diff 0, Risk 2, Conf 3)
 - [ ] P3: Add Studio keyboard shortcuts for generate/export actions to speed high-volume review loops. (Impact 3, Effort 2, Fit 3, Diff 1, Risk 1, Conf 4)
 - [ ] P3: Add release checklist automation script (version bump + changelog guard + build artifact verification). (Impact 2, Effort 3, Fit 3, Diff 0, Risk 2, Conf 3)
@@ -31,6 +31,9 @@
 - [ ] P3: Add filter-token chips UI (`keyword`/`site:`) with one-click remove for faster triage edits. (Impact 2, Effort 3, Fit 3, Diff 1, Risk 1, Conf 3)
 
 ## Implemented
+- [x] 2026-02-13 P1: Added CLI `generate --dry-run` diagnostics (`valid/invalid`, duplicate URLs, estimated truncation count) with no output writes. Evidence: `src/cli.ts`, `README.md`, `CHANGELOG.md`, `test/cli.test.ts`; verification: `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/cli.test.ts -t "reports diagnostics with --dry-run and does not write posts|handles EPIPE cleanly across output formats"`, `node dist/cli.js generate --input /tmp/feed-jarvis-cycle4-items.json --persona Analyst --max-chars 60 --dry-run --format csv`.
+- [x] 2026-02-13 P2: Added CLI regression coverage for output pipe-close (`EPIPE`) behavior across `text/json/jsonl/csv` and updated CLI tests to use `node --import tsx` execution in sandbox-restricted environments. Evidence: `test/cli.test.ts`; verification: `npx vitest run test/cli.test.ts -t "reports diagnostics with --dry-run and does not write posts|handles EPIPE cleanly across output formats"`.
+- [x] 2026-02-13 P2: Added session snapshot sanitization and edge-case coverage (invalid JSON snapshots, stale keys dropped, partial payload preserved). Evidence: `web/studioPrefs.js`, `web/studioPrefs.d.ts`, `web/app.js`, `test/studioPrefs.test.ts`; verification: `npx vitest run test/studioPrefs.test.ts`, `npm run lint`, `npm run typecheck`, `npm run build`.
 - [x] 2026-02-13 P1: Added Studio filter presets for Step 1 triage (save/load/delete named include/exclude/min-title settings) with local persistence and session restore support. Evidence: `web/filterPresets.js`, `web/filterPresets.d.ts`, `web/app.js`, `web/index.html`, `test/filterPresets.test.ts`; verification: `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/filterPresets.test.ts test/filters.test.ts`.
 - [x] 2026-02-13 P1: Added per-item "Mute domain" quick action in Step 1 preview that appends `site:<domain>` exclusions and re-filters immediately. Evidence: `web/app.js`, `web/index.html`, `web/styles.css`, `web/filters.js`, `test/filters.test.ts`; verification: `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/filterPresets.test.ts test/filters.test.ts`.
 - [x] 2026-02-13 P1: Added filter matching support for explicit `site:`/`domain:` tokens (subdomain-aware) to harden domain-level triage muting. Evidence: `web/filters.js`, `test/filters.test.ts`; verification: `npx vitest run test/filters.test.ts`.
@@ -74,6 +77,8 @@
 - [x] 2026-02-08 P2: Synced docs with shipped behavior changes. Evidence: `README.md`, `CHANGELOG.md`, `UPDATE.md`.
 
 ## Insights
+- CLI tests are more resilient in sandboxed environments when launched as `node --import tsx src/cli.ts` instead of invoking the `tsx` binary directly (which may require IPC `listen` permissions).
+- A no-write `--dry-run` path gives high-signal preflight diagnostics without changing generation/export behavior for strict production runs.
 - `site:<domain>` exclusion tokens give an explicit, low-ambiguity path for domain muting without changing existing free-text filter UX.
 - Saving filter presets closes a repeat-workflow parity gap and reduces setup friction for high-frequency feed triage sessions.
 - Step 4 UI actions (`build -> copy -> download`) now have deterministic browser assertions, reducing regression blind spots between timeline rendering and export/copy wiring.

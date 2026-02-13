@@ -7,6 +7,59 @@
 
 ## Open Problems
 
+## Session Notes (2026-02-13 | Global Cycle 4 Session 1)
+- Goal: Deliver production-grade preflight diagnostics for CLI generation and close the highest-value adjacent reliability test gaps.
+- Success criteria:
+  - `feed-jarvis generate --dry-run` reports `valid/invalid/duplicate URL/estimated truncation` diagnostics and exits without post output.
+  - CLI tests cover dry-run behavior and `EPIPE` handling for `text/json/jsonl/csv`.
+  - Session persistence edge-case tests cover invalid snapshots, stale keys, and partial payload fallback behavior.
+  - Verification evidence and tracker updates are recorded.
+- Non-goals:
+  - Scheduler/publishing integrations.
+  - `web/app.js` modularization.
+  - New API surfaces unrelated to this diagnostics/reliability scope.
+- Brainstorming checkpoint (ranked; impact/effort/fit/diff/risk/confidence):
+  1. CLI `generate --dry-run` diagnostics with structured stderr summary (5/3/5/1/1/4) -> selected.
+  2. CLI `EPIPE` regression coverage across all output formats (4/2/5/0/1/4) -> selected.
+  3. Session snapshot edge-case tests (invalid JSON/stale keys/partial payloads) (4/2/5/0/1/4) -> selected.
+  4. `/api/fetch` retry-attempt telemetry in summary payload (3/2/4/0/1/3) -> pending.
+  5. `/api/fetch` latency telemetry (`durationMs`/`slowestFeedMs`) (3/2/4/0/1/3) -> pending.
+  6. Studio persona-card search/filter for 50+ personas (3/2/3/1/1/4) -> pending.
+  7. `web/app.js` modularization pass (4/4/5/0/2/3) -> pending.
+  8. Release checklist automation script (2/3/3/0/2/3) -> pending.
+- Product phase checkpoint:
+  - Prompt: "Are we in a good product phase yet?" -> No.
+  - Best-in-market signal (untrusted web, bounded scan 2026-02-13): Buffer, Sprout, dlvr.it, and Zapier-integrated RSS workflows emphasize preflight confidence, repeatable automation controls, and clear diagnostics before/after publish automation.
+  - Gap map:
+    - Missing: CLI preflight dry-run diagnostics.
+    - Weak: test-depth around pipe-close behavior and session snapshot edge cases.
+    - Parity: ingestion interoperability, bounded retries/concurrency, Studio triage presets and mute controls, metadata exports.
+    - Differentiator: private local-first drafting with multi-persona timeline generation.
+- What features are still pending?
+  - From `PRODUCT_ROADMAP.md`: dry-run diagnostics, session-persistence edge-case coverage, and CLI piping regression tests are immediate reliability priorities.
+  - From `CLONE_FEATURES.md`: candidate backlog remains above the 20-item depth target after cycle-4 replenishment.
+- Locked task list for this session:
+  - Implement CLI `generate --dry-run` diagnostics path.
+  - Add CLI `EPIPE` regression tests for all output formats.
+  - Add session persistence edge-case tests with deterministic assertions.
+- Execution outcome:
+  - Completed: Added `--dry-run` to CLI `generate` and introduced structured preflight diagnostics (`valid/invalid`, duplicate URL counts, estimated truncation counts) with no output writes.
+  - Completed: Added CLI regression coverage for `EPIPE` across `text/json/jsonl/csv` and switched CLI test launch strategy to `node --import tsx` for sandbox compatibility.
+  - Completed: Added `parseStudioSessionSnapshot` sanitization and tests for invalid JSON snapshots, stale key dropping, and partial payload restores.
+  - Completed: Updated `README.md`, `CHANGELOG.md`, `PRODUCT_ROADMAP.md`, and `CLONE_FEATURES.md` to reflect shipped behavior and remaining backlog.
+- Post-ship product phase checkpoint:
+  - Prompt: "Are we in a good product phase yet?" -> No.
+  - Missing now: `/api/fetch` retries/latency diagnostics and API request-id error tracing are the next highest-value reliability/parity items.
+- Signals:
+  - GitHub issue signals: disabled/unavailable.
+  - GitHub CI signals: disabled/unavailable.
+- Quick code review sweep:
+  - `rg TODO|FIXME|HACK|XXX` returned no markers in `src/`, `web/`, `test/`, and docs roots.
+  - Highest-maintenance hotspot remains `web/app.js`; this session keeps UI-touch minimal and test-focused.
+- Trust labels:
+  - Trusted: local repository code/tests/commands.
+  - Untrusted: external market/reference pages.
+
 ## Session Notes (2026-02-13 | Global Cycle 3 Session 1)
 - Goal: Close the highest-impact repeat-triage parity gaps by shipping saved filter presets and one-click domain muting in Studio Step 1.
 - Success criteria:
@@ -279,6 +332,7 @@
 
 ## Recent Decisions
 - Template: YYYY-MM-DD | Decision | Why | Evidence (tests/logs) | Commit | Confidence (high/medium/low) | Trust (trusted/untrusted)
+- 2026-02-13 | Ship CLI preflight diagnostics (`generate --dry-run`) plus reliability coverage for session snapshot edge cases and `EPIPE` output piping | This was the highest-impact remaining parity gap from the roadmap and directly improves preflight confidence for repeat CLI workflows without changing normal generation behavior | `src/cli.ts`, `test/cli.test.ts`, `web/studioPrefs.js`, `web/app.js`, `test/studioPrefs.test.ts`, `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/studioPrefs.test.ts`, `npx vitest run test/cli.test.ts -t "reports diagnostics with --dry-run and does not write posts|handles EPIPE cleanly across output formats"`, `node dist/cli.js generate --input /tmp/feed-jarvis-cycle4-items.json --persona Analyst --max-chars 60 --dry-run --format csv` | (this commit) | high | trusted
 - 2026-02-13 | Ship Studio Step 1 filter presets plus per-item domain muting (`site:` tokens) | This was the highest-value remaining repeat-triage parity gap and directly improves daily workflow speed/signal quality | `web/filterPresets.js`, `web/app.js`, `web/index.html`, `web/filters.js`, `test/filterPresets.test.ts`, `test/filters.test.ts`, `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/filterPresets.test.ts test/filters.test.ts`, `node dist/cli.js generate --input /tmp/feed-jarvis-smoke-items-cycle3.json --persona Analyst --format jsonl --max-chars 200` | 2e8f772 | high | trusted
 - 2026-02-13 | Extend Playwright smoke coverage to include Step 4 agent-feed flow (`build -> copy -> download`) with deterministic payload assertions | Step 4 was the highest-value remaining parity/testing gap; closing it reduces regression risk in the multi-persona timeline workflow and aligns with roadmap cycle goals | `scripts/e2e-web.ts`, `npm run lint`, `npm run typecheck`, `npm run build`, `npm run e2e:web` (`listen EPERM` in sandbox), `node dist/cli.js generate --input /tmp/feed-jarvis-smoke-items-cycle2.json --persona Analyst --format jsonl --max-chars 180` | 8611fab | high | trusted
 - 2026-02-13 | Add bounded configurable fetch concurrency across CLI + Studio/API with shared worker-limited execution (`--fetch-concurrency`, `FEED_JARVIS_FETCH_CONCURRENCY`, `/api/fetch` `fetchConcurrency`) | Large multi-feed runs previously used unbounded `Promise.all`, causing avoidable request spikes and inconsistent throughput control | `src/lib/concurrency.ts`, `src/cli.ts`, `src/server.ts`, `web/app.js`, `web/index.html`, `test/concurrency.test.ts`, `test/cli.test.ts`, `test/server.test.ts`, `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/concurrency.test.ts test/studioPrefs.test.ts` | 859de5b | high | trusted
@@ -324,16 +378,24 @@
 ## Next Prioritized Tasks
 - Scoring rubric: Impact (1-5), Effort (1-5, lower is easier), Strategic fit (1-5), Differentiation (1-5), Risk (1-5, lower is safer), Confidence (1-5).
 - Selected (completed in cycle 2026-02-13):
-- Add Studio filter presets (`include`/`exclude`/`minTitleLength`) with local save/load/delete controls (Impact 5, Effort 3, Fit 5, Diff 1, Risk 1, Conf 4).
-- Add per-item mute-domain quick action and `site:` token support in filtering (Impact 5, Effort 2, Fit 5, Diff 2, Risk 1, Conf 4).
-- Add focused filter preset/domain-token test coverage (Impact 4, Effort 2, Fit 5, Diff 0, Risk 1, Conf 5).
+- Add CLI `generate --dry-run` diagnostics mode with preflight summary and no output writes (Impact 5, Effort 3, Fit 5, Diff 1, Risk 1, Conf 4).
+- Add CLI regression tests for `EPIPE` output piping across `text/json/jsonl/csv` (Impact 4, Effort 2, Fit 5, Diff 0, Risk 1, Conf 4).
+- Add session snapshot sanitization + edge-case tests (invalid snapshots/stale keys/partial payloads) (Impact 4, Effort 2, Fit 5, Diff 0, Risk 1, Conf 4).
 - Remaining backlog:
-- CLI `generate --dry-run` diagnostics for invalid inputs and truncation stats (Impact 4, Effort 3, Fit 4, Diff 1, Risk 1, Conf 3).
-- Session-persistence edge-case tests (invalid snapshots/stale keys/partial payloads) (Impact 3, Effort 2, Fit 4, Diff 0, Risk 1, Conf 4).
-- API request-id in error payloads for faster troubleshooting (Impact 3, Effort 2, Fit 4, Diff 0, Risk 1, Conf 4).
+- `/api/fetch` retries summary fields (`retryAttempts`, `retrySuccesses`) for UX diagnostics (Impact 4, Effort 2, Fit 4, Diff 0, Risk 1, Conf 3).
+- `/api/fetch` latency summary fields (`durationMs`, `slowestFeedMs`) for slow-batch troubleshooting (Impact 4, Effort 2, Fit 4, Diff 0, Risk 1, Conf 3).
+- API request-id in error payloads for faster Studio troubleshooting (Impact 3, Effort 2, Fit 4, Diff 0, Risk 1, Conf 4).
 
 ## Verification Evidence
 - Template: YYYY-MM-DD | Command | Key output | Status (pass/fail)
+- 2026-02-13 | `npm run lint` | `Checked 46 files ... No fixes applied.` | pass
+- 2026-02-13 | `npm run typecheck` | `tsc -p tsconfig.json --noEmit` completed with no errors | pass
+- 2026-02-13 | `npm run build` | `tsc -p tsconfig.build.json` completed with no errors | pass
+- 2026-02-13 | `npx vitest run test/studioPrefs.test.ts` | `Test Files 1 passed; Tests 8 passed` | pass
+- 2026-02-13 | `npx vitest run test/cli.test.ts -t "reports diagnostics with --dry-run and does not write posts|handles EPIPE cleanly across output formats"` | `Test Files 1 passed; Tests 2 passed` | pass
+- 2026-02-13 | `node dist/cli.js generate --input /tmp/feed-jarvis-cycle4-items.json --persona Analyst --max-chars 60 --dry-run --format csv` | emitted dry-run diagnostics (`valid 2`, `invalid 2`, `duplicate urls 1`, `estimated truncations 1`) | pass
+- 2026-02-13 | `node dist/cli.js generate --input /tmp/feed-jarvis-cycle4-valid.json --persona Analyst --max-chars 60 --format text` | emitted two drafts for valid sample payload | pass
+- 2026-02-13 | `npm test` | 12 files passed, but server/CLI integration suites failed in sandbox with `listen EPERM`; one cache write failed with `EPERM` | fail (env)
 - 2026-02-13 | `git push origin main` | `58b11ec..2e8f772 main -> main` | pass
 - 2026-02-13 | `npx vitest run test/filterPresets.test.ts test/filters.test.ts` | `Test Files 2 passed; Tests 10 passed` | pass
 - 2026-02-13 | `npm run lint` | `Checked 46 files ... No fixes applied.` | pass
