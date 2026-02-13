@@ -226,7 +226,7 @@
 
 ## Recent Decisions
 - Template: YYYY-MM-DD | Decision | Why | Evidence (tests/logs) | Commit | Confidence (high/medium/low) | Trust (trusted/untrusted)
-- 2026-02-13 | Extend Playwright smoke coverage to include Step 4 agent-feed flow (`build -> copy -> download`) with deterministic payload assertions | Step 4 was the highest-value remaining parity/testing gap; closing it reduces regression risk in the multi-persona timeline workflow and aligns with roadmap cycle goals | `scripts/e2e-web.ts`, `npm run lint`, `npm run typecheck`, `npm run build`, `npm run e2e:web` (`listen EPERM` in sandbox), `node dist/cli.js generate --input /tmp/feed-jarvis-smoke-items-cycle2.json --persona Analyst --format jsonl --max-chars 180` | pending | high | trusted
+- 2026-02-13 | Extend Playwright smoke coverage to include Step 4 agent-feed flow (`build -> copy -> download`) with deterministic payload assertions | Step 4 was the highest-value remaining parity/testing gap; closing it reduces regression risk in the multi-persona timeline workflow and aligns with roadmap cycle goals | `scripts/e2e-web.ts`, `npm run lint`, `npm run typecheck`, `npm run build`, `npm run e2e:web` (`listen EPERM` in sandbox), `node dist/cli.js generate --input /tmp/feed-jarvis-smoke-items-cycle2.json --persona Analyst --format jsonl --max-chars 180` | 8611fab | high | trusted
 - 2026-02-13 | Add bounded configurable fetch concurrency across CLI + Studio/API with shared worker-limited execution (`--fetch-concurrency`, `FEED_JARVIS_FETCH_CONCURRENCY`, `/api/fetch` `fetchConcurrency`) | Large multi-feed runs previously used unbounded `Promise.all`, causing avoidable request spikes and inconsistent throughput control | `src/lib/concurrency.ts`, `src/cli.ts`, `src/server.ts`, `web/app.js`, `web/index.html`, `test/concurrency.test.ts`, `test/cli.test.ts`, `test/server.test.ts`, `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/concurrency.test.ts test/studioPrefs.test.ts` | 859de5b | high | trusted
 - 2026-02-12 | Add deterministic browser E2E critical-flow smoke (`fetch -> generate -> export`) and run it in CI with Playwright Chromium install | P1 parity required real browser coverage for the Studio journey and export wiring; deterministic fixtures keep it stable and actionable | `scripts/e2e-web.ts`, `.github/workflows/ci.yml`, `package.json`, `npm run lint`, `npm run typecheck`, `npm run build`, `npm run e2e:web` (`listen EPERM` in this sandbox) | 89ab2b3 | medium | trusted
 - 2026-02-12 | Add Studio feed-set OPML import/export with collision-safe import naming | OPML import/export is a baseline interoperability expectation and unlocks migration to/from feed readers with low risk to local-first posture | `web/feedSets.js`, `web/app.js`, `test/feedSets.test.ts`, `npx vitest run test/feedSets.test.ts` | 0c4ba7f | high | trusted
@@ -279,6 +279,8 @@
 
 ## Verification Evidence
 - Template: YYYY-MM-DD | Command | Key output | Status (pass/fail)
+- 2026-02-13 | `git push origin main` | `28d02d5..8611fab main -> main` | pass
+- 2026-02-13 | `gh run list --branch main --limit 5` | `error connecting to api.github.com` in this environment | fail (env)
 - 2026-02-13 | `npm run lint` | initial run flagged formatter changes in `scripts/e2e-web.ts`; follow-up run passed with `Checked 43 files ... No fixes applied.` | pass
 - 2026-02-13 | `npm run typecheck` | `tsc -p tsconfig.json --noEmit` completed with no errors | pass
 - 2026-02-13 | `npm run build` | `tsc -p tsconfig.build.json` completed with no errors | pass
