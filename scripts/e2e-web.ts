@@ -112,6 +112,43 @@ function assertCsvHeader(csvPayload: string) {
   }
 }
 
+function assertAgentFeedPayload(agentFeedPayload: string) {
+  const parsed = JSON.parse(agentFeedPayload);
+  assert(
+    parsed && typeof parsed === "object",
+    "Agent feed payload should be JSON object.",
+  );
+
+  const meta = Reflect.get(parsed, "meta");
+  const feed = Reflect.get(parsed, "feed");
+
+  assert(
+    meta && typeof meta === "object",
+    "Agent feed payload should include meta object.",
+  );
+  assert(Array.isArray(feed), "Agent feed payload should include feed array.");
+  assert.equal(
+    feed.length,
+    3,
+    "Expected three agent feed rows for personaLimit=3.",
+  );
+  assert.equal(Reflect.get(meta, "layout"), "consensus");
+  assert.equal(Reflect.get(meta, "mode"), "template");
+  assert.equal(Reflect.get(meta, "personaLimit"), 3);
+
+  for (const row of feed) {
+    assert(
+      row && typeof row === "object",
+      "Each agent feed row should be an object.",
+    );
+    assert.equal(typeof Reflect.get(row, "personaName"), "string");
+    assert.equal(typeof Reflect.get(row, "personaPrefix"), "string");
+    assert.equal(Reflect.get(row, "itemTitle"), "Alpha release notes");
+    assert.equal(Reflect.get(row, "itemUrl"), "https://example.com/alpha");
+    assert.equal(typeof Reflect.get(row, "post"), "string");
+  }
+}
+
 async function run() {
   const { server, baseUrl } = await startServer();
   const browser = await chromium.launch({
@@ -120,6 +157,9 @@ async function run() {
 
   try {
     const context = await browser.newContext({ acceptDownloads: true });
+    await context.grantPermissions(["clipboard-read", "clipboard-write"], {
+      origin: baseUrl,
+    });
     const page = await context.newPage();
 
     await page.goto(baseUrl, { waitUntil: "domcontentloaded" });
@@ -166,11 +206,44 @@ async function run() {
     assert.match(csvPayload, /https:\/\/example\.com\/alpha/);
     assert.match(csvPayload, /https:\/\/example\.com\/beta/);
 
+    await page.locator("#agentPersonaLimit").fill("3");
+    await page.locator("#agentLayoutSelect").selectOption("consensus");
+    await page.locator("#buildAgentFeedBtn").click();
+    await waitForStatusText(
+      page,
+      "#agentFeedStatus",
+      "Built 3 feed post(s) (consensus).",
+    );
+
+    const agentFeedCount = await page
+      .locator("#agentFeedList .post-card")
+      .count();
+    assert.equal(agentFeedCount, 3, "Expected three Step 4 agent feed cards.");
+    const firstAgentSource = await page
+      .locator("#agentFeedList .post-card .post-source-title")
+      .first()
+      .textContent();
+    assert.match(
+      firstAgentSource ?? "",
+      /Alpha release notes/,
+      "Expected consensus layout to target the top item.",
+    );
+
+    await page.locator("#copyAgentFeedBtn").click();
+    await waitForStatusText(page, "#agentFeedStatus", "Copied to clipboard.");
+
+    const agentFeedPayload = await triggerDownload(
+      page,
+      "#downloadAgentFeedBtn",
+    );
+    assertAgentFeedPayload(agentFeedPayload);
+
     await context.close();
 
     console.log("E2E smoke passed:");
     console.log("- critical flow: fetch -> generate -> export");
     console.log("- exports: txt, jsonl, csv");
+    console.log("- agent feed: build -> copy -> download");
   } finally {
     await browser.close();
     await stopServer(server);

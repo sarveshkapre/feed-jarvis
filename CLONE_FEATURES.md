@@ -26,10 +26,13 @@
 - [ ] P3: Add benchmark script for feed parse + generation throughput on 1k-item payloads. (Impact 2, Effort 3, Fit 3, Diff 1, Risk 1, Conf 3)
 - [ ] P3: Add feed-set migration helper when storage schema changes (with versioned upgrade path). (Impact 2, Effort 2, Fit 3, Diff 0, Risk 1, Conf 3)
 - [ ] P3: Add copy-ready "trimmed chars" analytics summary after post edits for QA review. (Impact 2, Effort 2, Fit 3, Diff 1, Risk 1, Conf 3)
-- [ ] P3: Add browser E2E path for Step 4 agent feed (`build -> copy -> download`) to reduce regressions in multi-persona timeline UX. (Impact 3, Effort 3, Fit 4, Diff 1, Risk 1, Conf 3)
 - [ ] P3: Add Studio import support for newline-delimited feed URL files to mirror CLI `--urls-file` workflows. (Impact 2, Effort 2, Fit 3, Diff 0, Risk 1, Conf 4)
+- [ ] P3: Add Step 4 persona-name search/filter to control large timeline views. (Impact 2, Effort 2, Fit 3, Diff 1, Risk 1, Conf 3)
+- [ ] P3: Add per-feed error detail accordion in Step 1 fetch status for faster debugging. (Impact 3, Effort 3, Fit 4, Diff 0, Risk 2, Conf 3)
 
 ## Implemented
+- [x] 2026-02-13 P1: Extended browser E2E smoke to cover Step 4 agent feed (`build -> copy -> download`) in the existing Playwright flow. Evidence: `scripts/e2e-web.ts`; verification: `npm run lint`, `npm run typecheck`, `npm run build`, `npm run e2e:web` (blocked in this sandbox by `listen EPERM`), `node dist/cli.js generate --input /tmp/feed-jarvis-smoke-items-cycle2.json --persona Analyst --format jsonl --max-chars 180`.
+- [x] 2026-02-13 P2: Added deterministic Step 4 assertion depth for rendered feed cards, copy status, and downloaded JSON payload structure (`meta` + `feed`). Evidence: `scripts/e2e-web.ts`; verification: `npm run lint`, `npm run typecheck`, `npm run build`, `npm test` (sandbox `listen EPERM` / cache-path `EPERM`), `npx vitest run test/concurrency.test.ts test/studioPrefs.test.ts test/feedSets.test.ts`.
 - [x] 2026-02-13 P1: Added bounded configurable fetch concurrency across CLI + Studio/API (`--fetch-concurrency`, `FEED_JARVIS_FETCH_CONCURRENCY`, `fetchConcurrency` request field) using shared worker-limited execution. Evidence: `src/lib/concurrency.ts`, `src/cli.ts`, `src/server.ts`, `web/app.js`, `web/index.html`, `web/studioPrefs.js`; verification: `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/concurrency.test.ts test/studioPrefs.test.ts`.
 - [x] 2026-02-13 P1: Added concurrency behavior tests for CLI and server fetch flows with max in-flight assertions. Evidence: `test/cli.test.ts`, `test/server.test.ts`, `test/concurrency.test.ts`; verification: `npx vitest run test/concurrency.test.ts test/studioPrefs.test.ts` (full network/listen integration tests blocked in this sandbox by `listen EPERM`).
 - [x] 2026-02-12 P1: Added browser-level Studio E2E smoke for critical flow (`fetch -> generate -> export`) with deterministic feed fixtures. Evidence: `scripts/e2e-web.ts`, `package.json`, `.github/workflows/ci.yml`; verification: `npm run lint`, `npm run typecheck`, `npm run build`, `npm run e2e:web` (environment blocked in this sandbox: `listen EPERM`), `npx playwright install chromium`.
@@ -68,6 +71,7 @@
 - [x] 2026-02-08 P2: Synced docs with shipped behavior changes. Evidence: `README.md`, `CHANGELOG.md`, `UPDATE.md`.
 
 ## Insights
+- Step 4 UI actions (`build -> copy -> download`) now have deterministic browser assertions, reducing regression blind spots between timeline rendering and export/copy wiring.
 - Bounded concurrency materially reduces peak in-flight requests on large URL batches while preserving output ordering and dedupe behavior.
 - Browser-level coverage is now practical and deterministic by stubbing feed fetches in a local test server and driving real DOM interactions via Playwright.
 - Export verification should stay browser-driven because it catches regressions in both payload construction and download wiring.

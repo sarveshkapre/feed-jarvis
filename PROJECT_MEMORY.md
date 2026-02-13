@@ -7,6 +7,56 @@
 
 ## Open Problems
 
+## Session Notes (2026-02-13 | Cycle 2 Session 1)
+- Goal: Ship the highest-impact remaining parity work by adding deterministic browser E2E coverage for Step 4 agent-feed actions (`build -> copy -> download`).
+- Success criteria:
+  - Existing Playwright smoke run covers Step 4 build flow and verifies feed entries render.
+  - E2E verifies Step 4 copy action succeeds and download payload is structurally correct.
+  - Step 3 fetch/generate/export assertions remain passing in the same script.
+  - Verification commands and tracker updates are recorded.
+- Non-goals:
+  - New scheduler/queue integrations.
+  - Large `web/app.js` architectural refactor.
+  - New feature surface outside Step 4 validation depth.
+- Brainstorming checkpoint (ranked; impact/effort/fit/diff/risk/confidence):
+  1. Step 4 browser E2E path (`build -> copy -> download`) in `scripts/e2e-web.ts` (5/2/5/1/1/4) -> selected.
+  2. Step 4 E2E assertion depth for metadata + downloaded JSON schema (4/2/5/0/1/4) -> selected.
+  3. Saved filter presets (include/exclude/min-title) (4/3/4/1/1/3) -> pending.
+  4. Per-item mute-domain quick action in Studio (4/3/4/2/1/3) -> pending.
+  5. CLI `generate --dry-run` diagnostics mode (4/3/4/1/1/3) -> pending.
+  6. Session-persistence edge-case coverage (3/2/4/0/1/4) -> pending.
+  7. API request-id field for better support diagnostics (3/2/4/0/1/4) -> pending.
+  8. `web/app.js` modularization (4/4/5/0/2/3) -> pending.
+  9. Studio keyboard shortcuts for generate/export (3/2/3/1/1/4) -> pending.
+  10. Fetch telemetry summary fields (`durationMs`, `slowestFeedMs`) (3/2/4/0/1/3) -> pending.
+- Product phase checkpoint:
+  - Prompt: "Are we in a good product phase yet?" -> No.
+  - Best-in-market signal (untrusted web, bounded scan 2026-02-13): Feedly/Buffer/Sprout/RSS.app/Inoreader set baseline expectations around ingestion interoperability, filtering, and robust automation controls; product trust improves when browser-level flows are regression tested end-to-end.
+  - Gap map:
+    - Missing: Step 4 browser E2E assertions for build/copy/download timeline flow.
+    - Weak: Step 4 regression detection relative to already-covered Step 3 flow.
+    - Parity: OPML + URL-file ingestion, retries, bounded concurrency, filters/rules, Step 3 browser E2E.
+    - Differentiator: local-first multi-persona drafting with strict private-host defaults.
+- What features are still pending?
+  - From `PRODUCT_ROADMAP.md`: saved filter presets, mute-domain action, dry-run diagnostics, session-persistence hardening, and app modularization are pending.
+  - From `CLONE_FEATURES.md`: backlog remains >20 candidates after cycle-2 replenishment.
+- Locked task list for this session:
+  - Extend existing Playwright E2E smoke to include Step 4 agent feed build/copy/download path.
+  - Add deterministic assertions for Step 4 feed metadata and JSON download payload shape.
+- Execution outcome:
+  - Completed: Extended `scripts/e2e-web.ts` to include Step 4 build flow assertions (`personaLimit=3`, `consensus` layout, card rendering checks).
+  - Completed: Added Step 4 action assertions for `Copy feed` status and `Download feed .json` payload structure (`meta.layout`, `meta.mode`, `meta.personaLimit`, feed rows).
+  - Completed: Synced roadmap/changelog/backlog trackers to mark Step 4 E2E parity gap closed.
+- Quick code review sweep:
+  - `rg TODO/FIXME` returned no markers in tracked source/docs paths.
+  - `web/app.js` remains a high-maintenance hotspot (~2058 LOC), so this session keeps scope to targeted Step 4 coverage only.
+- Signals:
+  - GitHub issue signals: disabled/unavailable.
+  - GitHub CI signals: disabled/unavailable.
+- Trust labels:
+  - Trusted: local repository code/tests/commands.
+  - Untrusted: external market/reference pages.
+
 ## Session Notes (2026-02-13 | Cycle 1 Session 4)
 - Goal: Improve large-run fetch reliability by shipping bounded configurable fetch concurrency across CLI + Studio and validating it with integration tests.
 - Success criteria:
@@ -176,6 +226,7 @@
 
 ## Recent Decisions
 - Template: YYYY-MM-DD | Decision | Why | Evidence (tests/logs) | Commit | Confidence (high/medium/low) | Trust (trusted/untrusted)
+- 2026-02-13 | Extend Playwright smoke coverage to include Step 4 agent-feed flow (`build -> copy -> download`) with deterministic payload assertions | Step 4 was the highest-value remaining parity/testing gap; closing it reduces regression risk in the multi-persona timeline workflow and aligns with roadmap cycle goals | `scripts/e2e-web.ts`, `npm run lint`, `npm run typecheck`, `npm run build`, `npm run e2e:web` (`listen EPERM` in sandbox), `node dist/cli.js generate --input /tmp/feed-jarvis-smoke-items-cycle2.json --persona Analyst --format jsonl --max-chars 180` | pending | high | trusted
 - 2026-02-13 | Add bounded configurable fetch concurrency across CLI + Studio/API with shared worker-limited execution (`--fetch-concurrency`, `FEED_JARVIS_FETCH_CONCURRENCY`, `/api/fetch` `fetchConcurrency`) | Large multi-feed runs previously used unbounded `Promise.all`, causing avoidable request spikes and inconsistent throughput control | `src/lib/concurrency.ts`, `src/cli.ts`, `src/server.ts`, `web/app.js`, `web/index.html`, `test/concurrency.test.ts`, `test/cli.test.ts`, `test/server.test.ts`, `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/concurrency.test.ts test/studioPrefs.test.ts` | 859de5b | high | trusted
 - 2026-02-12 | Add deterministic browser E2E critical-flow smoke (`fetch -> generate -> export`) and run it in CI with Playwright Chromium install | P1 parity required real browser coverage for the Studio journey and export wiring; deterministic fixtures keep it stable and actionable | `scripts/e2e-web.ts`, `.github/workflows/ci.yml`, `package.json`, `npm run lint`, `npm run typecheck`, `npm run build`, `npm run e2e:web` (`listen EPERM` in this sandbox) | 89ab2b3 | medium | trusted
 - 2026-02-12 | Add Studio feed-set OPML import/export with collision-safe import naming | OPML import/export is a baseline interoperability expectation and unlocks migration to/from feed readers with low risk to local-first posture | `web/feedSets.js`, `web/app.js`, `test/feedSets.test.ts`, `npx vitest run test/feedSets.test.ts` | 0c4ba7f | high | trusted
@@ -219,16 +270,22 @@
 ## Next Prioritized Tasks
 - Scoring rubric: Impact (1-5), Effort (1-5, lower is easier), Strategic fit (1-5), Differentiation (1-5), Risk (1-5, lower is safer), Confidence (1-5).
 - Selected (completed in cycle 2026-02-13):
-- Bounded configurable fetch concurrency across CLI + Studio/API (Impact 5, Effort 3, Fit 5, Diff 0, Risk 1, Conf 4).
-- Studio fetch-concurrency UI control with session persistence (Impact 4, Effort 2, Fit 5, Diff 1, Risk 1, Conf 4).
-- Concurrency behavior coverage for helper + CLI/server fetch flows (Impact 5, Effort 2, Fit 5, Diff 0, Risk 1, Conf 4).
+- Extend Playwright smoke to Step 4 agent-feed path (`build -> copy -> download`) (Impact 5, Effort 2, Fit 5, Diff 1, Risk 1, Conf 4).
+- Add deterministic Step 4 assertions for card metadata + downloaded JSON payload (Impact 4, Effort 2, Fit 5, Diff 0, Risk 1, Conf 4).
 - Remaining backlog:
 - Save/load filter presets for repeat triage workflows (Impact 4, Effort 3, Fit 4, Diff 1, Risk 1, Conf 3).
-- Browser E2E for Step 4 agent-feed flow (`build -> copy -> download`) (Impact 4, Effort 3, Fit 4, Diff 1, Risk 1, Conf 3).
+- Per-item mute-domain quick action in Studio (Impact 4, Effort 3, Fit 4, Diff 2, Risk 1, Conf 3).
 - CLI `generate --dry-run` diagnostics for invalid inputs and truncation stats (Impact 4, Effort 3, Fit 4, Diff 1, Risk 1, Conf 3).
 
 ## Verification Evidence
 - Template: YYYY-MM-DD | Command | Key output | Status (pass/fail)
+- 2026-02-13 | `npm run lint` | initial run flagged formatter changes in `scripts/e2e-web.ts`; follow-up run passed with `Checked 43 files ... No fixes applied.` | pass
+- 2026-02-13 | `npm run typecheck` | `tsc -p tsconfig.json --noEmit` completed with no errors | pass
+- 2026-02-13 | `npm run build` | `tsc -p tsconfig.build.json` completed with no errors | pass
+- 2026-02-13 | `npm run e2e:web` | failed in sandbox with socket bind restriction `listen EPERM: operation not permitted 127.0.0.1` | fail (env)
+- 2026-02-13 | `npm test` | unit-heavy suites passed; server/cli/listen-dependent suites failed in sandbox with `listen EPERM`; one cache-path write failed with `EPERM` | fail (env)
+- 2026-02-13 | `npx vitest run test/concurrency.test.ts test/studioPrefs.test.ts test/feedSets.test.ts` | `Test Files 3 passed; Tests 14 passed` | pass
+- 2026-02-13 | `node dist/cli.js generate --input /tmp/feed-jarvis-smoke-items-cycle2.json --persona Analyst --format jsonl --max-chars 180` | emitted two JSONL drafts for local smoke payload | pass
 - 2026-02-13 | `git push origin main` | `859de5b..ae00dcd main -> main` | pass
 - 2026-02-13 | `gh run list --branch main --limit 5` | `error connecting to api.github.com` in this environment | fail (env)
 - 2026-02-13 | `git push origin main` | `6a489ff..859de5b main -> main` | pass

@@ -20,6 +20,8 @@ npm run smoke:web
 npm run e2e:web
 ```
 
+`npm run e2e:web` validates `fetch -> generate -> export` plus Step 4 agent-feed `build -> copy -> download`.
+
 Studio feed safety defaults:
 
 ```bash

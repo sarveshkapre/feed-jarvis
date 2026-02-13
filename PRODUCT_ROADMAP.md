@@ -5,7 +5,7 @@
 
 ## Good Product Phase Status
 - Status: `No` (checkpoint run on 2026-02-13).
-- Why not yet: core local-first workflows are strong, but parity gaps remain in large-run reliability controls and advanced repeat-workflow UX.
+- Why not yet: core local-first workflows are strong, but parity gaps remain in repeat-workflow UX and diagnostics depth for high-volume runs.
 
 ## Definition Of Done
 - Core Studio + CLI workflows are complete for repeated daily use.
@@ -23,6 +23,18 @@
 
 ## Current Milestone
 - M3 Reliability + Interop
+
+## Session Goal Checkpoint (2026-02-13 | Cycle 2 Session 1)
+- Goal: Close the highest-impact remaining parity gap by shipping browser E2E coverage for Step 4 agent-feed actions (`build -> copy -> download`).
+- Success criteria:
+  - Playwright E2E validates Step 4 build flow and confirms feed cards render with expected metadata.
+  - E2E validates copy and download actions for Step 4 outputs and asserts payload structure.
+  - Existing Step 3 coverage remains intact in the same deterministic run.
+  - Verification evidence and tracker updates are captured.
+- Non-goals:
+  - New scheduler/publishing integrations.
+  - Major `web/app.js` modularization.
+  - New API surface area changes unrelated to agent-feed verification.
 
 ## Session Goal Checkpoint (2026-02-13 | Cycle 1 Session 4)
 - Goal: Ship bounded fetch concurrency controls across CLI + Studio to harden large multi-feed runs.
@@ -90,6 +102,24 @@
   - Parity: OPML feed-set interoperability, transient retry handling, URL-list ingestion, local feed sets/rules, item filters, metadata-rich exports, agent feed layouts.
 - Differentiator: local-first end-to-end drafting with strict private-host safeguards.
 
+## Product Phase Checkpoint (2026-02-13 | Cycle 2 Session 1)
+- Prompt: "Are we in a good product phase yet?" -> `No`.
+- Best-in-market references (untrusted web, bounded scan):
+  - Feedly OPML interoperability and migration baseline (`https://docs.feedly.com/article/51-how-to-import-opml-into-feedly`, `https://docs.feedly.com/article/52-how-can-i-export-my-sources-and-feeds-through-opml`).
+  - RSS.app keyword-filtering expectations for feed triage (`https://help.rss.app/en/articles/10271103-how-to-filter-rss-feeds`).
+  - Buffer feed automation workflow expectations (`https://support.buffer.com/article/613-automating-rss-feeds-using-feedly-and-zapier`).
+  - Sprout automated feed publishing control baseline (`https://support.sproutsocial.com/hc/en-us/articles/20299161205645-How-do-I-use-Automated-Feed-Publishing-on-the-Professional-and-Advanced-Plans`).
+  - Inoreader automation/time-saving posture for high-volume feeds (`https://www.inoreader.com/blog/2026/01/save-time-with-automations.html`).
+- Core expected capabilities in this segment:
+  - Reliable ingestion interoperability with repeatable save/reuse workflows.
+  - Fast noise control and confidence-building verification in real UI flows.
+  - Stable export/automation handoff formats with deterministic behavior.
+- Parity gap map:
+  - Missing: browser E2E assertions for Step 4 agent timeline interactions (`build -> copy -> download`).
+  - Weak: regression detection for Step 4 UI actions compared with stronger Step 3 assertions.
+  - Parity: OPML and URL-file ingestion, filter/rules stack, retry/backoff, bounded fetch concurrency, Step 3 browser E2E.
+  - Differentiator: local-first multi-persona drafting and timeline generation with private-host safeguards.
+
 ## Product Phase Checkpoint (2026-02-13 | Session 4)
 - Prompt: "Are we in a good product phase yet?" -> `No`.
 - Best-in-market references (untrusted web, bounded scan):
@@ -131,6 +161,10 @@
 - [x] P1: Studio OPML import/export for saved feed sets (local-only interoperability).
 - [x] P1: Studio live over-max-char warnings while editing drafts + one-click trim suggestion.
 
+## Locked Cycle Scope (2026-02-13 | Cycle 2 Session 1)
+- [x] P1: Extend browser E2E coverage to Step 4 agent feed flow (`build -> copy -> download`) with deterministic assertions.
+- [x] P2: Add Step 4 assertion depth for feed metadata and exported JSON structure to reduce regression risk.
+
 ## Locked Cycle Scope (2026-02-12 | Session 3)
 - [x] P1: Browser-level Studio E2E coverage for critical path (`fetch -> generate -> export`) with deterministic fixtures.
 - [x] P2: Export smoke assertions in CI for `.txt`, `.jsonl`, and `.csv` from the browser-driven flow.
@@ -151,13 +185,13 @@
 - P2: CLI `generate --dry-run` diagnostics (invalid items, duplicate URLs, truncation counts).
 - P2: Targeted session-persistence edge-case tests (invalid snapshots, stale keys, partial payloads).
 - P2: CLI regression tests for `EPIPE` across text/json/jsonl/csv output formats.
-- P2: Browser E2E coverage for Step 4 agent feed flow (`build -> copy -> download`) in CI.
 - P3: Refactor `web/app.js` into smaller modules (state/api/exporters/ui binding).
 - P3: Studio keyboard shortcuts for generation/export actions.
 - P3: Release checklist automation (version bump + changelog guard + artifact verify).
 - P3: Docs split: keep README compact and move deep recipes to `docs/`.
 
 ## Delivered Features (Recent)
+- 2026-02-13: Expanded browser-level Studio E2E smoke to include Step 4 agent feed (`build -> copy -> download`) with deterministic assertions for rendered cards, copy status, and downloaded JSON payload shape.
 - 2026-02-13: Added bounded configurable fetch concurrency for CLI + Studio server/API (`--fetch-concurrency`, `FEED_JARVIS_FETCH_CONCURRENCY`, `/api/fetch` `fetchConcurrency`) with shared worker-limited execution and summary reporting.
 - 2026-02-13: Added Studio Step 1 fetch-concurrency control (`1-20`) with session persistence and fetch-status detail.
 - 2026-02-13: Added concurrency-focused coverage for shared helper logic plus CLI/server fetch behavior.
@@ -174,11 +208,10 @@
 - 2026-02-11: Added Studio local-only rule presets and CLI OPML fetch ingestion.
 
 ## Risks And Blockers
-- Risk: no browser-level CI coverage yet for Step 4 agent-feed journey (`build -> copy -> download`).
 - Risk: large pending UX work in `web/app.js` carries rising maintenance cost until modularized.
 - Active blockers: none currently.
 
 ## Next Cycle Goals
-- Expand browser E2E from Step 3 flow to Step 4 agent-feed workflow.
-- Reduce manual QA cost via broader browser assertions and fewer environment-sensitive gaps.
+- Ship saved filter presets for include/exclude/min-title to reduce repeated setup work.
+- Add per-item mute-domain quick action in Studio to tighten feed-triage loops.
 - Continue reliability hardening for large feed sets (clearer diagnostics and per-feed latency visibility).

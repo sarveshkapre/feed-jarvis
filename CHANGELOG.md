@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## Unreleased
+- Testing: extend browser-level Studio E2E smoke to include Step 4 agent-feed flow (`build -> copy -> download`) with assertions for rendered cards, copy status, and downloaded JSON payload shape.
 - Fetch: add bounded multi-feed concurrency controls (`--fetch-concurrency` / `FEED_JARVIS_FETCH_CONCURRENCY`) for CLI and Studio server fetch paths.
 - Studio UI: add persisted "Fetch concurrency" control (1-20) and include effective concurrency in fetch status details.
 - Studio/API: `/api/fetch` accepts `fetchConcurrency` and reports effective `summary.concurrency`.
