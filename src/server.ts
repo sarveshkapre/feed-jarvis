@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { existsSync } from "node:fs";
 import { readFile, stat } from "node:fs/promises";
 import { createServer, type Server } from "node:http";
@@ -77,12 +78,28 @@ function sendJson(
   res: import("node:http").ServerResponse,
   status: number,
   payload: unknown,
+  requestId?: string,
 ) {
-  res.writeHead(status, {
+  const headers: Record<string, string> = {
     "content-type": "application/json; charset=utf-8",
     "cache-control": "no-store",
+  };
+  if (requestId) {
+    headers["x-request-id"] = requestId;
+  }
+  res.writeHead(status, {
+    ...headers,
   });
   res.end(`${JSON.stringify(payload)}\n`);
+}
+
+function sendApiError(
+  res: import("node:http").ServerResponse,
+  status: number,
+  message: string,
+  requestId: string,
+) {
+  sendJson(res, status, { error: message, requestId }, requestId);
 }
 
 async function readJsonBody(
@@ -212,18 +229,29 @@ async function handleFetchFeed(body: unknown, options: RuntimeOptions) {
     ),
   );
 
-  const results = await mapWithConcurrency(urls, fetchConcurrency, (url) =>
-    fetchFeed(url, {
-      allowHosts,
-      allowPrivateHosts: options.allowPrivateHosts,
-      cache: true,
-      cacheTtlMs: DEFAULT_CACHE_TTL_MS,
-      fetchFn: options.fetchFn,
-      maxBytes: DEFAULT_MAX_BYTES,
-      maxItems,
-      timeoutMs: DEFAULT_TIMEOUT_MS,
-    }),
+  const startedAtMs = Date.now();
+  const results = await mapWithConcurrency(
+    urls,
+    fetchConcurrency,
+    async (url) => {
+      const feedStartedAtMs = Date.now();
+      const result = await fetchFeed(url, {
+        allowHosts,
+        allowPrivateHosts: options.allowPrivateHosts,
+        cache: true,
+        cacheTtlMs: DEFAULT_CACHE_TTL_MS,
+        fetchFn: options.fetchFn,
+        maxBytes: DEFAULT_MAX_BYTES,
+        maxItems,
+        timeoutMs: DEFAULT_TIMEOUT_MS,
+      });
+      return {
+        ...result,
+        durationMs: Math.max(0, Date.now() - feedStartedAtMs),
+      };
+    },
   );
+  const durationMs = Math.max(0, Date.now() - startedAtMs);
 
   const items = results.flatMap((result) => result.items);
   const dedupedItems = dedupe ? dedupeByUrl(items) : items;
@@ -231,6 +259,18 @@ async function handleFetchFeed(body: unknown, options: RuntimeOptions) {
   const cacheCount = results.filter(
     (result) => result.source === "cache",
   ).length;
+  const retryAttempts = results.reduce(
+    (sum, result) => sum + result.retryAttempts,
+    0,
+  );
+  const retrySuccesses = results.reduce(
+    (sum, result) => sum + (result.retrySucceeded ? 1 : 0),
+    0,
+  );
+  const slowestFeedMs = results.reduce(
+    (max, result) => Math.max(max, result.durationMs),
+    0,
+  );
 
   return {
     items: finalItems,
@@ -242,6 +282,10 @@ async function handleFetchFeed(body: unknown, options: RuntimeOptions) {
       dedupe: dedupe,
       deduped: dedupe ? items.length - dedupedItems.length : 0,
       limited: dedupedItems.length - finalItems.length,
+      retryAttempts,
+      retrySuccesses,
+      durationMs,
+      slowestFeedMs,
     },
   };
 }
@@ -680,10 +724,16 @@ export function createStudioServer(options: StudioServerOptions = {}): Server {
       `http://${req.headers.host ?? "localhost"}`,
     );
     const method = req.method ?? "GET";
+    const apiRequest = requestUrl.pathname.startsWith("/api/");
+    const requestId = apiRequest ? randomUUID() : "";
+    const sendJsonResponse = (status: number, payload: unknown) =>
+      sendJson(res, status, payload, requestId || undefined);
+    const sendRequestError = (status: number, message: string) =>
+      sendApiError(res, status, message, requestId);
 
     if (requestUrl.pathname === "/api/personas" && method === "GET") {
       const personas = await personasPromise;
-      sendJson(res, 200, { personas });
+      sendJsonResponse(200, { personas });
       return;
     }
 
@@ -691,10 +741,10 @@ export function createStudioServer(options: StudioServerOptions = {}): Server {
       try {
         const body = await readJsonBody(req);
         const payload = await handleFetchFeed(body, runtimeOptions);
-        sendJson(res, 200, payload);
+        sendJsonResponse(200, payload);
       } catch (err) {
         const message = err instanceof Error ? err.message : "Request failed.";
-        sendJson(res, 400, { error: message });
+        sendRequestError(400, message);
       }
       return;
     }
@@ -704,10 +754,10 @@ export function createStudioServer(options: StudioServerOptions = {}): Server {
         const body = await readJsonBody(req);
         const personas = await personasPromise;
         const payload = await handleGenerate(body, personas, runtimeOptions);
-        sendJson(res, 200, payload);
+        sendJsonResponse(200, payload);
       } catch (err) {
         const message = err instanceof Error ? err.message : "Request failed.";
-        sendJson(res, 400, { error: message });
+        sendRequestError(400, message);
       }
       return;
     }
@@ -717,16 +767,16 @@ export function createStudioServer(options: StudioServerOptions = {}): Server {
         const body = await readJsonBody(req);
         const personas = await personasPromise;
         const payload = await handleAgentFeed(body, personas, runtimeOptions);
-        sendJson(res, 200, payload);
+        sendJsonResponse(200, payload);
       } catch (err) {
         const message = err instanceof Error ? err.message : "Request failed.";
-        sendJson(res, 400, { error: message });
+        sendRequestError(400, message);
       }
       return;
     }
 
     if (requestUrl.pathname.startsWith("/api/")) {
-      sendJson(res, 404, { error: "Not found" });
+      sendRequestError(404, "Not found");
       return;
     }
 

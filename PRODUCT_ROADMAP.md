@@ -5,7 +5,7 @@
 
 ## Good Product Phase Status
 - Status: `No` (checkpoint run on 2026-02-13).
-- Why not yet: core local-first workflows are strong, but parity gaps remain in repeat-workflow UX and diagnostics depth for high-volume runs.
+- Why not yet: core local-first workflows are strong, but parity gaps remain in operator speed/UX (`web/app.js` modularity + keyboard flow) and publish-readiness release automation.
 
 ## Definition Of Done
 - Core Studio + CLI workflows are complete for repeated daily use.
@@ -23,6 +23,36 @@
 
 ## Current Milestone
 - M3 Reliability + Interop
+
+## Session Goal Checkpoint (2026-02-13 | Global Cycle 5 Session 1)
+- Goal: Close the highest-impact remaining M3 reliability/supportability gaps by shipping fetch retry/latency diagnostics and API request IDs.
+- Success criteria:
+  - `/api/fetch` summary includes `retryAttempts`, `retrySuccesses`, `durationMs`, and `slowestFeedMs`.
+  - API error payloads include a request ID and Studio surfaces that ID in error messages for troubleshooting.
+  - Tests cover new summary diagnostics and request-id payload/header behavior.
+  - Verification evidence and tracker updates are captured.
+- Non-goals:
+  - `web/app.js` modularization.
+  - Scheduler/publishing integrations.
+  - New API routes unrelated to fetch diagnostics/supportability.
+
+## Product Phase Checkpoint (2026-02-13 | Global Cycle 5 Session 1)
+- Prompt: "Are we in a good product phase yet?" -> `No`.
+- Best-in-market references (untrusted web, bounded scan):
+  - Feedly guide: mute filters for repeated feed noise reduction (`https://feedly.helpscoutdocs.com/article/345-mute-filters`).
+  - RSS.app guide: filtering controls baseline for feed triage (`https://help.rss.app/en/articles/10271103-how-to-filter-rss-feeds`).
+  - Buffer Help: RSS automation and queue guardrail baseline (`https://support.buffer.com/article/613-automating-rss-feeds-using-feedly-and-zapier`).
+  - Sprout Social Help: automated feed publishing controls/limits (`https://support.sproutsocial.com/hc/en-us/articles/20299161205645-How-do-I-use-Automated-Feed-Publishing-on-the-Professional-and-Advanced-Plans`).
+  - Inoreader blog: automation efficiency expectations for high-volume workflows (`https://www.inoreader.com/blog/2026/01/save-time-with-automations.html`).
+- Core expected capabilities in this segment:
+  - Fast diagnostics for repeated runs (retry visibility, latency visibility, traceable failures).
+  - Repeat-workflow speed controls (saved settings + keyboard efficiency).
+  - Stable export and automation handoff with confidence checks.
+- Parity gap map:
+  - Missing: fetch retry/latency summary visibility and traceable request IDs in Studio-facing errors.
+  - Weak: troubleshooting depth for large feed batches and fast operator navigation.
+  - Parity: ingestion interoperability (URL-file/OPML), retries/concurrency controls, triage filtering/presets, deterministic exports.
+  - Differentiator: private local-first multi-persona workflow with strict host safety defaults.
 
 ## Session Goal Checkpoint (2026-02-13 | Global Cycle 4 Session 1)
 - Goal: Ship preflight CLI diagnostics parity by adding `generate --dry-run` insight mode and close adjacent reliability test gaps.
@@ -211,6 +241,13 @@
   - Closed weak reliability gaps: session snapshot edge-case coverage and CLI `EPIPE` regression coverage across output formats.
   - Remaining highest-value parity/reliability items: fetch retry/latency diagnostics in `/api/fetch` summary and targeted API request-id support for troubleshooting.
 
+## Product Phase Checkpoint (2026-02-13 | Global Cycle 5 Session 1 Post-Ship)
+- Prompt: "Are we in a good product phase yet?" -> `No`.
+- Outcome after this session:
+  - Closed missing parity/reliability items: `/api/fetch` now reports retry/latency diagnostics and API errors now include request IDs for supportability.
+  - Remaining highest-value gaps: `web/app.js` modularization and keyboard shortcuts for high-throughput studio operation.
+  - Remaining reliability/release gap: release checklist automation and docs split for maintainable release readiness.
+
 ## Product Phase Checkpoint (2026-02-12 | Session 3)
 - Prompt: "Are we in a good product phase yet?" -> `No`.
 - Best-in-market references (untrusted web, bounded scan):
@@ -248,6 +285,11 @@
 - [x] P2: Add CLI regression tests for pipe-close (`EPIPE`) behavior across `text/json/jsonl/csv` output formats.
 - [x] P2: Add targeted session-persistence edge-case tests for invalid snapshots, stale keys, and partial payload defaults.
 
+## Locked Cycle Scope (2026-02-13 | Global Cycle 5 Session 1)
+- [x] P1: Add `/api/fetch` diagnostics fields (`retryAttempts`, `retrySuccesses`, `durationMs`, `slowestFeedMs`) for large-run troubleshooting.
+- [x] P1: Add API request-id support in error payloads (and response headers) for faster support/debug loops in Studio.
+- [x] P2: Add/extend tests and Studio summary formatting for new diagnostics fields and request-id surfaced errors.
+
 ## Locked Cycle Scope (2026-02-12 | Session 3)
 - [x] P1: Browser-level Studio E2E coverage for critical path (`fetch -> generate -> export`) with deterministic fixtures.
 - [x] P2: Export smoke assertions in CI for `.txt`, `.jsonl`, and `.csv` from the browser-driven flow.
@@ -263,15 +305,15 @@
 - [x] P1: Studio pasted JSON URL validation (`http/https` only) with actionable user feedback.
 
 ## Pending Features (What Is Still Pending?)
-- P2: Add server-side request id in API error payloads for faster troubleshooting in Studio.
-- P2: Add `/api/fetch` retry summary fields (`retryAttempts`, `retrySuccesses`) for better large-run diagnostics.
-- P2: Add `/api/fetch` latency summary fields (`durationMs`, `slowestFeedMs`) for troubleshooting slow feed batches.
 - P3: Refactor `web/app.js` into smaller modules (state/api/exporters/ui binding).
 - P3: Studio keyboard shortcuts for generation/export actions.
 - P3: Release checklist automation (version bump + changelog guard + artifact verify).
 - P3: Docs split: keep README compact and move deep recipes to `docs/`.
 
 ## Delivered Features (Recent)
+- 2026-02-13: Added `/api/fetch` diagnostics summary fields (`retryAttempts`, `retrySuccesses`, `durationMs`, `slowestFeedMs`) for large-run troubleshooting.
+- 2026-02-13: Added API request-id support in error payloads and `x-request-id` response headers; Studio now appends request IDs to surfaced API error messages.
+- 2026-02-13: Added coverage for fetch diagnostics formatting and server request-id + diagnostics behavior (`test/studioPrefs.test.ts`, `test/server.test.ts`).
 - 2026-02-13: Added CLI `generate --dry-run` preflight diagnostics (`valid/invalid`, duplicate URL counts, estimated truncation counts) with no output writes.
 - 2026-02-13: Added CLI regression coverage for output pipe-close (`EPIPE`) behavior across `text/json/jsonl/csv` formats.
 - 2026-02-13: Added session-persistence snapshot sanitization + tests for invalid JSON, stale keys, and partial payload restore paths.
@@ -299,6 +341,6 @@
 - Active blockers: none currently.
 
 ## Next Cycle Goals
-- Add `/api/fetch` retries/latency diagnostics in summary payloads for large-run troubleshooting.
-- Add API request-id support in error payloads to improve supportability from Studio UI errors.
-- Continue reliability hardening for large feed sets while reducing maintenance risk in `web/app.js`.
+- Start phased `web/app.js` modularization to reduce maintenance risk while preserving behavior.
+- Add Studio keyboard shortcuts for generate/export and high-frequency review loops.
+- Add release checklist automation and finish docs split so README stays compact while deep recipes move to `docs/`.

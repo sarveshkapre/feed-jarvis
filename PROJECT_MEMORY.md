@@ -31,6 +31,60 @@
   - Trusted: local repository code/tests/commands.
   - Untrusted: external market/reference pages.
 
+## Session Notes (2026-02-13 | Global Cycle 5 Session 1)
+- Goal: Ship the highest-impact remaining M3 reliability/supportability work by adding fetch diagnostics telemetry and API request IDs.
+- Success criteria:
+  - `/api/fetch` summary returns `retryAttempts`, `retrySuccesses`, `durationMs`, and `slowestFeedMs`.
+  - API error payloads include `requestId` and matching `x-request-id` headers.
+  - Studio fetch/error UX surfaces the new diagnostics/request-id context without regressing existing status messaging.
+  - Verification commands and tracker updates are recorded.
+- Non-goals:
+  - `web/app.js` modularization.
+  - Scheduler/publishing integrations.
+  - New API routes beyond diagnostics/supportability changes.
+- Brainstorming checkpoint (ranked; impact/effort/fit/diff/risk/confidence):
+  1. `/api/fetch` retry/latency summary diagnostics (`retryAttempts`, `retrySuccesses`, `durationMs`, `slowestFeedMs`) (5/2/5/0/1/4) -> selected.
+  2. API request-id in error payloads + response headers (5/2/5/0/1/5) -> selected.
+  3. Studio fetch status formatting update for new diagnostics (4/2/5/0/1/4) -> selected.
+  4. Server test coverage for diagnostics and request-id behavior (5/2/5/0/1/4) -> selected.
+  5. Studio keyboard shortcuts for generate/export flow (4/3/4/1/1/4) -> pending.
+  6. `web/app.js` modularization starter split (state/api/utils) (4/4/5/0/2/3) -> pending.
+  7. Release checklist automation script (3/3/4/0/1/3) -> pending.
+  8. Deep docs split from README into `docs/` recipes (3/2/4/0/1/5) -> pending.
+  9. Step 1 per-feed error detail accordion (3/3/4/0/2/3) -> pending.
+  10. Filter preset import/export JSON (3/2/3/1/1/3) -> pending.
+- Product phase checkpoint:
+  - Prompt: "Are we in a good product phase yet?" -> No.
+  - Best-in-market signal (untrusted web, bounded scan 2026-02-13): Feedly/RSS.app/Buffer/Sprout/Inoreader reinforce that trustworthy feed workflows expose high-signal diagnostics and traceable failure context for repeated automated runs.
+  - Gap map:
+    - Missing: fetch retry/latency diagnostics visibility and request-id traceability in Studio-facing API errors.
+    - Weak: high-throughput operator speed (keyboard flow/modular maintainability).
+    - Parity: ingestion interop (URL-file/OPML), bounded retries/concurrency, filter presets/domain mute, deterministic exports.
+    - Differentiator: local-first private workflow with multi-persona generation/timeline support.
+- What features are still pending?
+  - From `PRODUCT_ROADMAP.md`: request-id support, fetch retry diagnostics, fetch latency diagnostics, `web/app.js` modularization, keyboard shortcuts, release checklist automation, docs split.
+  - From `CLONE_FEATURES.md`: backlog depth remains above 20 candidates.
+- Locked task list for this session:
+  - Add `/api/fetch` retry and latency diagnostics.
+  - Add API request-id error payload/header support and surface request-id in Studio API errors.
+  - Add tests and summary formatting updates for the new diagnostics.
+- Execution outcome:
+  - Completed: `src/lib/feedFetch.ts` now returns retry-attempt metadata (`retryAttempts`, `retrySucceeded`) from network fetch paths.
+  - Completed: `src/server.ts` now reports fetch diagnostics (`retryAttempts`, `retrySuccesses`, `durationMs`, `slowestFeedMs`) and emits request IDs in API error payloads + `x-request-id` headers.
+  - Completed: `web/studioPrefs.js` + `web/app.js` now format diagnostics in Step 1 status and append request IDs in surfaced API error text.
+  - Completed: Added tests for diagnostics formatting (`test/studioPrefs.test.ts`) and request-id/fetch-diagnostics server behavior (`test/server.test.ts`).
+- Anti-drift check:
+  - Confirmed all implemented items map directly to M3 reliability/supportability goals; deferred modularization/keyboard work to next cycle.
+- Quick code review sweep:
+  - `rg TODO|FIXME|HACK|XXX src web test docs` returned no actionable source markers.
+  - Largest hotspot remains `web/app.js` (2.2k+ LOC), reinforcing modularization as next cycle priority.
+- Signals:
+  - GitHub issue signals: disabled/unavailable.
+  - GitHub CI signals: disabled/unavailable.
+- Trust labels:
+  - Trusted: local repository code/tests/commands.
+  - Untrusted: external market/reference pages.
+
 ## Session Notes (2026-02-13 | Cycle 2 Session 1)
 - Goal: Ship the highest-impact remaining parity work by adding deterministic browser E2E coverage for Step 4 agent-feed actions (`build -> copy -> download`).
 - Success criteria:
@@ -250,6 +304,7 @@
 
 ## Recent Decisions
 - Template: YYYY-MM-DD | Decision | Why | Evidence (tests/logs) | Commit | Confidence (high/medium/low) | Trust (trusted/untrusted)
+- 2026-02-13 | Add `/api/fetch` retry/latency diagnostics and API request IDs for Studio troubleshooting | These were the highest-impact remaining parity/reliability gaps after dry-run diagnostics and materially improve large-run debugging confidence | `src/lib/feedFetch.ts`, `src/server.ts`, `web/studioPrefs.js`, `web/app.js`, `test/studioPrefs.test.ts`, `test/server.test.ts`, `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/studioPrefs.test.ts`, `FEED_JARVIS_CACHE_DIR=/tmp/feed-jarvis-cache-test npx vitest run test/feedFetch.test.ts`, `npx vitest run test/server.test.ts` (`listen EPERM` sandbox limitation), `node dist/cli.js generate --input /tmp/feed-jarvis-cycle5-smoke-items.json --persona Analyst --format jsonl --max-chars 180` | pending | high | trusted
 - 2026-02-13 | Ship CLI preflight diagnostics (`generate --dry-run`) plus reliability coverage for session snapshot edge cases and `EPIPE` output piping | This was the highest-impact remaining parity gap from the roadmap and directly improves preflight confidence for repeat CLI workflows without changing normal generation behavior | `src/cli.ts`, `test/cli.test.ts`, `web/studioPrefs.js`, `web/app.js`, `test/studioPrefs.test.ts`, `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/studioPrefs.test.ts`, `npx vitest run test/cli.test.ts -t "reports diagnostics with --dry-run and does not write posts|handles EPIPE cleanly across output formats"`, `node dist/cli.js generate --input /tmp/feed-jarvis-cycle4-items.json --persona Analyst --max-chars 60 --dry-run --format csv` | 02bd0b4 | high | trusted
 - 2026-02-13 | Ship Studio Step 1 filter presets plus per-item domain muting (`site:` tokens) | This was the highest-value remaining repeat-triage parity gap and directly improves daily workflow speed/signal quality | `web/filterPresets.js`, `web/app.js`, `web/index.html`, `web/filters.js`, `test/filterPresets.test.ts`, `test/filters.test.ts`, `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/filterPresets.test.ts test/filters.test.ts`, `node dist/cli.js generate --input /tmp/feed-jarvis-smoke-items-cycle3.json --persona Analyst --format jsonl --max-chars 200` | 2e8f772 | high | trusted
 - 2026-02-13 | Extend Playwright smoke coverage to include Step 4 agent-feed flow (`build -> copy -> download`) with deterministic payload assertions | Step 4 was the highest-value remaining parity/testing gap; closing it reduces regression risk in the multi-persona timeline workflow and aligns with roadmap cycle goals | `scripts/e2e-web.ts`, `npm run lint`, `npm run typecheck`, `npm run build`, `npm run e2e:web` (`listen EPERM` in sandbox), `node dist/cli.js generate --input /tmp/feed-jarvis-smoke-items-cycle2.json --persona Analyst --format jsonl --max-chars 180` | 8611fab | high | trusted
@@ -296,16 +351,24 @@
 ## Next Prioritized Tasks
 - Scoring rubric: Impact (1-5), Effort (1-5, lower is easier), Strategic fit (1-5), Differentiation (1-5), Risk (1-5, lower is safer), Confidence (1-5).
 - Selected (completed in cycle 2026-02-13):
-- Add CLI `generate --dry-run` diagnostics mode with preflight summary and no output writes (Impact 5, Effort 3, Fit 5, Diff 1, Risk 1, Conf 4).
-- Add CLI regression tests for `EPIPE` output piping across `text/json/jsonl/csv` (Impact 4, Effort 2, Fit 5, Diff 0, Risk 1, Conf 4).
-- Add session snapshot sanitization + edge-case tests (invalid snapshots/stale keys/partial payloads) (Impact 4, Effort 2, Fit 5, Diff 0, Risk 1, Conf 4).
+- Add `/api/fetch` diagnostics fields (`retryAttempts`, `retrySuccesses`, `durationMs`, `slowestFeedMs`) and surface them in Studio status (Impact 5, Effort 2, Fit 5, Diff 0, Risk 1, Conf 4).
+- Add API request-id support in error payloads/headers and surface IDs in Studio errors (Impact 5, Effort 2, Fit 5, Diff 0, Risk 1, Conf 5).
+- Add diagnostics/request-id coverage updates (`test/server.test.ts`, `test/studioPrefs.test.ts`) (Impact 4, Effort 2, Fit 5, Diff 0, Risk 1, Conf 4).
 - Remaining backlog:
-- `/api/fetch` retries summary fields (`retryAttempts`, `retrySuccesses`) for UX diagnostics (Impact 4, Effort 2, Fit 4, Diff 0, Risk 1, Conf 3).
-- `/api/fetch` latency summary fields (`durationMs`, `slowestFeedMs`) for slow-batch troubleshooting (Impact 4, Effort 2, Fit 4, Diff 0, Risk 1, Conf 3).
-- API request-id in error payloads for faster Studio troubleshooting (Impact 3, Effort 2, Fit 4, Diff 0, Risk 1, Conf 4).
+- `web/app.js` modularization into smaller modules (state/api/export/ui) (Impact 4, Effort 4, Fit 5, Diff 0, Risk 2, Conf 3).
+- Studio keyboard shortcuts for high-frequency generate/export loops (Impact 4, Effort 2, Fit 4, Diff 1, Risk 1, Conf 4).
+- Release checklist automation (version/changelog/artifact guard) (Impact 3, Effort 3, Fit 4, Diff 0, Risk 1, Conf 3).
 
 ## Verification Evidence
 - Template: YYYY-MM-DD | Command | Key output | Status (pass/fail)
+- 2026-02-13 | `npm run format` | `Formatted 44 files ... Fixed 1 file.` | pass
+- 2026-02-13 | `npm run lint` | `Checked 46 files ... No fixes applied.` | pass
+- 2026-02-13 | `npm run typecheck` | `tsc -p tsconfig.json --noEmit` completed with no errors | pass
+- 2026-02-13 | `npm run build` | `tsc -p tsconfig.build.json` completed with no errors | pass
+- 2026-02-13 | `npx vitest run test/studioPrefs.test.ts` | `Test Files 1 passed; Tests 9 passed` | pass
+- 2026-02-13 | `FEED_JARVIS_CACHE_DIR=/tmp/feed-jarvis-cache-test npx vitest run test/feedFetch.test.ts` | `Test Files 1 passed; Tests 11 passed` | pass
+- 2026-02-13 | `npx vitest run test/server.test.ts` | failed in sandbox with `listen EPERM: operation not permitted 127.0.0.1` | fail (env)
+- 2026-02-13 | `node dist/cli.js generate --input /tmp/feed-jarvis-cycle5-smoke-items.json --persona Analyst --format jsonl --max-chars 180` | emitted two JSONL lines for smoke payload | pass
 - 2026-02-13 | `git push origin main` | `4333481..02bd0b4 main -> main` | pass
 - 2026-02-13 | `gh run list --branch main --limit 5` | `error connecting to api.github.com` in this environment | fail (env)
 - 2026-02-13 | `npm run lint` | `Checked 46 files ... No fixes applied.` | pass

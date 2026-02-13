@@ -8,9 +8,6 @@
 
 ## Candidate Features To Do
 - [ ] P2: Add Studio-side URL normalization helper for pasted feeds (strip whitespace/tracking junk safely). (Impact 3, Effort 2, Fit 4, Diff 0, Risk 2, Conf 3)
-- [ ] P2: Add server-side request id in API error payloads for better troubleshooting in Studio. (Impact 3, Effort 2, Fit 4, Diff 0, Risk 1, Conf 4)
-- [ ] P2: Add retries summary fields to `/api/fetch` response (`retryAttempts`, `retrySuccesses`) for UX visibility. (Impact 3, Effort 2, Fit 4, Diff 0, Risk 1, Conf 3)
-- [ ] P2: Add fetch latency telemetry fields to `/api/fetch` summary (`durationMs`, `slowestFeedMs`) for large-run troubleshooting. (Impact 3, Effort 2, Fit 4, Diff 0, Risk 1, Conf 3)
 - [ ] P2: Add optional output schema versioning metadata in JSON/JSONL exports for stable downstream imports. (Impact 3, Effort 2, Fit 3, Diff 1, Risk 1, Conf 3)
 - [ ] P2: Add `--diagnostics-json` machine-readable dry-run output for CI/pipeline ingestion. (Impact 3, Effort 2, Fit 4, Diff 1, Risk 1, Conf 3)
 - [ ] P3: Add Studio quick action to insert a valid sample `items.json` payload into Step 1 JSON mode. (Impact 2, Effort 1, Fit 3, Diff 0, Risk 1, Conf 4)
@@ -31,6 +28,9 @@
 - [ ] P3: Add filter-token chips UI (`keyword`/`site:`) with one-click remove for faster triage edits. (Impact 2, Effort 3, Fit 3, Diff 1, Risk 1, Conf 3)
 
 ## Implemented
+- [x] 2026-02-13 P1: Added `/api/fetch` retry/latency diagnostics in response summary (`retryAttempts`, `retrySuccesses`, `durationMs`, `slowestFeedMs`) for large-run troubleshooting. Evidence: `src/lib/feedFetch.ts`, `src/server.ts`, `web/studioPrefs.js`, `test/server.test.ts`, `test/studioPrefs.test.ts`; verification: `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/studioPrefs.test.ts`.
+- [x] 2026-02-13 P1: Added API request IDs in error payloads and `x-request-id` response headers; Studio now surfaces request IDs in API error text. Evidence: `src/server.ts`, `web/app.js`, `test/server.test.ts`; verification: `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/server.test.ts` (blocked in this sandbox by `listen EPERM`).
+- [x] 2026-02-13 P2: Added server tests for fetch diagnostics + request-id behavior and kept fetch retry unit coverage green with writable cache-dir override. Evidence: `test/server.test.ts`, `test/feedFetch.test.ts`; verification: `FEED_JARVIS_CACHE_DIR=/tmp/feed-jarvis-cache-test npx vitest run test/feedFetch.test.ts`.
 - [x] 2026-02-13 P1: Added CLI `generate --dry-run` diagnostics (`valid/invalid`, duplicate URLs, estimated truncation count) with no output writes. Evidence: `src/cli.ts`, `README.md`, `CHANGELOG.md`, `test/cli.test.ts`; verification: `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/cli.test.ts -t "reports diagnostics with --dry-run and does not write posts|handles EPIPE cleanly across output formats"`, `node dist/cli.js generate --input /tmp/feed-jarvis-cycle4-items.json --persona Analyst --max-chars 60 --dry-run --format csv`.
 - [x] 2026-02-13 P2: Added CLI regression coverage for output pipe-close (`EPIPE`) behavior across `text/json/jsonl/csv` and updated CLI tests to use `node --import tsx` execution in sandbox-restricted environments. Evidence: `test/cli.test.ts`; verification: `npx vitest run test/cli.test.ts -t "reports diagnostics with --dry-run and does not write posts|handles EPIPE cleanly across output formats"`.
 - [x] 2026-02-13 P2: Added session snapshot sanitization and edge-case coverage (invalid JSON snapshots, stale keys dropped, partial payload preserved). Evidence: `web/studioPrefs.js`, `web/studioPrefs.d.ts`, `web/app.js`, `test/studioPrefs.test.ts`; verification: `npx vitest run test/studioPrefs.test.ts`, `npm run lint`, `npm run typecheck`, `npm run build`.
@@ -77,6 +77,8 @@
 - [x] 2026-02-08 P2: Synced docs with shipped behavior changes. Evidence: `README.md`, `CHANGELOG.md`, `UPDATE.md`.
 
 ## Insights
+- API request IDs in both response headers and JSON error payloads make Studio-reported failures directly traceable in logs and support workflows.
+- Retry/latency diagnostics (`retryAttempts`, `retrySuccesses`, `durationMs`, `slowestFeedMs`) are most useful when formatted into one status line rather than hidden as raw JSON.
 - CLI tests are more resilient in sandboxed environments when launched as `node --import tsx src/cli.ts` instead of invoking the `tsx` binary directly (which may require IPC `listen` permissions).
 - A no-write `--dry-run` path gives high-signal preflight diagnostics without changing generation/export behavior for strict production runs.
 - `site:<domain>` exclusion tokens give an explicit, low-ambiguity path for domain muting without changing existing free-text filter UX.

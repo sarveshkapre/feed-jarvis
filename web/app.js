@@ -294,7 +294,14 @@ function getApiError(res, payload, fallback) {
     const value = payload.value;
     if (value && typeof value === "object") {
       const error = Reflect.get(value, "error");
-      if (typeof error === "string" && error.trim()) return error.trim();
+      const requestId = Reflect.get(value, "requestId");
+      const requestIdText =
+        typeof requestId === "string" && requestId.trim()
+          ? ` (request id: ${requestId.trim()})`
+          : "";
+      if (typeof error === "string" && error.trim()) {
+        return `${error.trim()}${requestIdText}`;
+      }
     }
   }
 

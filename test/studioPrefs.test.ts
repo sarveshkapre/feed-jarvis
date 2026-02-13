@@ -78,6 +78,29 @@ describe("studioPrefs", () => {
     );
   });
 
+  test("includes retry and latency diagnostics in fetch summary details", () => {
+    expect(
+      formatFetchSummary(
+        {
+          sources: 2,
+          cache: 1,
+          network: 1,
+          dedupe: false,
+          deduped: 0,
+          limited: 0,
+          retryAttempts: 2,
+          retrySuccesses: 1,
+          durationMs: 48,
+          slowestFeedMs: 35,
+        },
+        4,
+        2,
+      ),
+    ).toBe(
+      "Loaded 4 item(s) from 2 feed(s). (1 cache, 1 network, retries 2 (recovered 1), duration 48ms, slowest 35ms)",
+    );
+  });
+
   test("returns null for invalid or non-object session snapshots", () => {
     expect(parseStudioSessionSnapshot("not json")).toBeNull();
     expect(parseStudioSessionSnapshot(JSON.stringify(["bad"]))).toBeNull();

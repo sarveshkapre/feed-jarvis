@@ -191,6 +191,22 @@ export function formatFetchSummary(summary, itemsCount, fallbackSources) {
     summary && typeof summary === "object"
       ? coerceNonNegativeInt(Reflect.get(summary, "concurrency"))
       : null;
+  const retryAttempts =
+    summary && typeof summary === "object"
+      ? coerceNonNegativeInt(Reflect.get(summary, "retryAttempts"))
+      : null;
+  const retrySuccesses =
+    summary && typeof summary === "object"
+      ? coerceNonNegativeInt(Reflect.get(summary, "retrySuccesses"))
+      : null;
+  const durationMs =
+    summary && typeof summary === "object"
+      ? coerceNonNegativeInt(Reflect.get(summary, "durationMs"))
+      : null;
+  const slowestFeedMs =
+    summary && typeof summary === "object"
+      ? coerceNonNegativeInt(Reflect.get(summary, "slowestFeedMs"))
+      : null;
 
   const feeds =
     sources ??
@@ -211,6 +227,17 @@ export function formatFetchSummary(summary, itemsCount, fallbackSources) {
   }
   if (concurrency !== null && concurrency > 0) {
     parts.push(`concurrency ${concurrency}`);
+  }
+  if ((retryAttempts ?? 0) > 0 || (retrySuccesses ?? 0) > 0) {
+    const attempts = retryAttempts ?? 0;
+    const recovered = retrySuccesses ?? 0;
+    parts.push(`retries ${attempts} (recovered ${recovered})`);
+  }
+  if (durationMs !== null && durationMs > 0) {
+    parts.push(`duration ${durationMs}ms`);
+  }
+  if (slowestFeedMs !== null && slowestFeedMs > 0) {
+    parts.push(`slowest ${slowestFeedMs}ms`);
   }
 
   const detail = parts.length > 0 ? ` (${parts.join(", ")})` : "";

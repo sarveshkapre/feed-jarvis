@@ -111,6 +111,7 @@ npm run dev -- fetch --opml feeds.opml --allow-host example.com --allow-host new
 - Studio persistence: remembers your input mode and form settings across refreshes.
 - Studio JSON input: validates URLs as `http/https` and reports skipped invalid entries.
 - Studio fetch controls: tune `max items`, `dedupe`, and fetch concurrency (`1-20`) for large URL batches.
+- Studio fetch diagnostics: status includes cache/network split, dedupe/trim counts, retry diagnostics, and latency (`duration`/`slowest`) details.
 - Studio feed sets: save/load named groups of feed URLs and import/export sets as OPML (local-only).
 - Studio rule presets: save/load named text-rule bundles (prepend/append/hashtags/UTM) for repeat runs.
 - Studio filters: include/exclude keywords, enforce minimum title length, save/load named filter presets, and mute domains with `site:example.com`.
@@ -124,6 +125,7 @@ npm run dev -- fetch --opml feeds.opml --allow-host example.com --allow-host new
 - Outputs: Studio exports `.txt`, `.jsonl`, and `.csv` drafts (JSONL/CSV include source metadata); CLI supports text/JSON/JSONL/CSV.
 - CLI fetch ingestion: supports direct `--url`, newline-delimited `--urls-file`, and OPML (`--opml`) inputs.
 - CLI fetch throughput: supports `--fetch-concurrency` (or `FEED_JARVIS_FETCH_CONCURRENCY`) to bound parallel feed requests.
+- API troubleshooting: error payloads include a request id and the same value in `x-request-id` response headers.
 
 Tip: load/override personas via `--personas` from JSON, a single `.md` persona file, or a directory of `.md` persona files.
 Tip: set `FEED_JARVIS_PERSONAS=/absolute/path/to/personas` to override Studio personas.

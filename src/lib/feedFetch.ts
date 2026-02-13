@@ -31,6 +31,8 @@ export type FetchFeedOptions = {
 export type FetchFeedResult = {
   items: FeedItem[];
   source: "cache" | "network";
+  retryAttempts: number;
+  retrySucceeded: boolean;
 };
 
 export async function fetchFeed(
@@ -69,15 +71,12 @@ export async function fetchFeed(
     return {
       items: parseFeedXml(cached.xml, options.maxItems),
       source: "cache",
+      retryAttempts: 0,
+      retrySucceeded: false,
     };
   }
 
-  let fetchResult: {
-    xml: string;
-    etag?: string;
-    lastModified?: string;
-    notModified?: boolean;
-  };
+  let fetchResult: FetchXmlWithRetryResult;
   try {
     fetchResult = await fetchXmlWithRetry({
       url,
@@ -97,6 +96,8 @@ export async function fetchFeed(
       return {
         items: parseFeedXml(cached.xml, options.maxItems),
         source: "cache",
+        retryAttempts: 0,
+        retrySucceeded: false,
       };
     }
     throw err;
@@ -115,6 +116,8 @@ export async function fetchFeed(
   return {
     items: parseFeedXml(fetchResult.xml, options.maxItems),
     source: fetchResult.notModified ? "cache" : "network",
+    retryAttempts: fetchResult.retryAttempts,
+    retrySucceeded: fetchResult.retrySucceeded,
   };
 }
 
@@ -132,16 +135,22 @@ type FetchXmlWithRetryOptions = {
   sleepFn: (ms: number) => Promise<void>;
 };
 
-async function fetchXmlWithRetry(options: FetchXmlWithRetryOptions): Promise<{
+type FetchXmlWithRetryResult = {
   xml: string;
   etag?: string;
   lastModified?: string;
   notModified?: boolean;
-}> {
+  retryAttempts: number;
+  retrySucceeded: boolean;
+};
+
+async function fetchXmlWithRetry(
+  options: FetchXmlWithRetryOptions,
+): Promise<FetchXmlWithRetryResult> {
   let attempt = 0;
   while (true) {
     try {
-      return await fetchXml(
+      const result = await fetchXml(
         options.url,
         options.allowHosts,
         options.allowPrivateHosts,
@@ -151,6 +160,11 @@ async function fetchXmlWithRetry(options: FetchXmlWithRetryOptions): Promise<{
         options.fetchFn,
         options.cacheEntry,
       );
+      return {
+        ...result,
+        retryAttempts: attempt,
+        retrySucceeded: attempt > 0,
+      };
     } catch (err) {
       const canRetry = isRetryableError(err) && attempt < options.retryAttempts;
       if (!canRetry) throw err;

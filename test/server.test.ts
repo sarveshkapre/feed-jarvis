@@ -475,6 +475,61 @@ describe("studio server", () => {
     });
   });
 
+  it("reports retry and latency diagnostics in fetch summary", async () => {
+    const nonce = `diagnostics-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    const retryUrl = `http://localhost/${nonce}-retry.xml`;
+    const okUrl = `http://localhost/${nonce}-ok.xml`;
+    const attemptsByUrl = new Map<string, number>();
+
+    const fetchFn: typeof fetch = async (href) => {
+      const key = String(href);
+      const attempt = (attemptsByUrl.get(key) ?? 0) + 1;
+      attemptsByUrl.set(key, attempt);
+
+      if (key.includes("-retry.xml") && attempt === 1) {
+        return new Response("temporary upstream failure", {
+          status: 500,
+          statusText: "Internal Server Error",
+          headers: { "content-type": "text/plain" },
+        });
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 12));
+      const name = key.split("/").at(-1) ?? "item.xml";
+      const xml = `<?xml version="1.0"?>
+<rss version="2.0"><channel>
+  <item><title>${name}</title><link>http://localhost/${name}</link></item>
+</channel></rss>`;
+      return new Response(xml, {
+        status: 200,
+        headers: { "content-type": "application/rss+xml" },
+      });
+    };
+
+    await withServer({ allowPrivateHosts: true, fetchFn }, async (baseUrl) => {
+      const res = await fetch(`${baseUrl}/api/fetch`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          urls: [retryUrl, okUrl],
+          maxItems: 10,
+          dedupe: false,
+        }),
+      });
+
+      expect(res.status).toBe(200);
+      const payload = await res.json();
+      expect(payload.items).toHaveLength(2);
+      expect(payload.summary).toMatchObject({
+        sources: 2,
+        retryAttempts: 1,
+        retrySuccesses: 1,
+      });
+      expect(payload.summary.durationMs).toBeGreaterThan(0);
+      expect(payload.summary.slowestFeedMs).toBeGreaterThan(0);
+    });
+  });
+
   it("respects fetchConcurrency for /api/fetch", async () => {
     const nonce = `concurrency-${Date.now()}-${Math.random().toString(16).slice(2)}`;
     const urls = Array.from(
@@ -531,7 +586,31 @@ describe("studio server", () => {
       const res = await fetch(`${baseUrl}/api/not-found`);
       expect(res.status).toBe(404);
       const payload = await res.json();
-      expect(payload).toEqual({ error: "Not found" });
+      expect(payload.error).toBe("Not found");
+      expect(typeof payload.requestId).toBe("string");
+      expect(payload.requestId.length).toBeGreaterThan(0);
+      expect(res.headers.get("x-request-id")).toBe(payload.requestId);
+    });
+  });
+
+  it("includes request id in API validation errors", async () => {
+    await withServer({}, async (baseUrl) => {
+      const res = await fetch(`${baseUrl}/api/generate`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          personaName: "Analyst",
+          template: "straight",
+        }),
+      });
+
+      expect(res.status).toBe(400);
+      const payload = await res.json();
+      expect(typeof payload.error).toBe("string");
+      expect(payload.error.length).toBeGreaterThan(0);
+      expect(typeof payload.requestId).toBe("string");
+      expect(payload.requestId.length).toBeGreaterThan(0);
+      expect(res.headers.get("x-request-id")).toBe(payload.requestId);
     });
   });
 
