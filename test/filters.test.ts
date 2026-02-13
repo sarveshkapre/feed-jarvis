@@ -51,4 +51,20 @@ describe("applyItemFilters", () => {
     const out = applyItemFilters(items, { include: "podcast", exclude: "ceo" });
     expect(out).toEqual([]);
   });
+
+  test("supports site: tokens for domain muting", () => {
+    const out = applyItemFilters(items, { exclude: "site:example.com" });
+    expect(out).toEqual([]);
+
+    const subdomain = applyItemFilters(
+      [
+        {
+          title: "Regional update",
+          url: "https://news.example.com/post",
+        },
+      ],
+      { exclude: "site:example.com" },
+    );
+    expect(subdomain).toEqual([]);
+  });
 });

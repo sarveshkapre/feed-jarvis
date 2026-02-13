@@ -24,6 +24,18 @@
 ## Current Milestone
 - M3 Reliability + Interop
 
+## Session Goal Checkpoint (2026-02-13 | Global Cycle 3 Session 1)
+- Goal: Ship repeat-workflow triage parity by adding saved filter presets and one-click domain muting in Studio Step 1.
+- Success criteria:
+  - Users can save/load/delete named filter presets (`include`/`exclude`/`min-title`) locally in Step 1.
+  - Items preview includes a per-item mute-domain quick action that updates exclusion filters and immediately re-filters items.
+  - Filter logic supports explicit domain exclusion tokens without regressing existing keyword behavior.
+  - Verification evidence and tracker updates are captured.
+- Non-goals:
+  - Scheduler/publishing integrations.
+  - Large `web/app.js` modularization.
+  - New server/API endpoints unrelated to triage UX.
+
 ## Session Goal Checkpoint (2026-02-13 | Cycle 2 Session 1)
 - Goal: Close the highest-impact remaining parity gap by shipping browser E2E coverage for Step 4 agent-feed actions (`build -> copy -> download`).
 - Success criteria:
@@ -136,7 +148,32 @@
   - Missing: bounded configurable fetch concurrency control surfaced in UI + API.
   - Weak: visibility/control of ingestion throughput on large URL batches.
   - Parity: URL-file + OPML ingestion, retry/backoff, filters/rules, export formats, Step 3 E2E coverage.
-  - Differentiator: strict local-first behavior with private-host defaults.
+- Differentiator: strict local-first behavior with private-host defaults.
+
+## Product Phase Checkpoint (2026-02-13 | Global Cycle 3 Session 1)
+- Prompt: "Are we in a good product phase yet?" -> `No`.
+- Best-in-market references (untrusted web, bounded scan):
+  - Feedly guide on muting terms/topics in AI feeds (`https://docs.feedly.com/article/507-how-to-mute-topics-in-feedly-ai-feeds`).
+  - Feedly keyword mute filters in regular feeds (`https://feedly.helpscoutdocs.com/article/345-mute-filters`).
+  - Inoreader automation/rules emphasis for high-volume workflows (`https://www.inoreader.com/blog/2026/01/save-time-with-automations.html`).
+  - RSS.app keyword/domain filtering baseline (`https://help.rss.app/en/articles/10271103-how-to-filter-rss-feeds`).
+  - Buffer RSS automation expectations for repeat publishing loops (`https://support.buffer.com/article/613-automating-rss-feeds-using-feedly-and-zapier`).
+- Core expected capabilities in this segment:
+  - Reusable filter controls and quick muting to reduce repeated setup and feed noise.
+  - Safe local persistence of triage state for repeated daily runs.
+  - Deterministic export/automation handoff once triage quality is high.
+- Parity gap map:
+  - Missing: saved filter presets and one-click domain mute action in Studio triage.
+  - Weak: repeated filter setup speed and item-level noise suppression controls.
+  - Parity: OPML + URL-file ingestion, bounded retry/concurrency, Step 3/4 browser E2E coverage.
+  - Differentiator: private local-first workflow with persona-rich generation modes.
+
+## Product Phase Checkpoint (2026-02-13 | Global Cycle 3 Session 1 Post-Ship)
+- Prompt: "Are we in a good product phase yet?" -> `No`.
+- Outcome after this session:
+  - Closed missing parity items: saved filter presets and one-click domain muting in Step 1.
+  - Remaining highest-value missing parity item: CLI dry-run diagnostics for invalid/duplicate/truncation visibility before publish/export.
+  - Remaining weak areas: session-persistence edge-case resilience and large-file maintainability in `web/app.js`.
 
 ## Product Phase Checkpoint (2026-02-12 | Session 3)
 - Prompt: "Are we in a good product phase yet?" -> `No`.
@@ -165,6 +202,11 @@
 - [x] P1: Extend browser E2E coverage to Step 4 agent feed flow (`build -> copy -> download`) with deterministic assertions.
 - [x] P2: Add Step 4 assertion depth for feed metadata and exported JSON structure to reduce regression risk.
 
+## Locked Cycle Scope (2026-02-13 | Global Cycle 3 Session 1)
+- [x] P1: Add Studio saved filter presets (save/load/delete) for include/exclude/min-title triage settings.
+- [x] P1: Add per-item mute-domain quick action that appends a domain exclusion token and re-filters immediately.
+- [x] P1: Add coverage for filter preset helpers and domain-token filtering behavior.
+
 ## Locked Cycle Scope (2026-02-12 | Session 3)
 - [x] P1: Browser-level Studio E2E coverage for critical path (`fetch -> generate -> export`) with deterministic fixtures.
 - [x] P2: Export smoke assertions in CI for `.txt`, `.jsonl`, and `.csv` from the browser-driven flow.
@@ -180,8 +222,6 @@
 - [x] P1: Studio pasted JSON URL validation (`http/https` only) with actionable user feedback.
 
 ## Pending Features (What Is Still Pending?)
-- P2: Studio saved filter presets (include/exclude/min-title) for repeat triage workflows.
-- P2: Studio per-item quick action to mute a domain into exclusion filters.
 - P2: CLI `generate --dry-run` diagnostics (invalid items, duplicate URLs, truncation counts).
 - P2: Targeted session-persistence edge-case tests (invalid snapshots, stale keys, partial payloads).
 - P2: CLI regression tests for `EPIPE` across text/json/jsonl/csv output formats.
@@ -191,6 +231,9 @@
 - P3: Docs split: keep README compact and move deep recipes to `docs/`.
 
 ## Delivered Features (Recent)
+- 2026-02-13: Added Studio filter presets (save/load/delete) for Step 1 include/exclude/min-title triage settings with local persistence and session restore support.
+- 2026-02-13: Added Step 1 per-item "Mute domain" action that appends `site:<domain>` exclusions and re-applies filtering immediately.
+- 2026-02-13: Added filter coverage for preset parse/upsert/remove helpers and `site:` domain-token filtering behavior.
 - 2026-02-13: Expanded browser-level Studio E2E smoke to include Step 4 agent feed (`build -> copy -> download`) with deterministic assertions for rendered cards, copy status, and downloaded JSON payload shape.
 - 2026-02-13: Added bounded configurable fetch concurrency for CLI + Studio server/API (`--fetch-concurrency`, `FEED_JARVIS_FETCH_CONCURRENCY`, `/api/fetch` `fetchConcurrency`) with shared worker-limited execution and summary reporting.
 - 2026-02-13: Added Studio Step 1 fetch-concurrency control (`1-20`) with session persistence and fetch-status detail.
@@ -212,6 +255,6 @@
 - Active blockers: none currently.
 
 ## Next Cycle Goals
-- Ship saved filter presets for include/exclude/min-title to reduce repeated setup work.
-- Add per-item mute-domain quick action in Studio to tighten feed-triage loops.
+- Ship CLI `generate --dry-run` diagnostics for invalid/duplicate/truncation insight before output.
+- Add targeted session-persistence edge-case coverage for invalid snapshots and stale keys.
 - Continue reliability hardening for large feed sets (clearer diagnostics and per-feed latency visibility).

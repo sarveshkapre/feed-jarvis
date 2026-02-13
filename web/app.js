@@ -7,6 +7,13 @@ import {
   serializeFeedSetsAsOpml,
   upsertFeedSet,
 } from "./feedSets.js";
+import {
+  FILTER_PRESETS_STORAGE_KEY,
+  parseFilterPresets,
+  removeFilterPreset,
+  serializeFilterPresets,
+  upsertFilterPreset,
+} from "./filterPresets.js";
 import { applyItemFilters, normalizeItemFilters } from "./filters.js";
 import { getPostLengthStatus, trimPostToMaxChars } from "./postEditing.js";
 import {
@@ -38,6 +45,7 @@ const state = {
   agentFeed: [],
   agentFeedMeta: null,
   feedSets: [],
+  filterPresets: [],
   rulePresets: [],
   personasBase: [],
   personasOverrides: [],
@@ -78,6 +86,11 @@ const elements = {
   filterInclude: document.getElementById("filterInclude"),
   filterExclude: document.getElementById("filterExclude"),
   filterMinTitleLength: document.getElementById("filterMinTitleLength"),
+  filterPresetSelect: document.getElementById("filterPresetSelect"),
+  loadFilterPresetBtn: document.getElementById("loadFilterPresetBtn"),
+  saveFilterPresetBtn: document.getElementById("saveFilterPresetBtn"),
+  deleteFilterPresetBtn: document.getElementById("deleteFilterPresetBtn"),
+  filterPresetStatus: document.getElementById("filterPresetStatus"),
   filterStatus: document.getElementById("filterStatus"),
   itemsList: document.getElementById("itemsList"),
   itemsEmpty: document.getElementById("itemsEmpty"),
@@ -169,6 +182,26 @@ function readFeedSets() {
 function writeFeedSets(sets) {
   try {
     window.localStorage.setItem(FEED_SETS_STORAGE_KEY, serializeFeedSets(sets));
+  } catch {
+    // Ignore quota/privacy mode errors.
+  }
+}
+
+function readFilterPresets() {
+  try {
+    const raw = window.localStorage.getItem(FILTER_PRESETS_STORAGE_KEY);
+    return parseFilterPresets(raw);
+  } catch {
+    return [];
+  }
+}
+
+function writeFilterPresets(presets) {
+  try {
+    window.localStorage.setItem(
+      FILTER_PRESETS_STORAGE_KEY,
+      serializeFilterPresets(presets),
+    );
   } catch {
     // Ignore quota/privacy mode errors.
   }
@@ -386,6 +419,7 @@ function persistSessionSnapshot() {
     filterInclude: elements.filterInclude.value,
     filterExclude: elements.filterExclude.value,
     filterMinTitleLength: elements.filterMinTitleLength.value,
+    filterPresetName: elements.filterPresetSelect?.value ?? "",
     personaName: elements.personaSelect.value,
     useCustomPersona: elements.customPersonaToggle.checked,
     customPersonaName: elements.customPersonaName.value,
@@ -456,6 +490,13 @@ function restoreSessionSnapshot() {
   }
   if (typeof snapshot.filterMinTitleLength === "string") {
     elements.filterMinTitleLength.value = snapshot.filterMinTitleLength;
+  }
+  if (
+    typeof snapshot.filterPresetName === "string" &&
+    elements.filterPresetSelect &&
+    snapshot.filterPresetName.trim()
+  ) {
+    elements.filterPresetSelect.value = snapshot.filterPresetName;
   }
   if (typeof snapshot.template === "string") {
     elements.templateSelect.value = snapshot.template;
@@ -566,6 +607,121 @@ function updateFilterStatus() {
     elements.filterStatus,
     `Filters: ${filtered} of ${total} item(s) match.`,
   );
+}
+
+function refreshFilterPresetSelect() {
+  if (!elements.filterPresetSelect) return;
+
+  const selected = elements.filterPresetSelect.value;
+  elements.filterPresetSelect.innerHTML = "";
+
+  const placeholder = document.createElement("option");
+  placeholder.value = "";
+  placeholder.textContent = "Choose a saved preset…";
+  elements.filterPresetSelect.appendChild(placeholder);
+
+  for (const preset of state.filterPresets) {
+    const option = document.createElement("option");
+    option.value = preset.name;
+    option.textContent = preset.name;
+    elements.filterPresetSelect.appendChild(option);
+  }
+
+  if (
+    selected &&
+    state.filterPresets.some((preset) => preset.name === selected)
+  ) {
+    elements.filterPresetSelect.value = selected;
+  }
+
+  const hasSelection = Boolean(elements.filterPresetSelect.value);
+  if (elements.loadFilterPresetBtn) {
+    elements.loadFilterPresetBtn.disabled = !hasSelection;
+  }
+  if (elements.deleteFilterPresetBtn) {
+    elements.deleteFilterPresetBtn.disabled = !hasSelection;
+  }
+}
+
+function getSelectedFilterPreset() {
+  const name = elements.filterPresetSelect?.value ?? "";
+  if (!name) return null;
+  return state.filterPresets.find((preset) => preset.name === name) ?? null;
+}
+
+function applyFiltersToForm(filters) {
+  const next = normalizeItemFilters(filters);
+  elements.filterInclude.value = next.include;
+  elements.filterExclude.value = next.exclude;
+  elements.filterMinTitleLength.value = String(next.minTitleLength);
+}
+
+function loadSelectedFilterPreset() {
+  const preset = getSelectedFilterPreset();
+  if (!preset) {
+    setStatus(
+      elements.filterPresetStatus,
+      "Choose a saved filter preset first.",
+      "error",
+    );
+    return;
+  }
+
+  applyFiltersToForm(preset.filters);
+  refreshFilteredItems();
+  resetAgentFeed();
+  setStatus(elements.filterPresetStatus, `Loaded "${preset.name}".`);
+  persistSessionSnapshot();
+}
+
+function saveFilterPreset() {
+  const filters = currentFilters();
+  const hasActiveFilters =
+    Boolean(filters.include.trim()) ||
+    Boolean(filters.exclude.trim()) ||
+    filters.minTitleLength > 0;
+  if (!hasActiveFilters) {
+    setStatus(
+      elements.filterPresetStatus,
+      "Add at least one filter value before saving a preset.",
+      "error",
+    );
+    return;
+  }
+
+  const defaultName =
+    (elements.filterPresetSelect?.value ?? "").trim() || "Triage default";
+  const nameRaw = window.prompt("Name this filter preset:", defaultName);
+  const name = typeof nameRaw === "string" ? nameRaw.trim() : "";
+  if (!name) {
+    setStatus(elements.filterPresetStatus, "Cancelled filter preset save.");
+    return;
+  }
+
+  state.filterPresets = upsertFilterPreset(state.filterPresets, {
+    name,
+    filters,
+  });
+  writeFilterPresets(state.filterPresets);
+  refreshFilterPresetSelect();
+  if (elements.filterPresetSelect) elements.filterPresetSelect.value = name;
+  refreshFilterPresetSelect();
+  setStatus(elements.filterPresetStatus, `Saved "${name}".`);
+  persistSessionSnapshot();
+}
+
+function deleteFilterPreset() {
+  const preset = getSelectedFilterPreset();
+  if (!preset) return;
+  const ok = window.confirm(`Delete filter preset "${preset.name}"?`);
+  if (!ok) return;
+
+  state.filterPresets = removeFilterPreset(state.filterPresets, preset.name);
+  writeFilterPresets(state.filterPresets);
+  if (elements.filterPresetSelect) elements.filterPresetSelect.value = "";
+  refreshFilterPresetSelect();
+  setStatus(elements.filterPresetStatus, `Deleted "${preset.name}".`);
+  persistSessionSnapshot();
 }
 
 function refreshFeedSetSelect() {
@@ -916,6 +1072,65 @@ function deleteRulePreset() {
   persistSessionSnapshot();
 }
 
+function parseFilterTerms(raw) {
+  if (typeof raw !== "string") return [];
+  return raw
+    .split(/,|\n/)
+    .map((value) => value.trim())
+    .filter((value) => value.length > 0);
+}
+
+function addMutedDomain(hostname) {
+  if (!hostname) return;
+  const token = `site:${hostname.toLowerCase()}`;
+  const existing = parseFilterTerms(elements.filterExclude.value);
+  const hasToken = existing.some((entry) => entry.toLowerCase() === token);
+  if (!hasToken) {
+    existing.push(token);
+    elements.filterExclude.value = existing.join(", ");
+  }
+
+  refreshFilteredItems();
+  resetAgentFeed();
+  setStatus(elements.filterStatus, `Muted ${hostname}.`);
+  persistSessionSnapshot();
+}
+
+function renderPreviewItem(item) {
+  const li = document.createElement("li");
+  li.className = "preview-item-row";
+
+  const title = document.createElement("div");
+  title.className = "preview-item-title";
+  title.textContent = item.title;
+  li.appendChild(title);
+
+  const meta = document.createElement("div");
+  meta.className = "preview-item-meta";
+
+  const domain = document.createElement("span");
+  domain.className = "preview-item-domain";
+
+  const parsed = safeHttpUrl(String(item?.url ?? ""));
+  if (parsed) {
+    const hostname = parsed.hostname.toLowerCase();
+    domain.textContent = hostname;
+
+    const mute = document.createElement("button");
+    mute.type = "button";
+    mute.className = "preview-item-mute";
+    mute.textContent = "Mute domain";
+    mute.addEventListener("click", () => addMutedDomain(hostname));
+    meta.appendChild(mute);
+  } else {
+    domain.textContent = "No domain";
+  }
+
+  meta.prepend(domain);
+  li.appendChild(meta);
+  return li;
+}
+
 function updateItemsPreview() {
   elements.itemsList.innerHTML = "";
   setStatus(elements.itemsExportStatus, "");
@@ -945,9 +1160,7 @@ function updateItemsPreview() {
   if (elements.copyItemsBtn) elements.copyItemsBtn.disabled = false;
   const previewItems = state.filteredItems.slice(0, 8);
   for (const item of previewItems) {
-    const li = document.createElement("li");
-    li.textContent = item.title;
-    elements.itemsList.appendChild(li);
+    elements.itemsList.appendChild(renderPreviewItem(item));
   }
   if (state.filteredItems.length > previewItems.length) {
     const li = document.createElement("li");
@@ -1853,6 +2066,16 @@ function wireEvents() {
   });
   elements.exportFeedSetsBtn?.addEventListener("click", exportFeedSetsOpml);
   elements.deleteFeedSetBtn?.addEventListener("click", deleteFeedSet);
+  elements.filterPresetSelect?.addEventListener("change", () => {
+    refreshFilterPresetSelect();
+    persistSessionSnapshot();
+  });
+  elements.loadFilterPresetBtn?.addEventListener(
+    "click",
+    loadSelectedFilterPreset,
+  );
+  elements.saveFilterPresetBtn?.addEventListener("click", saveFilterPreset);
+  elements.deleteFilterPresetBtn?.addEventListener("click", deleteFilterPreset);
   elements.rulePresetSelect?.addEventListener("change", () => {
     refreshRulePresetSelect();
     persistSessionSnapshot();
@@ -2003,6 +2226,7 @@ function wireEvents() {
     elements.filterInclude,
     elements.filterExclude,
     elements.filterMinTitleLength,
+    elements.filterPresetSelect,
     elements.personaSelect,
     elements.customPersonaName,
     elements.customPersonaPrefix,
@@ -2045,11 +2269,14 @@ function wireEvents() {
 
 state.channelMaxCharsByChannel = readChannelMaxCharsByChannel();
 state.feedSets = readFeedSets();
+state.filterPresets = readFilterPresets();
 state.rulePresets = readRulePresets();
 refreshFeedSetSelect();
+refreshFilterPresetSelect();
 refreshRulePresetSelect();
 restoreSessionSnapshot();
 refreshFeedSetSelect();
+refreshFilterPresetSelect();
 refreshRulePresetSelect();
 wireEvents();
 loadPersonas();

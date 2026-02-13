@@ -368,7 +368,8 @@ button[disabled] {
 }
 
 .feed-presets,
-.rule-presets {
+.rule-presets,
+.filter-presets {
   padding: 16px;
   border-radius: var(--radius-sm);
   background: rgba(238, 245, 242, 0.35);
@@ -378,12 +379,14 @@ button[disabled] {
 }
 
 .feed-presets .inline-row,
-.rule-presets .inline-row {
+.rule-presets .inline-row,
+.filter-presets .inline-row {
   gap: 12px;
 }
 
 .feed-presets select,
-.rule-presets select {
+.rule-presets select,
+.filter-presets select {
   min-width: 220px;
 }
 
@@ -468,6 +471,42 @@ button[disabled] {
   background: #fff;
   border: 1px solid rgba(20, 32, 41, 0.08);
   font-size: 0.9rem;
+}
+
+.preview-item-row {
+  display: grid;
+  gap: 8px;
+}
+
+.preview-item-title {
+  font-weight: 500;
+}
+
+.preview-item-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.preview-item-domain {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.preview-item-mute {
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.78rem;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+
+.preview-item-mute:hover {
+  color: var(--ink);
 }
 
 .preview .empty {

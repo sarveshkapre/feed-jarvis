@@ -7,6 +7,59 @@
 
 ## Open Problems
 
+## Session Notes (2026-02-13 | Global Cycle 3 Session 1)
+- Goal: Close the highest-impact repeat-triage parity gaps by shipping saved filter presets and one-click domain muting in Studio Step 1.
+- Success criteria:
+  - Step 1 supports local save/load/delete for named filter presets (`include`, `exclude`, `minTitleLength`).
+  - Items preview exposes a per-item mute-domain action that updates exclusion filters and immediately re-applies filters.
+  - Filtering supports explicit domain exclusion tokens for URL-host muting without breaking keyword filtering.
+  - Verification commands and outcomes are recorded.
+- Non-goals:
+  - Scheduler/queue publishing integrations.
+  - Large `web/app.js` modularization.
+  - New server endpoint work not required for Step 1 triage UX.
+- Brainstorming checkpoint (ranked; impact/effort/fit/diff/risk/confidence):
+  1. Saved filter presets (`include`/`exclude`/`minTitleLength`) with local persistence + UI controls (5/3/5/1/1/4) -> selected.
+  2. Per-item mute-domain quick action that appends domain exclusion token and re-filters list (5/2/5/2/1/4) -> selected.
+  3. Filter helper module for preset parse/upsert/remove with tests (4/2/5/0/1/5) -> selected.
+  4. Filter telemetry/status enrichment (3/2/4/0/1/3) -> pending.
+  5. CLI `generate --dry-run` diagnostics mode (4/3/4/1/1/3) -> pending.
+  6. Session persistence edge-case tests (3/2/4/0/1/4) -> pending.
+  7. API request-id in error payloads (3/2/4/0/1/4) -> pending.
+  8. `web/app.js` modularization (4/4/5/0/2/3) -> pending.
+- Product phase checkpoint:
+  - Prompt: "Are we in a good product phase yet?" -> No.
+  - Best-in-market signal (untrusted web, bounded scan 2026-02-13): Feedly/Inoreader/RSS.app/Buffer emphasize repeatable filtering and fast muting controls for high-volume feed workflows.
+  - Gap map:
+    - Missing: saved filter presets and item-level mute-domain quick action.
+    - Weak: repeat-run triage speed due manual filter re-entry.
+    - Parity: OPML + URL-file ingestion, retry/backoff, bounded concurrency, Step 3/4 E2E.
+    - Differentiator: private local-first persona-driven drafting.
+- What features are still pending?
+  - From `PRODUCT_ROADMAP.md`: dry-run diagnostics, session-persistence edge-case tests, and modularization remain pending after this cycle.
+  - From `CLONE_FEATURES.md`: backlog depth remains above 20 candidates.
+- Locked task list for this session:
+  - Implement saved filter presets in Studio Step 1.
+  - Implement per-item mute-domain quick action and domain token filtering semantics.
+  - Add focused tests for new filter preset helper logic and domain mute filtering.
+- Execution outcome:
+  - Completed: Added `web/filterPresets.js` helper module (`parse`/`upsert`/`remove`/`serialize`) with declaration typing and test coverage.
+  - Completed: Added Step 1 filter preset UI controls (`save`/`load`/`delete`) with local persistence and session snapshot restore in `web/app.js`.
+  - Completed: Added per-item "Mute domain" quick action in preview rows and `site:` domain-token filtering semantics in `web/filters.js`.
+  - Completed: Updated roadmap/backlog/readme memory entries to reflect shipped triage-parity behavior.
+- Post-ship product phase checkpoint:
+  - Prompt: "Are we in a good product phase yet?" -> No.
+  - Missing now: CLI dry-run diagnostics and session persistence hardening remain the highest-value parity/reliability work.
+- Signals:
+  - GitHub issue signals: disabled/unavailable.
+  - GitHub CI signals: disabled/unavailable.
+- Quick code review sweep:
+  - `rg TODO|FIXME` returned no markers in source/test/docs paths.
+  - `web/app.js` remains the highest-maintenance hotspot; changes should stay scoped to Step 1 triage flows.
+- Trust labels:
+  - Trusted: local repository code/tests/commands.
+  - Untrusted: external market/reference pages.
+
 ## Session Notes (2026-02-13 | Cycle 2 Session 1)
 - Goal: Ship the highest-impact remaining parity work by adding deterministic browser E2E coverage for Step 4 agent-feed actions (`build -> copy -> download`).
 - Success criteria:
@@ -226,6 +279,7 @@
 
 ## Recent Decisions
 - Template: YYYY-MM-DD | Decision | Why | Evidence (tests/logs) | Commit | Confidence (high/medium/low) | Trust (trusted/untrusted)
+- 2026-02-13 | Ship Studio Step 1 filter presets plus per-item domain muting (`site:` tokens) | This was the highest-value remaining repeat-triage parity gap and directly improves daily workflow speed/signal quality | `web/filterPresets.js`, `web/app.js`, `web/index.html`, `web/filters.js`, `test/filterPresets.test.ts`, `test/filters.test.ts`, `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/filterPresets.test.ts test/filters.test.ts`, `node dist/cli.js generate --input /tmp/feed-jarvis-smoke-items-cycle3.json --persona Analyst --format jsonl --max-chars 200` | pending | high | trusted
 - 2026-02-13 | Extend Playwright smoke coverage to include Step 4 agent-feed flow (`build -> copy -> download`) with deterministic payload assertions | Step 4 was the highest-value remaining parity/testing gap; closing it reduces regression risk in the multi-persona timeline workflow and aligns with roadmap cycle goals | `scripts/e2e-web.ts`, `npm run lint`, `npm run typecheck`, `npm run build`, `npm run e2e:web` (`listen EPERM` in sandbox), `node dist/cli.js generate --input /tmp/feed-jarvis-smoke-items-cycle2.json --persona Analyst --format jsonl --max-chars 180` | 8611fab | high | trusted
 - 2026-02-13 | Add bounded configurable fetch concurrency across CLI + Studio/API with shared worker-limited execution (`--fetch-concurrency`, `FEED_JARVIS_FETCH_CONCURRENCY`, `/api/fetch` `fetchConcurrency`) | Large multi-feed runs previously used unbounded `Promise.all`, causing avoidable request spikes and inconsistent throughput control | `src/lib/concurrency.ts`, `src/cli.ts`, `src/server.ts`, `web/app.js`, `web/index.html`, `test/concurrency.test.ts`, `test/cli.test.ts`, `test/server.test.ts`, `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/concurrency.test.ts test/studioPrefs.test.ts` | 859de5b | high | trusted
 - 2026-02-12 | Add deterministic browser E2E critical-flow smoke (`fetch -> generate -> export`) and run it in CI with Playwright Chromium install | P1 parity required real browser coverage for the Studio journey and export wiring; deterministic fixtures keep it stable and actionable | `scripts/e2e-web.ts`, `.github/workflows/ci.yml`, `package.json`, `npm run lint`, `npm run typecheck`, `npm run build`, `npm run e2e:web` (`listen EPERM` in this sandbox) | 89ab2b3 | medium | trusted
@@ -270,15 +324,22 @@
 ## Next Prioritized Tasks
 - Scoring rubric: Impact (1-5), Effort (1-5, lower is easier), Strategic fit (1-5), Differentiation (1-5), Risk (1-5, lower is safer), Confidence (1-5).
 - Selected (completed in cycle 2026-02-13):
-- Extend Playwright smoke to Step 4 agent-feed path (`build -> copy -> download`) (Impact 5, Effort 2, Fit 5, Diff 1, Risk 1, Conf 4).
-- Add deterministic Step 4 assertions for card metadata + downloaded JSON payload (Impact 4, Effort 2, Fit 5, Diff 0, Risk 1, Conf 4).
+- Add Studio filter presets (`include`/`exclude`/`minTitleLength`) with local save/load/delete controls (Impact 5, Effort 3, Fit 5, Diff 1, Risk 1, Conf 4).
+- Add per-item mute-domain quick action and `site:` token support in filtering (Impact 5, Effort 2, Fit 5, Diff 2, Risk 1, Conf 4).
+- Add focused filter preset/domain-token test coverage (Impact 4, Effort 2, Fit 5, Diff 0, Risk 1, Conf 5).
 - Remaining backlog:
-- Save/load filter presets for repeat triage workflows (Impact 4, Effort 3, Fit 4, Diff 1, Risk 1, Conf 3).
-- Per-item mute-domain quick action in Studio (Impact 4, Effort 3, Fit 4, Diff 2, Risk 1, Conf 3).
 - CLI `generate --dry-run` diagnostics for invalid inputs and truncation stats (Impact 4, Effort 3, Fit 4, Diff 1, Risk 1, Conf 3).
+- Session-persistence edge-case tests (invalid snapshots/stale keys/partial payloads) (Impact 3, Effort 2, Fit 4, Diff 0, Risk 1, Conf 4).
+- API request-id in error payloads for faster troubleshooting (Impact 3, Effort 2, Fit 4, Diff 0, Risk 1, Conf 4).
 
 ## Verification Evidence
 - Template: YYYY-MM-DD | Command | Key output | Status (pass/fail)
+- 2026-02-13 | `npx vitest run test/filterPresets.test.ts test/filters.test.ts` | `Test Files 2 passed; Tests 10 passed` | pass
+- 2026-02-13 | `npm run lint` | `Checked 46 files ... No fixes applied.` | pass
+- 2026-02-13 | `npm run typecheck` | `tsc -p tsconfig.json --noEmit` completed with no errors | pass
+- 2026-02-13 | `npm run build` | `tsc -p tsconfig.build.json` completed with no errors | pass
+- 2026-02-13 | `npm test` | unit suites mostly passed, but server/CLI suites blocked by sandbox `listen EPERM`; one cache-write path blocked by `EPERM` | fail (env)
+- 2026-02-13 | `node dist/cli.js generate --input /tmp/feed-jarvis-smoke-items-cycle3.json --persona Analyst --format jsonl --max-chars 200` | emitted two JSONL drafts for smoke payload | pass
 - 2026-02-13 | `git push origin main` | `8611fab..dae6478 main -> main` | pass
 - 2026-02-13 | `gh run list --branch main --limit 5` | `error connecting to api.github.com` in this environment | fail (env)
 - 2026-02-13 | `git push origin main` | `28d02d5..8611fab main -> main` | pass

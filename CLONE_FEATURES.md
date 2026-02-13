@@ -7,8 +7,6 @@
 - Gaps found during codebase exploration
 
 ## Candidate Features To Do
-- [ ] P2: Studio saved filter presets (include/exclude/min-title) for repeatable triage workflows. (Impact 4, Effort 3, Fit 4, Diff 1, Risk 1, Conf 3)
-- [ ] P2: Studio per-item "mute domain" quick action that appends to filter exclusion terms locally. (Impact 4, Effort 3, Fit 4, Diff 2, Risk 1, Conf 3)
 - [ ] P2: Add Studio-side URL normalization helper for pasted feeds (strip whitespace/tracking junk safely). (Impact 3, Effort 2, Fit 4, Diff 0, Risk 2, Conf 3)
 - [ ] P2: Add server-side request id in API error payloads for better troubleshooting in Studio. (Impact 3, Effort 2, Fit 4, Diff 0, Risk 1, Conf 4)
 - [ ] P2: Add retries summary fields to `/api/fetch` response (`retryAttempts`, `retrySuccesses`) for UX visibility. (Impact 3, Effort 2, Fit 4, Diff 0, Risk 1, Conf 3)
@@ -29,8 +27,13 @@
 - [ ] P3: Add Studio import support for newline-delimited feed URL files to mirror CLI `--urls-file` workflows. (Impact 2, Effort 2, Fit 3, Diff 0, Risk 1, Conf 4)
 - [ ] P3: Add Step 4 persona-name search/filter to control large timeline views. (Impact 2, Effort 2, Fit 3, Diff 1, Risk 1, Conf 3)
 - [ ] P3: Add per-feed error detail accordion in Step 1 fetch status for faster debugging. (Impact 3, Effort 3, Fit 4, Diff 0, Risk 2, Conf 3)
+- [ ] P3: Add filter preset import/export JSON flow for cross-machine Studio setup reuse. (Impact 2, Effort 2, Fit 3, Diff 1, Risk 1, Conf 3)
+- [ ] P3: Add filter-token chips UI (`keyword`/`site:`) with one-click remove for faster triage edits. (Impact 2, Effort 3, Fit 3, Diff 1, Risk 1, Conf 3)
 
 ## Implemented
+- [x] 2026-02-13 P1: Added Studio filter presets for Step 1 triage (save/load/delete named include/exclude/min-title settings) with local persistence and session restore support. Evidence: `web/filterPresets.js`, `web/filterPresets.d.ts`, `web/app.js`, `web/index.html`, `test/filterPresets.test.ts`; verification: `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/filterPresets.test.ts test/filters.test.ts`.
+- [x] 2026-02-13 P1: Added per-item "Mute domain" quick action in Step 1 preview that appends `site:<domain>` exclusions and re-filters immediately. Evidence: `web/app.js`, `web/index.html`, `web/styles.css`, `web/filters.js`, `test/filters.test.ts`; verification: `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/filterPresets.test.ts test/filters.test.ts`.
+- [x] 2026-02-13 P1: Added filter matching support for explicit `site:`/`domain:` tokens (subdomain-aware) to harden domain-level triage muting. Evidence: `web/filters.js`, `test/filters.test.ts`; verification: `npx vitest run test/filters.test.ts`.
 - [x] 2026-02-13 P1: Extended browser E2E smoke to cover Step 4 agent feed (`build -> copy -> download`) in the existing Playwright flow. Evidence: `scripts/e2e-web.ts`; verification: `npm run lint`, `npm run typecheck`, `npm run build`, `npm run e2e:web` (blocked in this sandbox by `listen EPERM`), `node dist/cli.js generate --input /tmp/feed-jarvis-smoke-items-cycle2.json --persona Analyst --format jsonl --max-chars 180`.
 - [x] 2026-02-13 P2: Added deterministic Step 4 assertion depth for rendered feed cards, copy status, and downloaded JSON payload structure (`meta` + `feed`). Evidence: `scripts/e2e-web.ts`; verification: `npm run lint`, `npm run typecheck`, `npm run build`, `npm test` (sandbox `listen EPERM` / cache-path `EPERM`), `npx vitest run test/concurrency.test.ts test/studioPrefs.test.ts test/feedSets.test.ts`.
 - [x] 2026-02-13 P1: Added bounded configurable fetch concurrency across CLI + Studio/API (`--fetch-concurrency`, `FEED_JARVIS_FETCH_CONCURRENCY`, `fetchConcurrency` request field) using shared worker-limited execution. Evidence: `src/lib/concurrency.ts`, `src/cli.ts`, `src/server.ts`, `web/app.js`, `web/index.html`, `web/studioPrefs.js`; verification: `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/concurrency.test.ts test/studioPrefs.test.ts`.
@@ -71,6 +74,8 @@
 - [x] 2026-02-08 P2: Synced docs with shipped behavior changes. Evidence: `README.md`, `CHANGELOG.md`, `UPDATE.md`.
 
 ## Insights
+- `site:<domain>` exclusion tokens give an explicit, low-ambiguity path for domain muting without changing existing free-text filter UX.
+- Saving filter presets closes a repeat-workflow parity gap and reduces setup friction for high-frequency feed triage sessions.
 - Step 4 UI actions (`build -> copy -> download`) now have deterministic browser assertions, reducing regression blind spots between timeline rendering and export/copy wiring.
 - Bounded concurrency materially reduces peak in-flight requests on large URL batches while preserving output ordering and dedupe behavior.
 - Browser-level coverage is now practical and deterministic by stubbing feed fetches in a local test server and driving real DOM interactions via Playwright.

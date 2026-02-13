@@ -126,6 +126,23 @@
           </div>
           <div class="filters">
             <h3>Filter items (optional)</h3>
+            <div class="filter-presets">
+              <div class="inline-row">
+                <label for="filterPresetSelect">
+                  Filter preset
+                  <span>Save and recall include/exclude/min-title filters (local-only).</span>
+                </label>
+                <select id="filterPresetSelect">
+                  <option value="">Choose a saved preset…</option>
+                </select>
+              </div>
+              <div class="button-row">
+                <button class="ghost" id="loadFilterPresetBtn" type="button" disabled>Load</button>
+                <button class="ghost" id="saveFilterPresetBtn" type="button">Save</button>
+                <button class="secondary" id="deleteFilterPresetBtn" type="button" disabled>Delete</button>
+              </div>
+              <div class="status" id="filterPresetStatus" role="status" aria-live="polite"></div>
+            </div>
             <div class="filter-grid">
               <label for="filterInclude">Include keywords</label>
               <input
@@ -145,7 +162,8 @@
               <input id="filterMinTitleLength" type="number" min="0" value="0" />
             </div>
             <p class="filter-help">
-              Matches are case-insensitive. Include matches any keyword. Exclude wins.
+              Matches are case-insensitive. Include matches any keyword. Exclude wins. Use
+              <code>site:example.com</code> to mute a domain.
             </p>
             <div class="status" id="filterStatus" role="status" aria-live="polite"></div>
           </div>
