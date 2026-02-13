@@ -65,6 +65,7 @@ const elements = {
   deleteFeedSetBtn: document.getElementById("deleteFeedSetBtn"),
   feedSetStatus: document.getElementById("feedSetStatus"),
   maxItems: document.getElementById("maxItems"),
+  fetchConcurrency: document.getElementById("fetchConcurrency"),
   dedupe: document.getElementById("dedupe"),
   fetchBtn: document.getElementById("fetchBtn"),
   loadJsonBtn: document.getElementById("loadJsonBtn"),
@@ -379,6 +380,7 @@ function persistSessionSnapshot() {
     feedUrls: elements.feedUrls.value,
     feedSetName: elements.feedSetSelect?.value ?? "",
     maxItems: elements.maxItems.value,
+    fetchConcurrency: elements.fetchConcurrency?.value ?? "",
     dedupe: elements.dedupe.checked,
     jsonItems: elements.jsonItems.value,
     filterInclude: elements.filterInclude.value,
@@ -433,6 +435,12 @@ function restoreSessionSnapshot() {
   }
   if (typeof snapshot.maxItems === "string") {
     elements.maxItems.value = snapshot.maxItems;
+  }
+  if (
+    typeof snapshot.fetchConcurrency === "string" &&
+    elements.fetchConcurrency
+  ) {
+    elements.fetchConcurrency.value = snapshot.fetchConcurrency;
   }
   if (typeof snapshot.dedupe === "boolean") {
     elements.dedupe.checked = snapshot.dedupe;
@@ -1438,6 +1446,13 @@ async function fetchItems() {
   }
 
   const maxItems = Math.max(1, Number(elements.maxItems.value) || 20);
+  const fetchConcurrency = Math.min(
+    20,
+    Math.max(1, Number(elements.fetchConcurrency?.value) || 4),
+  );
+  if (elements.fetchConcurrency) {
+    elements.fetchConcurrency.value = String(fetchConcurrency);
+  }
   const dedupe = elements.dedupe.checked;
 
   setButtonLoading(elements.fetchBtn, true, "Fetching...");
@@ -1446,7 +1461,7 @@ async function fetchItems() {
     const res = await fetch("/api/fetch", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ urls, maxItems, dedupe }),
+      body: JSON.stringify({ urls, maxItems, dedupe, fetchConcurrency }),
     });
 
     const payload = await readApiPayload(res);
@@ -1982,6 +1997,7 @@ function wireEvents() {
     elements.feedUrls,
     elements.feedSetSelect,
     elements.maxItems,
+    elements.fetchConcurrency,
     elements.dedupe,
     elements.jsonItems,
     elements.filterInclude,

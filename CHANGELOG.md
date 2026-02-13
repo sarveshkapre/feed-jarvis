@@ -1,6 +1,10 @@
 # CHANGELOG
 
 ## Unreleased
+- Fetch: add bounded multi-feed concurrency controls (`--fetch-concurrency` / `FEED_JARVIS_FETCH_CONCURRENCY`) for CLI and Studio server fetch paths.
+- Studio UI: add persisted "Fetch concurrency" control (1-20) and include effective concurrency in fetch status details.
+- Studio/API: `/api/fetch` accepts `fetchConcurrency` and reports effective `summary.concurrency`.
+- Testing: add concurrency behavior coverage for CLI fetch, Studio `/api/fetch`, and shared concurrency helpers.
 - Testing: add browser-level Studio E2E smoke (`fetch -> generate -> export`) using Playwright with deterministic feed fixtures.
 - CI: install Chromium via Playwright and run `npm run e2e:web` after existing checks.
 - Studio UI: add feed-set OPML import/export (local-only) with dedupe-safe parsing and collision-safe set naming.

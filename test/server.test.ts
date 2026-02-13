@@ -475,6 +475,57 @@ describe("studio server", () => {
     });
   });
 
+  it("respects fetchConcurrency for /api/fetch", async () => {
+    const nonce = `concurrency-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    const urls = Array.from(
+      { length: 6 },
+      (_unused, index) => `http://localhost/${nonce}-${index.toString(10)}.xml`,
+    );
+
+    let inFlight = 0;
+    let maxInFlight = 0;
+    const fetchFn: typeof fetch = async (href) => {
+      inFlight += 1;
+      maxInFlight = Math.max(maxInFlight, inFlight);
+      try {
+        await new Promise((resolve) => setTimeout(resolve, 20));
+        const suffix = String(href).split("/").at(-1) ?? "item.xml";
+        const xml = `<?xml version="1.0"?>
+<rss version="2.0"><channel>
+  <item><title>${suffix}</title><link>http://localhost/${suffix}</link></item>
+</channel></rss>`;
+        return new Response(xml, {
+          status: 200,
+          headers: { "content-type": "application/rss+xml" },
+        });
+      } finally {
+        inFlight -= 1;
+      }
+    };
+
+    await withServer({ allowPrivateHosts: true, fetchFn }, async (baseUrl) => {
+      const res = await fetch(`${baseUrl}/api/fetch`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          urls,
+          maxItems: 10,
+          dedupe: false,
+          fetchConcurrency: 2,
+        }),
+      });
+
+      expect(res.status).toBe(200);
+      const payload = await res.json();
+      expect(payload.summary).toMatchObject({
+        sources: 6,
+        concurrency: 2,
+      });
+      expect(payload.items).toHaveLength(6);
+      expect(maxInFlight).toBeLessThanOrEqual(2);
+    });
+  });
+
   it("returns JSON 404 for unknown api routes", async () => {
     await withServer({}, async (baseUrl) => {
       const res = await fetch(`${baseUrl}/api/not-found`);

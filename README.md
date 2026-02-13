@@ -79,6 +79,7 @@ Fetch from an RSS/Atom feed (requires explicit allowlist):
 npm run dev -- fetch --url https://example.com/rss.xml --allow-host example.com > events.json
 npm run dev -- fetch --url https://example.com/rss.xml --allow-host example.com --stats > events.json
 npm run dev -- fetch --url https://example.com/rss.xml --allow-host example.com --stale-if-error > events.json
+npm run dev -- fetch --urls-file feeds.txt --allow-host example.com --fetch-concurrency 4 > events.json
 npm run dev -- generate --input events.json --persona Analyst
 ```
 
@@ -99,6 +100,7 @@ npm run dev -- fetch --opml feeds.opml --allow-host example.com --allow-host new
 - Local-first: feeds and drafts never leave your machine.
 - Studio persistence: remembers your input mode and form settings across refreshes.
 - Studio JSON input: validates URLs as `http/https` and reports skipped invalid entries.
+- Studio fetch controls: tune `max items`, `dedupe`, and fetch concurrency (`1-20`) for large URL batches.
 - Studio feed sets: save/load named groups of feed URLs and import/export sets as OPML (local-only).
 - Studio rule presets: save/load named text-rule bundles (prepend/append/hashtags/UTM) for repeat runs.
 - Studio filters: optionally include/exclude keywords and enforce a minimum title length before generation/export.
@@ -111,10 +113,12 @@ npm run dev -- fetch --opml feeds.opml --allow-host example.com --allow-host new
 - Personas: consistent voice with editable prefixes (Studio supports local-only JSON import/export; CLI/Studio server support markdown persona files).
 - Outputs: Studio exports `.txt`, `.jsonl`, and `.csv` drafts (JSONL/CSV include source metadata); CLI supports text/JSON/JSONL/CSV.
 - CLI fetch ingestion: supports direct `--url`, newline-delimited `--urls-file`, and OPML (`--opml`) inputs.
+- CLI fetch throughput: supports `--fetch-concurrency` (or `FEED_JARVIS_FETCH_CONCURRENCY`) to bound parallel feed requests.
 
 Tip: load/override personas via `--personas` from JSON, a single `.md` persona file, or a directory of `.md` persona files.
 Tip: set `FEED_JARVIS_PERSONAS=/absolute/path/to/personas` to override Studio personas.
 Tip: set `FEED_JARVIS_LLM_MODEL` to define the default GPT model for Studio/CLI `--llm`.
+Tip: set `FEED_JARVIS_FETCH_CONCURRENCY` to cap parallel feed requests in CLI/Studio server fetch paths.
 Tip: write posts to a file with `--out posts.txt` or `--format jsonl` for one JSON string per line.
 
 ## Docs

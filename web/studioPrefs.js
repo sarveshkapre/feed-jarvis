@@ -96,6 +96,10 @@ export function formatFetchSummary(summary, itemsCount, fallbackSources) {
     summary && typeof summary === "object"
       ? coerceNonNegativeInt(Reflect.get(summary, "limited"))
       : null;
+  const concurrency =
+    summary && typeof summary === "object"
+      ? coerceNonNegativeInt(Reflect.get(summary, "concurrency"))
+      : null;
 
   const feeds =
     sources ??
@@ -113,6 +117,9 @@ export function formatFetchSummary(summary, itemsCount, fallbackSources) {
   }
   if (limited !== null && limited > 0) {
     parts.push(`${limited} trimmed`);
+  }
+  if (concurrency !== null && concurrency > 0) {
+    parts.push(`concurrency ${concurrency}`);
   }
 
   const detail = parts.length > 0 ? ` (${parts.join(", ")})` : "";

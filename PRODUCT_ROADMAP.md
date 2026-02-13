@@ -4,7 +4,7 @@
 - Keep feed-jarvis production-ready. Current focus: Feed Jarvis Studio (`feed-jarvis`). Find the highest-impact pending work, implement it, test it, and push to main.
 
 ## Good Product Phase Status
-- Status: `No` (checkpoint run on 2026-02-12).
+- Status: `No` (checkpoint run on 2026-02-13).
 - Why not yet: core local-first workflows are strong, but parity gaps remain in large-run reliability controls and advanced repeat-workflow UX.
 
 ## Definition Of Done
@@ -23,6 +23,18 @@
 
 ## Current Milestone
 - M3 Reliability + Interop
+
+## Session Goal Checkpoint (2026-02-13 | Cycle 1 Session 4)
+- Goal: Ship bounded fetch concurrency controls across CLI + Studio to harden large multi-feed runs.
+- Success criteria:
+  - CLI `fetch` supports bounded configurable concurrency and uses non-unbounded worker scheduling.
+  - Studio API supports bounded fetch concurrency and returns the effective value in fetch summary payloads.
+  - Studio UI exposes fetch concurrency setting and persists it across sessions.
+  - Concurrency behavior is covered by tests and verification evidence is captured.
+- Non-goals:
+  - Step 4 agent-feed browser E2E rollout.
+  - Scheduler/publishing integrations.
+  - Broad architecture refactors outside touched fetch pathways.
 
 ## Session Goal Checkpoint (2026-02-12 | Cycle 1 Session 3)
 - Goal: Ship production-grade browser E2E coverage for the Studio critical path so CI validates real user behavior (`fetch -> generate -> export`).
@@ -78,6 +90,24 @@
   - Parity: OPML feed-set interoperability, transient retry handling, URL-list ingestion, local feed sets/rules, item filters, metadata-rich exports, agent feed layouts.
 - Differentiator: local-first end-to-end drafting with strict private-host safeguards.
 
+## Product Phase Checkpoint (2026-02-13 | Session 4)
+- Prompt: "Are we in a good product phase yet?" -> `No`.
+- Best-in-market references (untrusted web, bounded scan):
+  - Feedly OPML import/export interoperability expectations (`https://docs.feedly.com/article/51-how-to-import-opml-into-feedly`, `https://docs.feedly.com/article/52-how-can-i-export-my-sources-and-feeds-through-opml`).
+  - Buffer RSS automation guidance for feed workflow throughput (`https://support.buffer.com/article/613-automating-rss-feeds-using-feedly-and-zapier`).
+  - Sprout automated feed publishing controls for cadence/limits (`https://support.sproutsocial.com/hc/en-us/articles/20299161205645-How-do-I-use-Automated-Feed-Publishing-on-the-Professional-and-Advanced-Plans`).
+  - RSS.app filtering baseline expectations (`https://help.rss.app/en/articles/10271103-how-to-filter-rss-feeds`).
+  - Inoreader automation guidance for high-volume workflows (`https://jp.inoreader.com/uk/blog/2026/01/save-time-with-automations.html`).
+- Core expected capabilities in this segment:
+  - Ingestion interoperability with safe controls at higher feed counts.
+  - Throughput guardrails (bounded concurrency, predictable retries, dedupe visibility).
+  - Repeat-workflow UX (saved rules/filters, shortcuts, reusable feed groups).
+- Parity gap map:
+  - Missing: bounded configurable fetch concurrency control surfaced in UI + API.
+  - Weak: visibility/control of ingestion throughput on large URL batches.
+  - Parity: URL-file + OPML ingestion, retry/backoff, filters/rules, export formats, Step 3 E2E coverage.
+  - Differentiator: strict local-first behavior with private-host defaults.
+
 ## Product Phase Checkpoint (2026-02-12 | Session 3)
 - Prompt: "Are we in a good product phase yet?" -> `No`.
 - Best-in-market references (untrusted web, bounded scan):
@@ -105,13 +135,17 @@
 - [x] P1: Browser-level Studio E2E coverage for critical path (`fetch -> generate -> export`) with deterministic fixtures.
 - [x] P2: Export smoke assertions in CI for `.txt`, `.jsonl`, and `.csv` from the browser-driven flow.
 
+## Locked Cycle Scope (2026-02-13 | Session 4)
+- [x] P1: Add bounded configurable fetch concurrency for CLI + Studio API.
+- [x] P2: Add Studio fetch-concurrency control with session persistence.
+- [x] P1: Add CLI/server concurrency behavior tests and update docs/trackers.
+
 ## Locked Cycle Scope (2026-02-12)
 - [x] P1: Feed fetcher bounded retry/backoff for transient 5xx/network/timeout failures (honor timeout + stale-if-error).
 - [x] P1: CLI `fetch --urls-file <path>` for newline-delimited feed URLs with existing dedupe + allowlist flow.
 - [x] P1: Studio pasted JSON URL validation (`http/https` only) with actionable user feedback.
 
 ## Pending Features (What Is Still Pending?)
-- P2: Fetcher configurable concurrent-fetch limit for large multi-feed runs.
 - P2: Studio saved filter presets (include/exclude/min-title) for repeat triage workflows.
 - P2: Studio per-item quick action to mute a domain into exclusion filters.
 - P2: CLI `generate --dry-run` diagnostics (invalid items, duplicate URLs, truncation counts).
@@ -124,6 +158,9 @@
 - P3: Docs split: keep README compact and move deep recipes to `docs/`.
 
 ## Delivered Features (Recent)
+- 2026-02-13: Added bounded configurable fetch concurrency for CLI + Studio server/API (`--fetch-concurrency`, `FEED_JARVIS_FETCH_CONCURRENCY`, `/api/fetch` `fetchConcurrency`) with shared worker-limited execution and summary reporting.
+- 2026-02-13: Added Studio Step 1 fetch-concurrency control (`1-20`) with session persistence and fetch-status detail.
+- 2026-02-13: Added concurrency-focused coverage for shared helper logic plus CLI/server fetch behavior.
 - 2026-02-12: Added browser-level Studio E2E smoke for critical flow (`fetch -> generate -> export`) with deterministic feed fixtures and export assertions (`.txt`, `.jsonl`, `.csv`).
 - 2026-02-12: CI now installs Playwright Chromium and runs `npm run e2e:web` after lint/typecheck/test/build + API smoke checks.
 - 2026-02-12: Added Studio feed-set OPML import/export (local-only) with parsing, dedupe, and collision-safe naming.
@@ -144,4 +181,4 @@
 ## Next Cycle Goals
 - Expand browser E2E from Step 3 flow to Step 4 agent-feed workflow.
 - Reduce manual QA cost via broader browser assertions and fewer environment-sensitive gaps.
-- Continue reliability hardening for large feed sets (concurrency controls and clearer diagnostics).
+- Continue reliability hardening for large feed sets (clearer diagnostics and per-feed latency visibility).

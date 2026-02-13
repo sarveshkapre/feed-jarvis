@@ -91,6 +91,14 @@
             <div class="inline-row">
               <label for="maxItems">Max items</label>
               <input id="maxItems" type="number" min="1" value="20" />
+              <label for="fetchConcurrency">Fetch concurrency</label>
+              <input
+                id="fetchConcurrency"
+                type="number"
+                min="1"
+                max="20"
+                value="4"
+              />
               <label class="switch">
                 <input id="dedupe" type="checkbox" checked />
                 Dedupe by URL

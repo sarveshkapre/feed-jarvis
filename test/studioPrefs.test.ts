@@ -56,4 +56,24 @@ describe("studioPrefs", () => {
       "Loaded 5 item(s) from 1 feed(s).",
     );
   });
+
+  test("includes concurrency in fetch summary details when provided", () => {
+    expect(
+      formatFetchSummary(
+        {
+          sources: 3,
+          cache: 0,
+          network: 3,
+          dedupe: false,
+          deduped: 0,
+          limited: 0,
+          concurrency: 4,
+        },
+        6,
+        3,
+      ),
+    ).toBe(
+      "Loaded 6 item(s) from 3 feed(s). (0 cache, 3 network, concurrency 4)",
+    );
+  });
 });

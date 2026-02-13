@@ -5,6 +5,7 @@ import { readFile, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { mapWithConcurrency, parseConcurrency } from "./lib/concurrency.js";
 import { fetchFeed } from "./lib/feedFetch.js";
 import { generatePostsWithLlm } from "./lib/llm.js";
 import { parseOpmlUrls } from "./lib/opml.js";
@@ -28,6 +29,8 @@ type PackageJson = { name?: string; version?: string };
 const require = createRequire(import.meta.url);
 const pkg = require("../package.json") as PackageJson;
 const DEFAULT_LLM_MODEL = "gpt-4.1-mini";
+const DEFAULT_FETCH_CONCURRENCY = 4;
+const MAX_FETCH_CONCURRENCY = 20;
 const bundledPersonasPath = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   "../personas",
@@ -63,6 +66,7 @@ Fetch options:
   --max-bytes <number>      Max feed bytes (default: 1000000)
   --cache-ttl <seconds>     Cache TTL seconds (default: 3600)
   --cache-dir <path>        Cache directory (default: OS cache dir)
+  --fetch-concurrency <n>   Max concurrent feed fetches (default: 4, max: 20)
   --no-cache                Disable caching
   --no-dedupe               Do not dedupe by event url
   --stats                   Print fetch stats to stderr
@@ -215,6 +219,16 @@ async function main() {
       min: 0,
     });
     const cacheDir = getOptionalStringFlag(args.flags, "--cache-dir");
+    const fetchConcurrency = getNumberFlag(
+      args.flags,
+      "--fetch-concurrency",
+      parseConcurrency(
+        process.env.FEED_JARVIS_FETCH_CONCURRENCY,
+        DEFAULT_FETCH_CONCURRENCY,
+        { min: 1, max: MAX_FETCH_CONCURRENCY },
+      ),
+      { min: 1, max: MAX_FETCH_CONCURRENCY },
+    );
     const cache = !args.flags.has("--no-cache");
     const dedupe = !args.flags.has("--no-dedupe");
     const stats = args.flags.has("--stats");
@@ -222,19 +236,17 @@ async function main() {
 
     let results: Awaited<ReturnType<typeof fetchFeed>>[] = [];
     try {
-      results = await Promise.all(
-        urls.map((url) =>
-          fetchFeed(url, {
-            allowHosts,
-            cache,
-            cacheDir,
-            cacheTtlMs: cacheTtlSeconds * 1000,
-            maxBytes,
-            maxItems,
-            timeoutMs,
-            staleIfError,
-          }),
-        ),
+      results = await mapWithConcurrency(urls, fetchConcurrency, (url) =>
+        fetchFeed(url, {
+          allowHosts,
+          cache,
+          cacheDir,
+          cacheTtlMs: cacheTtlSeconds * 1000,
+          maxBytes,
+          maxItems,
+          timeoutMs,
+          staleIfError,
+        }),
       );
     } catch (err) {
       die(err instanceof Error ? err.message : String(err));
@@ -258,6 +270,7 @@ async function main() {
           urlFilePaths.length > 0
             ? `- url files: ${urlFilePaths.length} (${fileUrls.length} url(s))`
             : undefined,
+          `- concurrency: ${fetchConcurrency}`,
           `- feeds: ${results.length} (${cacheCount} cache, ${networkCount} network)`,
           `- items: ${items.length}`,
           `- emitted: ${finalItems.length}`,
@@ -466,13 +479,19 @@ function getNumberFlag(
   flags: Map<string, FlagValue>,
   name: string,
   defaultValue: number,
-  constraints: { min: number },
+  constraints: { min: number; max?: number },
 ): number {
   const raw = resolveStringFlag(flags.get(name));
   if (!raw) return defaultValue;
 
   const parsed = Number(raw);
-  if (!Number.isFinite(parsed) || parsed < constraints.min) {
+  const max = constraints.max ?? Number.POSITIVE_INFINITY;
+  if (!Number.isFinite(parsed) || parsed < constraints.min || parsed > max) {
+    if (Number.isFinite(max)) {
+      dieUsage(
+        `Invalid ${name}: ${raw} (expected a number between ${constraints.min} and ${max})`,
+      );
+    }
     dieUsage(
       `Invalid ${name}: ${raw} (expected a number >= ${constraints.min})`,
     );

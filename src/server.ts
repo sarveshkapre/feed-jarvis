@@ -3,6 +3,7 @@ import { readFile, stat } from "node:fs/promises";
 import { createServer, type Server } from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { mapWithConcurrency, parseConcurrency } from "./lib/concurrency.js";
 import { fetchFeed } from "./lib/feedFetch.js";
 import { generatePostsWithLlm } from "./lib/llm.js";
 import {
@@ -28,6 +29,8 @@ const DEFAULT_CACHE_TTL_MS = 15 * 60 * 1000;
 const DEFAULT_TIMEOUT_MS = 12_000;
 const DEFAULT_MAX_BYTES = 1_000_000;
 const DEFAULT_ALLOW_PRIVATE_HOSTS = false;
+const DEFAULT_FETCH_CONCURRENCY = 4;
+const MAX_FETCH_CONCURRENCY = 20;
 const DEFAULT_LLM_MODEL = "gpt-4.1-mini";
 const bundledPersonasPath = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -51,6 +54,7 @@ const mimeTypes: Record<string, string> = {
 export type StudioServerOptions = {
   allowPrivateHosts?: boolean;
   fetchFn?: typeof fetch;
+  fetchConcurrency?: number;
   port?: number;
   personasPath?: string;
   openaiApiKey?: string;
@@ -62,6 +66,7 @@ export type StudioServerOptions = {
 type RuntimeOptions = {
   allowPrivateHosts: boolean;
   fetchFn?: typeof fetch;
+  fetchConcurrency: number;
   openaiApiKey?: string;
   openaiBaseUrl?: string;
   openaiFetchFn?: typeof fetch;
@@ -192,6 +197,11 @@ async function handleFetchFeed(body: unknown, options: RuntimeOptions) {
       ? Math.floor(maxItemsRaw)
       : DEFAULT_MAX_ITEMS;
   const dedupe = Reflect.get(body, "dedupe") !== false;
+  const fetchConcurrency = parseConcurrency(
+    Reflect.get(body, "fetchConcurrency"),
+    options.fetchConcurrency,
+    { min: 1, max: MAX_FETCH_CONCURRENCY },
+  );
 
   const allowHosts = Array.from(
     new Set(
@@ -202,19 +212,17 @@ async function handleFetchFeed(body: unknown, options: RuntimeOptions) {
     ),
   );
 
-  const results = await Promise.all(
-    urls.map((url) =>
-      fetchFeed(url, {
-        allowHosts,
-        allowPrivateHosts: options.allowPrivateHosts,
-        cache: true,
-        cacheTtlMs: DEFAULT_CACHE_TTL_MS,
-        fetchFn: options.fetchFn,
-        maxBytes: DEFAULT_MAX_BYTES,
-        maxItems,
-        timeoutMs: DEFAULT_TIMEOUT_MS,
-      }),
-    ),
+  const results = await mapWithConcurrency(urls, fetchConcurrency, (url) =>
+    fetchFeed(url, {
+      allowHosts,
+      allowPrivateHosts: options.allowPrivateHosts,
+      cache: true,
+      cacheTtlMs: DEFAULT_CACHE_TTL_MS,
+      fetchFn: options.fetchFn,
+      maxBytes: DEFAULT_MAX_BYTES,
+      maxItems,
+      timeoutMs: DEFAULT_TIMEOUT_MS,
+    }),
   );
 
   const items = results.flatMap((result) => result.items);
@@ -230,6 +238,7 @@ async function handleFetchFeed(body: unknown, options: RuntimeOptions) {
       sources: results.length,
       cache: cacheCount,
       network: results.length - cacheCount,
+      concurrency: fetchConcurrency,
       dedupe: dedupe,
       deduped: dedupe ? items.length - dedupedItems.length : 0,
       limited: dedupedItems.length - finalItems.length,
@@ -602,6 +611,21 @@ function resolveAllowPrivateHosts(configured?: boolean): boolean {
   );
 }
 
+function resolveFetchConcurrency(configured?: number): number {
+  if (typeof configured === "number") {
+    return parseConcurrency(configured, DEFAULT_FETCH_CONCURRENCY, {
+      min: 1,
+      max: MAX_FETCH_CONCURRENCY,
+    });
+  }
+
+  return parseConcurrency(
+    process.env.FEED_JARVIS_FETCH_CONCURRENCY,
+    DEFAULT_FETCH_CONCURRENCY,
+    { min: 1, max: MAX_FETCH_CONCURRENCY },
+  );
+}
+
 function resolvePersonasPath(configured?: string): string | undefined {
   const direct = configured?.trim();
   if (direct) return direct;
@@ -634,6 +658,7 @@ export function createStudioServer(options: StudioServerOptions = {}): Server {
   const runtimeOptions: RuntimeOptions = {
     allowPrivateHosts: resolveAllowPrivateHosts(options.allowPrivateHosts),
     fetchFn: options.fetchFn,
+    fetchConcurrency: resolveFetchConcurrency(options.fetchConcurrency),
     openaiApiKey: options.openaiApiKey ?? process.env.OPENAI_API_KEY,
     openaiBaseUrl:
       options.openaiBaseUrl ??

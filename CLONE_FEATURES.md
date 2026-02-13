@@ -7,12 +7,12 @@
 - Gaps found during codebase exploration
 
 ## Candidate Features To Do
-- [ ] P2: Feed fetcher configurable concurrent-fetch limit for large multi-feed runs to reduce network spikes. (Impact 4, Effort 3, Fit 4, Diff 0, Risk 2, Conf 3)
 - [ ] P2: Studio saved filter presets (include/exclude/min-title) for repeatable triage workflows. (Impact 4, Effort 3, Fit 4, Diff 1, Risk 1, Conf 3)
 - [ ] P2: Studio per-item "mute domain" quick action that appends to filter exclusion terms locally. (Impact 4, Effort 3, Fit 4, Diff 2, Risk 1, Conf 3)
 - [ ] P2: Add Studio-side URL normalization helper for pasted feeds (strip whitespace/tracking junk safely). (Impact 3, Effort 2, Fit 4, Diff 0, Risk 2, Conf 3)
 - [ ] P2: Add server-side request id in API error payloads for better troubleshooting in Studio. (Impact 3, Effort 2, Fit 4, Diff 0, Risk 1, Conf 4)
 - [ ] P2: Add retries summary fields to `/api/fetch` response (`retryAttempts`, `retrySuccesses`) for UX visibility. (Impact 3, Effort 2, Fit 4, Diff 0, Risk 1, Conf 3)
+- [ ] P2: Add fetch latency telemetry fields to `/api/fetch` summary (`durationMs`, `slowestFeedMs`) for large-run troubleshooting. (Impact 3, Effort 2, Fit 4, Diff 0, Risk 1, Conf 3)
 - [ ] P2: Add targeted unit coverage for session persistence edge cases (invalid snapshots, stale keys, partial payloads). (Impact 3, Effort 2, Fit 4, Diff 0, Risk 1, Conf 4)
 - [ ] P2: Add CLI regression tests for output piping behavior (`EPIPE`) across text/json/jsonl/csv formats. (Impact 3, Effort 2, Fit 4, Diff 0, Risk 1, Conf 4)
 - [ ] P2: Add optional `--dry-run` generation mode with richer diagnostics (invalid items, duplicate URLs, truncation counts). (Impact 4, Effort 3, Fit 4, Diff 1, Risk 1, Conf 3)
@@ -27,8 +27,11 @@
 - [ ] P3: Add feed-set migration helper when storage schema changes (with versioned upgrade path). (Impact 2, Effort 2, Fit 3, Diff 0, Risk 1, Conf 3)
 - [ ] P3: Add copy-ready "trimmed chars" analytics summary after post edits for QA review. (Impact 2, Effort 2, Fit 3, Diff 1, Risk 1, Conf 3)
 - [ ] P3: Add browser E2E path for Step 4 agent feed (`build -> copy -> download`) to reduce regressions in multi-persona timeline UX. (Impact 3, Effort 3, Fit 4, Diff 1, Risk 1, Conf 3)
+- [ ] P3: Add Studio import support for newline-delimited feed URL files to mirror CLI `--urls-file` workflows. (Impact 2, Effort 2, Fit 3, Diff 0, Risk 1, Conf 4)
 
 ## Implemented
+- [x] 2026-02-13 P1: Added bounded configurable fetch concurrency across CLI + Studio/API (`--fetch-concurrency`, `FEED_JARVIS_FETCH_CONCURRENCY`, `fetchConcurrency` request field) using shared worker-limited execution. Evidence: `src/lib/concurrency.ts`, `src/cli.ts`, `src/server.ts`, `web/app.js`, `web/index.html`, `web/studioPrefs.js`; verification: `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/concurrency.test.ts test/studioPrefs.test.ts`.
+- [x] 2026-02-13 P1: Added concurrency behavior tests for CLI and server fetch flows with max in-flight assertions. Evidence: `test/cli.test.ts`, `test/server.test.ts`, `test/concurrency.test.ts`; verification: `npx vitest run test/concurrency.test.ts test/studioPrefs.test.ts` (full network/listen integration tests blocked in this sandbox by `listen EPERM`).
 - [x] 2026-02-12 P1: Added browser-level Studio E2E smoke for critical flow (`fetch -> generate -> export`) with deterministic feed fixtures. Evidence: `scripts/e2e-web.ts`, `package.json`, `.github/workflows/ci.yml`; verification: `npm run lint`, `npm run typecheck`, `npm run build`, `npm run e2e:web` (environment blocked in this sandbox: `listen EPERM`), `npx playwright install chromium`.
 - [x] 2026-02-12 P2: Added browser-driven export smoke assertions for `.txt`, `.jsonl`, `.csv` payloads and wired them into CI. Evidence: `scripts/e2e-web.ts`, `.github/workflows/ci.yml`, `CHANGELOG.md`, `README.md`; verification: `npm run lint`, `npm run typecheck`, `npm run build`, `npm run e2e:web` (environment blocked in this sandbox: `listen EPERM`).
 - [x] 2026-02-12 P1: Studio feed-set OPML import/export (local-only) with dedupe-safe parsing and collision-safe naming during import. Evidence: `web/feedSets.js`, `web/feedSets.d.ts`, `web/app.js`, `web/index.html`, `test/feedSets.test.ts`; verification: `npx vitest run test/feedSets.test.ts`, `npm run lint`, `npm run typecheck`, `npm run build`.
@@ -65,6 +68,7 @@
 - [x] 2026-02-08 P2: Synced docs with shipped behavior changes. Evidence: `README.md`, `CHANGELOG.md`, `UPDATE.md`.
 
 ## Insights
+- Bounded concurrency materially reduces peak in-flight requests on large URL batches while preserving output ordering and dedupe behavior.
 - Browser-level coverage is now practical and deterministic by stubbing feed fetches in a local test server and driving real DOM interactions via Playwright.
 - Export verification should stay browser-driven because it catches regressions in both payload construction and download wiring.
 - OPML import/export is now parity-complete in Studio for local feed-set interoperability and migration.

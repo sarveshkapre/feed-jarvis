@@ -163,6 +163,69 @@ describe("cli", () => {
     }
   });
 
+  it("enforces --fetch-concurrency for multi-feed fetches", async () => {
+    let inFlight = 0;
+    let maxInFlight = 0;
+    const server = createServer((req, res) => {
+      inFlight += 1;
+      maxInFlight = Math.max(maxInFlight, inFlight);
+
+      setTimeout(() => {
+        const suffix = (req.url ?? "/feed").replace(/\W+/g, "-");
+        const xml = `<?xml version="1.0"?>\n<rss version="2.0"><channel><item><title>${suffix}</title><link>http://127.0.0.1${req.url ?? "/feed"}</link></item></channel></rss>`;
+        res.writeHead(200, { "content-type": "application/rss+xml" });
+        res.end(xml);
+        inFlight -= 1;
+      }, 25);
+    });
+    await new Promise<void>((resolve) => {
+      server.listen(0, "127.0.0.1", () => resolve());
+    });
+
+    const address = server.address();
+    if (!address || typeof address === "string") {
+      throw new Error("Failed to resolve test server address.");
+    }
+
+    const tmpDir = mkdtempSync(
+      path.join(os.tmpdir(), "feed-jarvis-concurrency-"),
+    );
+    const urlsPath = path.join(tmpDir, "feeds.txt");
+    const urls = Array.from(
+      { length: 6 },
+      (_unused, index) =>
+        `http://127.0.0.1:${address.port}/feed-${index.toString(10)}.xml`,
+    );
+    writeFileSync(urlsPath, `${urls.join("\n")}\n`, "utf8");
+
+    try {
+      const res = await runCli("./node_modules/.bin/tsx", [
+        "src/cli.ts",
+        "fetch",
+        "--urls-file",
+        urlsPath,
+        "--allow-host",
+        "127.0.0.1",
+        "--no-cache",
+        "--max-items",
+        "20",
+        "--fetch-concurrency",
+        "2",
+        "--stats",
+      ]);
+
+      expect(res.status).toBe(0);
+      expect(String(res.stderr)).toMatch(/- concurrency: 2/);
+      const parsed = JSON.parse(res.stdout);
+      expect(Array.isArray(parsed)).toBe(true);
+      expect(parsed).toHaveLength(6);
+      expect(maxInFlight).toBeLessThanOrEqual(2);
+    } finally {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+      rmSync(tmpDir, { recursive: true, force: true });
+    }
+  });
+
   it("supports markdown persona directories via --personas", () => {
     const tmpDir = mkdtempSync(path.join(os.tmpdir(), "feed-jarvis-personas-"));
     const personasDir = path.join(tmpDir, "personas");

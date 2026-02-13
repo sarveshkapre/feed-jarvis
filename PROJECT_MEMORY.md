@@ -7,6 +7,54 @@
 
 ## Open Problems
 
+## Session Notes (2026-02-13 | Cycle 1 Session 4)
+- Goal: Improve large-run fetch reliability by shipping bounded configurable fetch concurrency across CLI + Studio and validating it with integration tests.
+- Success criteria:
+  - CLI supports configurable fetch concurrency and uses bounded worker execution for multi-feed fetches.
+  - Studio `/api/fetch` supports bounded concurrency control, and Studio UI exposes/persists the setting.
+  - Tests verify concurrency limiting behavior for CLI and Studio server fetch flows.
+  - Verification commands and outcomes are recorded in this file.
+- Non-goals:
+  - Scheduler/autopublish integrations.
+  - Step 4 agent-feed E2E expansion in this session.
+  - Full `web/app.js` modularization.
+- Brainstorming checkpoint (ranked; impact/effort/fit/diff/risk/confidence):
+  1. Fetch concurrency limit for CLI + Studio API with bounded defaults (5/3/5/0/1/4) -> selected.
+  2. Studio fetch concurrency control + persisted session preference (4/2/5/1/1/4) -> selected.
+  3. Concurrency-focused integration coverage for CLI/server fetch paths (5/2/5/0/1/4) -> selected.
+  4. Saved filter presets (include/exclude/min-title) for repeat triage (4/3/4/1/1/3) -> pending.
+  5. Step 4 browser E2E (`build -> copy -> download`) (4/3/4/1/1/3) -> pending.
+  6. Per-item mute-domain quick action in Studio (4/3/4/2/1/3) -> pending.
+  7. CLI `generate --dry-run` diagnostics (4/3/4/1/1/3) -> pending.
+  8. Session persistence edge-case tests (invalid snapshots/stale keys) (3/2/4/0/1/4) -> pending.
+  9. Request-id field in API errors for supportability (3/2/4/0/1/4) -> pending.
+  10. `web/app.js` modularization pass (4/4/5/0/2/3) -> pending.
+- Product phase checkpoint:
+  - Prompt: "Are we in a good product phase yet?" -> No.
+  - Best-in-market signal (untrusted web, bounded scan 2026-02-13): Feedly/Inoreader/Buffer/Sprout/RSS.app all emphasize controlled automation throughput, stable ingestion, and repeatable feed workflows for multi-source operations.
+  - Gap map:
+    - Missing: configurable concurrency controls for large multi-feed fetch runs.
+    - Weak: large-run fetch behavior predictability in Studio UI.
+    - Parity: OPML/URL-file ingestion, retry/backoff, filters/rules, metadata exports, Step 3 browser E2E.
+    - Differentiator: local-first drafting with strict private-host safeguards.
+- What features are still pending?
+  - From `PRODUCT_ROADMAP.md`: saved filter presets, mute-domain quick action, Step 4 E2E, CLI dry-run diagnostics, and modularization remain pending.
+  - From `CLONE_FEATURES.md`: backlog remains >=20 items with reliability, UX, and test-depth opportunities.
+- Locked task list for this session:
+  - Bounded configurable fetch concurrency for CLI + Studio API.
+  - Studio fetch concurrency control with session persistence.
+  - CLI/server/tests updates validating concurrency behavior.
+- Execution outcome:
+  - Completed: Added shared bounded-concurrency helper and applied it to CLI `fetch` plus Studio `/api/fetch`.
+  - Completed: Added CLI/API/UI concurrency controls (`--fetch-concurrency`, `FEED_JARVIS_FETCH_CONCURRENCY`, Step 1 fetch concurrency input, and persisted session value).
+  - Completed: Added concurrency coverage (`test/concurrency.test.ts`, new CLI/server concurrency assertions, `studioPrefs` summary assertion).
+- Signals:
+  - GitHub issue signals: disabled/unavailable.
+  - GitHub CI signals: disabled/unavailable.
+- Trust labels:
+  - Trusted: local repository code/tests/commands.
+  - Untrusted: external market/reference pages.
+
 ## Session Notes (2026-02-12 | Cycle 1)
 - Goal: Ship the highest-impact reliability and ingestion parity improvements for Feed Jarvis Studio + CLI.
 - Success criteria:
@@ -128,6 +176,7 @@
 
 ## Recent Decisions
 - Template: YYYY-MM-DD | Decision | Why | Evidence (tests/logs) | Commit | Confidence (high/medium/low) | Trust (trusted/untrusted)
+- 2026-02-13 | Add bounded configurable fetch concurrency across CLI + Studio/API with shared worker-limited execution (`--fetch-concurrency`, `FEED_JARVIS_FETCH_CONCURRENCY`, `/api/fetch` `fetchConcurrency`) | Large multi-feed runs previously used unbounded `Promise.all`, causing avoidable request spikes and inconsistent throughput control | `src/lib/concurrency.ts`, `src/cli.ts`, `src/server.ts`, `web/app.js`, `web/index.html`, `test/concurrency.test.ts`, `test/cli.test.ts`, `test/server.test.ts`, `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/concurrency.test.ts test/studioPrefs.test.ts` | pending | high | trusted
 - 2026-02-12 | Add deterministic browser E2E critical-flow smoke (`fetch -> generate -> export`) and run it in CI with Playwright Chromium install | P1 parity required real browser coverage for the Studio journey and export wiring; deterministic fixtures keep it stable and actionable | `scripts/e2e-web.ts`, `.github/workflows/ci.yml`, `package.json`, `npm run lint`, `npm run typecheck`, `npm run build`, `npm run e2e:web` (`listen EPERM` in this sandbox) | 89ab2b3 | medium | trusted
 - 2026-02-12 | Add Studio feed-set OPML import/export with collision-safe import naming | OPML import/export is a baseline interoperability expectation and unlocks migration to/from feed readers with low risk to local-first posture | `web/feedSets.js`, `web/app.js`, `test/feedSets.test.ts`, `npx vitest run test/feedSets.test.ts` | 0c4ba7f | high | trusted
 - 2026-02-12 | Add live over-limit draft editing warnings and one-click trim helper | Users needed immediate visibility and fast correction while manually editing drafts to channel character limits | `web/postEditing.js`, `web/app.js`, `test/postEditing.test.ts`, `npx vitest run test/postEditing.test.ts` | 0c4ba7f | high | trusted
@@ -169,21 +218,25 @@
 
 ## Next Prioritized Tasks
 - Scoring rubric: Impact (1-5), Effort (1-5, lower is easier), Strategic fit (1-5), Differentiation (1-5), Risk (1-5, lower is safer), Confidence (1-5).
-- Selected (completed in cycle 2026-02-12):
-- Studio feed-set OPML import/export for local interoperability (Impact 5, Effort 4, Fit 5, Diff 1, Risk 2, Conf 4).
-- Studio live over-limit edit guidance with one-click trim suggestions (Impact 5, Effort 3, Fit 5, Diff 1, Risk 1, Conf 4).
-- Feed fetcher bounded retry/backoff for transient failures (Impact 5, Effort 3, Fit 5, Diff 1, Risk 2, Conf 4).
-- CLI `fetch --urls-file <path>` ingestion with allowlist-preserved fetch path (Impact 4, Effort 2, Fit 5, Diff 0, Risk 1, Conf 5).
-- Studio pasted JSON URL validation (`http/https`) with clear feedback (Impact 4, Effort 2, Fit 5, Diff 0, Risk 1, Conf 5).
-- Browser E2E critical flow coverage in CI (`fetch -> generate -> export`) (Impact 5, Effort 4, Fit 5, Diff 0, Risk 2, Conf 4).
-- Browser-driven export smoke assertions for `.txt`, `.jsonl`, `.csv` (Impact 4, Effort 2, Fit 5, Diff 0, Risk 1, Conf 4).
+- Selected (completed in cycle 2026-02-13):
+- Bounded configurable fetch concurrency across CLI + Studio/API (Impact 5, Effort 3, Fit 5, Diff 0, Risk 1, Conf 4).
+- Studio fetch-concurrency UI control with session persistence (Impact 4, Effort 2, Fit 5, Diff 1, Risk 1, Conf 4).
+- Concurrency behavior coverage for helper + CLI/server fetch flows (Impact 5, Effort 2, Fit 5, Diff 0, Risk 1, Conf 4).
 - Remaining backlog:
-- Feed fetch concurrent-limit controls for large runs (Impact 4, Effort 3, Fit 4, Diff 0, Risk 2, Conf 3).
 - Save/load filter presets for repeat triage workflows (Impact 4, Effort 3, Fit 4, Diff 1, Risk 1, Conf 3).
 - Browser E2E for Step 4 agent-feed flow (`build -> copy -> download`) (Impact 4, Effort 3, Fit 4, Diff 1, Risk 1, Conf 3).
+- CLI `generate --dry-run` diagnostics for invalid inputs and truncation stats (Impact 4, Effort 3, Fit 4, Diff 1, Risk 1, Conf 3).
 
 ## Verification Evidence
 - Template: YYYY-MM-DD | Command | Key output | Status (pass/fail)
+- 2026-02-13 | `npm run lint` | `Checked 43 files ... No fixes applied.` | pass
+- 2026-02-13 | `npm run typecheck` | `tsc -p tsconfig.json --noEmit` completed with no errors | pass
+- 2026-02-13 | `npm run build` | `tsc -p tsconfig.build.json` completed with no errors | pass
+- 2026-02-13 | `npx vitest run test/concurrency.test.ts test/studioPrefs.test.ts` | `Test Files 2 passed; Tests 7 passed` | pass
+- 2026-02-13 | `npx vitest run test/concurrency.test.ts test/studioPrefs.test.ts test/server.test.ts test/cli.test.ts` | server/cli suites failed in sandbox with `listen EPERM`; unit suites passed | fail (env)
+- 2026-02-13 | `npm test` | 11 files passed; server/cli suites blocked by sandbox `listen EPERM`; one cache-write test blocked by cache-dir `EPERM` | fail (env)
+- 2026-02-13 | `npm run smoke:web` | failed before script startup due sandbox `tsx` IPC `listen EPERM` | fail (env)
+- 2026-02-13 | `node dist/cli.js generate --input /tmp/feed-jarvis-smoke-items.json --persona Analyst --format jsonl --max-chars 180` | two JSONL drafts emitted for smoke payload | pass
 - 2026-02-12 | `git push origin main` | `201d384..a3b6ac6 main -> main` | pass
 - 2026-02-12 | `gh run list --branch main --limit 5` | `error connecting to api.github.com` in this environment | fail (env)
 - 2026-02-12 | `npx playwright --version && npx playwright install --list` | `Version 1.58.2` and local Chromium listed in Playwright cache | pass
