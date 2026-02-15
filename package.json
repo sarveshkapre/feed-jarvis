@@ -20,7 +20,7 @@
     "check": "npm run lint && npm run typecheck && npm test && npm run build"
   },
   "dependencies": {
-    "fast-xml-parser": "^5.0.0"
+    "fast-xml-parser": "^5.3.6"
   },
   "overrides": {
     "esbuild": "^0.27.2"
