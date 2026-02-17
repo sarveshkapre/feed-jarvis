@@ -5,7 +5,7 @@
 
 ## Good Product Phase Status
 - Status: `No` (checkpoint run on 2026-02-17).
-- Why not yet: core local-first workflows are strong and release/docs automation depth improved this session, but broader `web/app.js` decomposition and additional release/smoke hardening still remain before M5 is complete.
+- Why not yet: core local-first workflows are strong and Cycle 6 closed select-binding + fetch-contract gaps, but broader `web/app.js` decomposition and CI-safe listen/cache isolation still remain before M5 is complete.
 
 ## Definition Of Done
 - Core Studio + CLI workflows are complete for repeated daily use.
@@ -23,6 +23,74 @@
 
 ## Current Milestone
 - M4 UX Polish + Throughput
+
+## Session Goal Checkpoint (2026-02-17 | Global Cycle 6 Session 1)
+- Goal: Reduce `web/app.js` maintenance risk by extracting the named select/state binding seam and harden `/api/fetch` failure payload reliability with explicit contract docs plus smoke assertions.
+- Success criteria:
+  - Feed set/filter preset/rule preset select synchronization logic is extracted from `web/app.js` into a focused helper module with parity tests.
+  - `/api/fetch` `failures[]` payload contract and partial-success semantics are documented in `docs/`.
+  - Local smoke checks validate a partial-success `/api/fetch` path where `items[]` and `failures[]` coexist.
+  - Lint/typecheck/build + targeted tests/docs/security/smoke commands pass (or are explicitly blocked with evidence).
+- Non-goals:
+  - New APIs, schedulers, or hosted publishing integrations.
+  - Broad visual redesign outside touched Step 1 controls/docs.
+  - Full `web/app.js` modularization in one pass.
+
+## Product Phase Checkpoint (2026-02-17 | Global Cycle 6 Session 1)
+- Prompt: "Are we in a good product phase yet?" -> `No`.
+- Best-in-market references (untrusted web, bounded scan 2026-02-17):
+  - Feedly AI + summarize workflow signal (`https://feedly.com/new-features/posts/feedly-ai-and-summarization`).
+  - RSS.app filtering expectations (`https://help.rss.app/en/articles/10271103-how-to-filter-rss-feeds`).
+  - Buffer RSS automation operational baseline (`https://support.buffer.com/article/613-automating-rss-feeds-using-feedly-and-zapier`).
+  - Inoreader feed monitoring/reliability baseline (`https://www.inoreader.com/blog/2025/11/monitoring-feeds.html`).
+  - Inoreader automation throughput signal (`https://www.inoreader.com/blog/2026/01/save-time-with-automations.html`).
+- Core expected capabilities in this segment:
+  - Maintainable high-churn UI bindings (preset/select/action flows) with low refactor risk.
+  - Explicit API failure contracts for troubleshooting and support handoff.
+  - Repeatable smoke checks that verify mixed-success fetch flows.
+- Parity gap map:
+  - Missing: documented `/api/fetch` `failures[]` contract semantics.
+  - Weak: named select/state bindings are still duplicated in `web/app.js`.
+  - Weak: smoke checks currently focus happy-path fetch/generate and do not assert mixed success/failure fetch payloads.
+  - Parity: feed ingestion/filtering/rules presets/export formats/retries/concurrency.
+  - Differentiator: local-first multi-persona workflow with strict private-host safety defaults.
+
+## Pending Feature Checkpoint (2026-02-17 | Global Cycle 6 Session 1)
+- Prompt: "What features are still pending?"
+- `PRODUCT_ROADMAP.md` pending highlights:
+  - Next `web/app.js` state/UI seam extraction.
+  - `/api/fetch` failure payload contract docs and smoke-depth hardening.
+  - CI-safe listen/cache isolation defaults for broader integration coverage.
+- `CLONE_FEATURES.md` pending highlights:
+  - API payload contract docs for `/api/fetch` and focused browser/server smoke assertions.
+  - Remaining modularization slices and release/smoke stability fixtures.
+
+## Prioritized Session Tasks (2026-02-17 | Global Cycle 6 Session 1)
+- Selected first (score: impact/effort/strategic-fit/differentiation/risk/confidence):
+  1. Extract named select/state bindings from `web/app.js` into a focused helper module + tests (5/3/5/0/1/4).
+  2. Add `/api/fetch` failure payload contract docs (4/1/5/0/1/5).
+  3. Extend smoke checks with partial-success fetch assertion coverage (4/2/5/0/1/4).
+- Additional ranked candidates (not locked this session):
+  1. Add CI-safe test cache/listen isolation defaults (`FEED_JARVIS_CACHE_DIR`, host/port strategy) for integration reliability (4/3/4/0/2/3).
+  2. Add release-check JSON output fixture test for output-stability guarantees (3/2/4/0/1/4).
+  3. Add lightweight migration smoke command for storage schema keys (3/2/4/0/1/3).
+  4. Continue next `web/app.js` extraction seam (persona card/search + session listeners) (4/4/5/0/2/3).
+
+## Locked Cycle Scope (2026-02-17 | Global Cycle 6 Session 1)
+- [x] P1: Extract feed/filter/rule named select binding helpers from `web/app.js` with parity tests.
+- [x] P1: Document `/api/fetch` `failures[]` payload contract and partial-success behavior.
+- [x] P1: Add partial-success `/api/fetch` smoke assertion coverage and re-run quality gates.
+
+## Product Phase Checkpoint (2026-02-17 | Global Cycle 6 Session 1 Post-Ship)
+- Prompt: "Are we in a good product phase yet?" -> `No`.
+- Outcome after this session:
+  - Extracted the named select/state binding seam (`web/namedSelectBindings.js`) and removed duplicate select-refresh logic from `web/app.js`.
+  - Added explicit `/api/fetch` payload contract docs in `docs/API_CONTRACTS.md` and linked them from README/workflow docs.
+  - Extended smoke coverage with partial-success `/api/fetch` contract assertions and added unit coverage (`test/fetchContract.test.ts`) for smoke assertion logic.
+- Remaining highest-value gaps:
+  - Continue `web/app.js` seam extraction (persona/session/event binding slices).
+  - Add CI-safe listen/cache isolation defaults to unblock broader integration and smoke execution in constrained environments.
+  - Add output fixture stability coverage for release/smoke machine-readable contracts (`release:check --json`).
 
 ## Session Goal Checkpoint (2026-02-17 | Global Cycle 5 Session 1)
 - Goal: Complete a targeted cleanup/refactor pass by extracting the next Step 1 UI/status seam from `web/app.js`, shipping the pending fetch-failure JSON handoff action, and hardening snapshot test coverage.

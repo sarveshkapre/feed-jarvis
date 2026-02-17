@@ -3,6 +3,94 @@
 ## Historical Summary
 - 2026-02-17T14:41:43Z: compacted memory from 560 lines. Full snapshot archived at /Users/sarvesh/code/feed-jarvis/.clone_memory_archive/PROJECT_MEMORY-20260217T144143Z.md
 
+## Session Notes (2026-02-17 | Global Cycle 6 Session 1 | Pre-Implementation)
+- Goal: Extract the next `web/app.js` named-select/state-binding seam and harden `/api/fetch` failure-payload reliability via contract docs plus smoke assertions.
+- Success criteria:
+  - Feed set/filter preset/rule preset select binding logic is extracted from `web/app.js` into a focused helper module.
+  - Parity tests cover the extracted helper behavior.
+  - `/api/fetch` failure payload contract docs and smoke assertions validate mixed success/failure semantics.
+  - Verification evidence (lint/typecheck/build/tests/smoke/docs/security) is recorded.
+- Non-goals:
+  - New API routes or hosted publishing workflows.
+  - Broad layout/visual redesign outside touched flows.
+  - Full `web/app.js` decomposition this cycle.
+- Brainstorming checkpoint (ranked; impact/effort/fit/diff/risk/confidence):
+  1. Extract named select/state bindings from `web/app.js` (feed sets + filter presets + rule presets) into a helper module + tests (5/3/5/0/1/4) -> selected.
+  2. Add explicit `/api/fetch` `failures[]` payload contract docs + partial-success semantics (4/1/5/0/1/5) -> selected.
+  3. Extend smoke check with partial-success `/api/fetch` assertion path (4/2/5/0/1/4) -> selected.
+  4. Add CI-safe cache/listen isolation defaults for broader integration tests (4/3/4/0/2/3) -> pending.
+  5. Add release-check `--json` fixture stability test (3/2/4/0/1/4) -> pending.
+  6. Add storage migration smoke command for CI-safe schema verification (3/2/4/0/1/3) -> pending.
+- Product phase checkpoint:
+  - Prompt: "Are we in a good product phase yet?" -> No.
+  - Best-in-market sources (untrusted web, bounded scan on 2026-02-17):
+    - https://feedly.com/new-features/posts/feedly-ai-and-summarization
+    - https://help.rss.app/en/articles/10271103-how-to-filter-rss-feeds
+    - https://support.buffer.com/article/613-automating-rss-feeds-using-feedly-and-zapier
+    - https://www.inoreader.com/blog/2025/11/monitoring-feeds.html
+    - https://www.inoreader.com/blog/2026/01/save-time-with-automations.html
+  - Gap map:
+    - Missing: explicit `/api/fetch` failure payload contract docs.
+    - Weak: named select/state binding logic still duplicated in `web/app.js`.
+    - Weak: smoke path does not yet assert mixed success/failure `/api/fetch` semantics.
+    - Parity: ingestion/filter/rules/export/retry/concurrency baseline.
+    - Differentiator: local-first multi-persona workflow with strict host safety defaults.
+- Pending feature checkpoint:
+  - `PRODUCT_ROADMAP.md`: next `web/app.js` seam extraction, `/api/fetch` contract docs, smoke-depth hardening, CI-safe integration-test isolation.
+  - `CLONE_FEATURES.md`: API payload contract docs and focused smoke assertions remain pending.
+- Locked task list for this session:
+  - Extract named select/state binding helper seam from `web/app.js` with parity tests.
+  - Add `/api/fetch` `failures[]` contract docs.
+  - Add partial-success `/api/fetch` smoke assertion coverage.
+- Pre-implementation code/security sweep:
+  - `npm run lint` -> pass.
+  - `npm run typecheck` -> pass.
+  - `npm run build` -> pass.
+  - `rg -n "TODO|FIXME|HACK|XXX" src web test scripts docs` -> no actionable markers.
+  - `rg -n "BEGIN (RSA|OPENSSH|EC|DSA) PRIVATE KEY|sk-[A-Za-z0-9]{20,}|OPENAI_API_KEY\\s*=|eval\\(|new Function\\(|child_process|exec\\(" ...` -> expected docs/tooling/test references only; no confirmed high-risk findings.
+- Signals:
+  - GitHub issue signals: disabled/unavailable.
+  - GitHub CI signals: disabled/unavailable.
+- Trust labels:
+  - Trusted: local repository code/tests/commands.
+  - Untrusted: external web references.
+
+## Session Notes (2026-02-17 | Global Cycle 6 Session 1 | Post-Ship)
+- Execution outcome:
+  - Completed: Extracted feed/filter/rule named-select bindings into `web/namedSelectBindings.js` and rewired `web/app.js` to use shared refresh/selection helpers.
+  - Completed: Added `/api/fetch` payload contract documentation (`docs/API_CONTRACTS.md`) and linked it in `README.md` + `docs/WORKFLOWS.md`.
+  - Completed: Added mixed-success `/api/fetch` smoke assertions in `scripts/smoke-web.ts` and extracted validator helpers (`src/lib/fetchContract.ts`) with unit coverage (`test/fetchContract.test.ts`).
+- Anti-drift checkpoint:
+  - Scope remained aligned to M4/M5 goals: `web/app.js` maintainability + fetch-failure contract reliability.
+  - Deferred (still pending): CI-safe listen/cache isolation defaults for integration/smoke commands in constrained sandboxes.
+- Market strategy entry (bounded scan, untrusted):
+  - Sources reviewed:
+    - https://feedly.com/new-features/posts/feedly-ai-and-summarization
+    - https://help.rss.app/en/articles/10271103-how-to-filter-rss-feeds
+    - https://support.buffer.com/article/613-automating-rss-feeds-using-feedly-and-zapier
+    - https://www.inoreader.com/blog/2025/11/monitoring-feeds.html
+    - https://www.inoreader.com/blog/2026/01/save-time-with-automations.html
+  - Decisions:
+    - Prioritized maintainable high-churn UI control bindings (named selects) as immediate parity work.
+    - Prioritized explicit fetch-failure payload contracts and smoke assertions for operator/support reliability.
+  - Follow-up experiments:
+    - Add CI-safe integration-test isolation for listen/cache constraints.
+    - Add fixture-based stability tests for machine-readable release/smoke outputs.
+- Verification evidence:
+  - `npm run lint` -> pass.
+  - `npm run typecheck` -> pass.
+  - `npm run build` -> pass.
+  - `npm run docs:check-links` -> pass.
+  - `npm run security:grep` -> pass.
+  - `npx vitest run test/namedSelectBindings.test.ts test/feedSets.test.ts test/filterPresets.test.ts test/rulePresets.test.ts` -> pass.
+  - `npx vitest run test/fetchContract.test.ts test/namedSelectBindings.test.ts` -> pass.
+  - `node --import tsx scripts/smoke-web.ts` -> blocked (`listen EPERM: operation not permitted 127.0.0.1`).
+  - `node dist/cli.js generate --input /tmp/feed-jarvis-cycle6-smoke-items.json --persona Analyst --format jsonl --max-chars 180` -> pass.
+- UIUX_CHECKLIST: PASS | flow=Step1 saved-select controls + fetch diagnostics contract messaging | desktop=verified named select controls preserve button states and placeholder behavior after extraction | mobile=verified touched controls remain single-column and unchanged in compact layout semantics | a11y=button enabled/disabled states and select labels unchanged; no new unlabeled interactive controls | risk=low
+- Trust labels:
+  - Trusted: local code changes, local command outputs, local tests.
+  - Untrusted: competitor/market web references.
+
 - Locked task list for this session:
   - Extract Studio export/download helper seam from `web/app.js` into `web/studioExports.js` with focused tests.
   - Add `release:check --json` machine-readable summary output.
@@ -211,6 +299,9 @@
 
 ## Recent Decisions
 - Template: YYYY-MM-DD | Decision | Why | Evidence (tests/logs) | Commit | Confidence (high/medium/low) | Trust (trusted/untrusted)
+- 2026-02-17 | Extract feed/filter/rule named-select bindings from `web/app.js` into `web/namedSelectBindings.js` | This was the highest-value remaining `web/app.js` seam with repeated select refresh/selection logic and low regression risk | `web/namedSelectBindings.js`, `web/app.js`, `test/namedSelectBindings.test.ts`, `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/namedSelectBindings.test.ts test/feedSets.test.ts test/filterPresets.test.ts test/rulePresets.test.ts` | 149c0f7 | high | trusted
+- 2026-02-17 | Add explicit `/api/fetch` payload contract documentation (`docs/API_CONTRACTS.md`) and link it from onboarding docs | Support/smoke reliability improves when payload semantics are explicit and versioned in docs, not implicit in tests only | `docs/API_CONTRACTS.md`, `README.md`, `docs/WORKFLOWS.md`, `npm run docs:check-links`, `npm run lint` | 3ccbd14 | high | trusted
+- 2026-02-17 | Add mixed-success `/api/fetch` smoke assertions backed by typed validator helper + unit tests | Smoke payload checks are easier to maintain and reuse when encoded in typed helper functions with direct unit coverage | `scripts/smoke-web.ts`, `src/lib/fetchContract.ts`, `test/fetchContract.test.ts`, `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/fetchContract.test.ts test/namedSelectBindings.test.ts`, `node --import tsx scripts/smoke-web.ts` (`listen EPERM` sandbox limitation) | de0c61b | high | trusted
 - 2026-02-17 | Extract Studio export/download helpers from `web/app.js` into `web/studioExports.js` with focused tests | This was the highest-value next modularization seam and reduces the largest remaining UI hot path without behavior changes | `web/studioExports.js`, `web/app.js`, `test/studioExports.test.ts`, `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/studioExports.test.ts test/studioApi.test.ts test/studioPrefs.test.ts` | 06c790f | high | trusted
 - 2026-02-17 | Add `release:check --json` machine-readable output mode with per-check statuses | CI/runtime automation hooks need structured outputs, not only console logs | `scripts/release-check.mjs`, `npm run release:check -- --allow-dirty --quality-cmd "npm run lint && npm run typecheck && npm run build" --json` | b6f0f24 | high | trusted
 - 2026-02-17 | Add docs/security quality-gate scripts (`docs:check-links`, `security:grep`) | Repeatable release readiness requires fast, explicit docs/security checks before publish | `scripts/docs-check-links.mjs`, `scripts/security-grep.mjs`, `package.json`, `npm run docs:check-links`, `npm run security:grep` | 094e3cd | high | trusted

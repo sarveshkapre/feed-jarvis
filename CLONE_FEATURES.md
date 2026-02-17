@@ -6,6 +6,11 @@
 - Test and build failures
 - Gaps found during codebase exploration
 
+## Locked Cycle Scope (2026-02-17 | Global Cycle 6 Session 1)
+- [x] P1: Extract feed/filter/rule named select binding helpers from `web/app.js` into a focused module with parity tests.
+- [x] P1: Add `/api/fetch` `failures[]` payload contract docs covering shape and partial-success semantics.
+- [x] P1: Extend smoke verification with partial-success `/api/fetch` assertion coverage.
+
 ## Locked Cycle Scope (2026-02-17 | Global Cycle 5 Session 1)
 - [x] P1: Extract Step 1 fetch-failure rendering/serialization seam from `web/app.js` into a dedicated helper module and wire "copy failures JSON".
 - [x] P1: Add deterministic session snapshot round-trip fixture coverage.
@@ -80,11 +85,14 @@
 - [x] P3: Add release-check machine-readable summary output (`--json`) for CI automation hooks. (Impact 2, Effort 2, Fit 3, Diff 1, Risk 1, Conf 3)
 - [x] P3: Add Step 1 "copy fetch failures JSON" quick action for support/debug handoff. (Impact 2, Effort 2, Fit 3, Diff 1, Risk 1, Conf 3)
 - [ ] P3: Add migration smoke command (`npm run storage:migrate:check`) to validate schema key/version writes in CI-safe mode. (Impact 2, Effort 2, Fit 4, Diff 0, Risk 1, Conf 3)
-- [ ] P3: Add API contract docs for `/api/fetch` `failures[]` payload shape and partial-success semantics. (Impact 2, Effort 1, Fit 4, Diff 0, Risk 1, Conf 4)
+- [x] P3: Add API contract docs for `/api/fetch` `failures[]` payload shape and partial-success semantics. (Impact 2, Effort 1, Fit 4, Diff 0, Risk 1, Conf 4)
 - [ ] P3: Add focused browser smoke assertion ensuring Step 1 fetch failure details accordion renders for mixed success/failure fixtures. (Impact 3, Effort 2, Fit 4, Diff 0, Risk 2, Conf 3)
 - [ ] P3: Add release-check output fixture test to keep `--json` machine output stable for automation clients. (Impact 2, Effort 2, Fit 3, Diff 0, Risk 1, Conf 3)
 
 ## Implemented
+- [x] 2026-02-17 P1: Extracted named select/state-binding helper module (`web/namedSelectBindings.js`) and rewired feed-set/filter-preset/rule-preset selection flows in `web/app.js` with parity tests. Evidence: `web/namedSelectBindings.js`, `web/namedSelectBindings.d.ts`, `web/app.js`, `test/namedSelectBindings.test.ts`; verification: `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/namedSelectBindings.test.ts test/feedSets.test.ts test/filterPresets.test.ts test/rulePresets.test.ts`.
+- [x] 2026-02-17 P1: Added explicit `/api/fetch` payload contract documentation (`docs/API_CONTRACTS.md`) and linked it from onboarding/workflow docs. Evidence: `docs/API_CONTRACTS.md`, `README.md`, `docs/WORKFLOWS.md`; verification: `npm run docs:check-links`, `npm run lint`.
+- [x] 2026-02-17 P1: Extended smoke contract validation with mixed-success `/api/fetch` assertions and extracted typed fetch-contract validators with unit coverage. Evidence: `scripts/smoke-web.ts`, `src/lib/fetchContract.ts`, `test/fetchContract.test.ts`; verification: `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/fetchContract.test.ts test/namedSelectBindings.test.ts`, `node --import tsx scripts/smoke-web.ts` (blocked in sandbox: `listen EPERM`).
 - [x] 2026-02-17 P0: Migrated GitHub Actions to self-hosted runners (`ci` + `codeql`), added runner preflight checks, and documented full repository runner registration/setup flow. Evidence: `.github/workflows/ci.yml`, `.github/workflows/codeql.yml`, `scripts/ci-self-hosted-preflight.sh`, `docs/SELF_HOSTED_RUNNER.md`; verification: `bash scripts/ci-self-hosted-preflight.sh`, `npm ci`, `npx playwright install chromium`, `make check`, `npm run smoke:web`, `npm run e2e:web`.
 - [x] 2026-02-17 P1: Added deterministic Studio session snapshot round-trip fixture coverage in storage tests to guard refactor drift. Evidence: `test/studioStorage.test.ts`; verification: `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/studioStorage.test.ts test/fetchFailureDetails.test.ts test/studioApi.test.ts test/studioPrefs.test.ts`.
 - [x] 2026-02-17 P1: Extracted Step 1 fetch-failure presentation helpers into `web/fetchFailureDetails.js` and added a Step 1 "Copy failures JSON" action wired to clipboard-safe status feedback. Evidence: `web/fetchFailureDetails.js`, `web/fetchFailureDetails.d.ts`, `web/app.js`, `web/index.html`, `web/styles.css`, `test/fetchFailureDetails.test.ts`; verification: `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/fetchFailureDetails.test.ts test/fetchDiagnostics.test.ts test/studioApi.test.ts test/studioPrefs.test.ts`.
@@ -160,6 +168,8 @@
 - [x] 2026-02-08 P2: Synced docs with shipped behavior changes. Evidence: `README.md`, `CHANGELOG.md`, `UPDATE.md`.
 
 ## Insights
+- Named select refresh/get-selection logic is a strong low-risk seam when extracted into a shared helper because feed/filter/rule controls use the same placeholder/selection/button-disable lifecycle.
+- Smoke assertions are more maintainable when payload checks live in a typed helper (`src/lib/fetchContract.ts`) with unit tests, so contract drift can be detected even when listen-based smoke commands are sandbox-blocked.
 - Export/download logic is a low-risk `web/app.js` extraction seam because serialization is pure and can be validated with focused unit tests.
 - Release automation is easier to integrate with CI/runtime tooling when check outcomes are machine-readable (`--json`) instead of console text only.
 - Lightweight docs/security scripts are useful release gates only when high-noise patterns are scoped carefully (for example, avoiding placeholder-env and regex method-call false positives).
