@@ -57,6 +57,7 @@ npm run e2e:web
 ## Docs
 
 - Deep command recipes and workflow playbooks: `docs/WORKFLOWS.md`
+- API payload contracts for smoke/automation checks: `docs/API_CONTRACTS.md`
 - Release checklist and publish checks: `docs/RELEASE.md`
 - Self-hosted Actions runner setup: `docs/SELF_HOSTED_RUNNER.md`
 - Security policy: `docs/SECURITY.md`

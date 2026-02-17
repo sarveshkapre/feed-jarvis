@@ -151,5 +151,6 @@ On startup, Studio runs a safe migration helper that upgrades known legacy keys 
 - Validate payloads before generation with `--dry-run`.
 - Use `--diagnostics-json` for CI/pipeline parsing.
 - In Step 1 fetch mode, expand the fetch details panel to inspect per-feed failures (URL + reason + timing).
+- See `docs/API_CONTRACTS.md` for `/api/fetch` `failures[]` and partial-success response semantics.
 - If fetch fails for private or localhost hosts, confirm `FEED_JARVIS_ALLOW_PRIVATE_HOSTS=true` in trusted local-only runs.
 - For recurring parser issues, export filtered Studio items (`items.json`) and run CLI dry-run diagnostics against that file.
