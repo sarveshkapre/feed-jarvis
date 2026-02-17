@@ -17,7 +17,8 @@
     "test": "vitest run",
     "smoke:web": "tsx scripts/smoke-web.ts",
     "e2e:web": "node --import tsx scripts/e2e-web.ts",
-    "check": "npm run lint && npm run typecheck && npm test && npm run build"
+    "check": "npm run lint && npm run typecheck && npm test && npm run build",
+    "release:check": "node scripts/release-check.mjs"
   },
   "dependencies": {
     "fast-xml-parser": "^5.0.0"

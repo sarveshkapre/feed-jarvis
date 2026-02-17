@@ -4,8 +4,8 @@
 - Keep feed-jarvis production-ready. Current focus: Feed Jarvis Studio (`feed-jarvis`). Find the highest-impact pending work, implement it, test it, and push to main.
 
 ## Good Product Phase Status
-- Status: `No` (checkpoint run on 2026-02-13).
-- Why not yet: core local-first workflows are strong, but parity gaps remain in operator speed/UX (`web/app.js` modularity + keyboard flow) and publish-readiness release automation.
+- Status: `No` (checkpoint run on 2026-02-17).
+- Why not yet: core local-first workflows are strong and keyboard/release parity improved this session, but maintainability/docs depth gaps remain (`web/app.js` modularization + docs split for long-form workflows).
 
 ## Definition Of Done
 - Core Studio + CLI workflows are complete for repeated daily use.
@@ -53,6 +53,13 @@
   - Weak: release readiness automation and maintainability of large UI orchestration file.
   - Parity: ingestion interop (URL-file/OPML), retries/concurrency, filter/rule presets, deterministic exports, browser E2E.
   - Differentiator: private local-first multi-persona workflow with strict host safety defaults.
+
+## Product Phase Checkpoint (2026-02-17 | Global Cycle 22 Session 1 Post-Ship)
+- Prompt: "Are we in a good product phase yet?" -> `No`.
+- Outcome after this session:
+  - Closed missing parity items: Step 3/Step 4 keyboard shortcuts and scripted release-check automation.
+  - Remaining highest-value gaps: `web/app.js` modularization and docs split for deep command recipes/release playbooks.
+  - Remaining weak area: package publishing metadata currently excludes `dist/cli.js` in `npm pack --dry-run` output; release-check now warns explicitly.
 
 ## Session Goal Checkpoint (2026-02-13 | Global Cycle 5 Session 1)
 - Goal: Close the highest-impact remaining M3 reliability/supportability gaps by shipping fetch retry/latency diagnostics and API request IDs.
@@ -298,9 +305,9 @@
 - Differentiator: privacy-preserving local-first drafting + strict feed-host safety defaults.
 
 ## Locked Cycle Scope (2026-02-17 | Global Cycle 22 Session 1)
-- [ ] P1: Add Studio keyboard shortcuts for Step 3/Step 4 high-frequency actions (generate, export/copy, agent-feed actions) with safe input-focus guards.
-- [ ] P1: Add focused shortcut helper test coverage for keybinding matching + guard behavior.
-- [ ] P2: Add release checklist automation script with changelog guard + quality-gate command + artifact verification and docs wiring.
+- [x] P1: Add Studio keyboard shortcuts for Step 3/Step 4 high-frequency actions (generate, export/copy, agent-feed actions) with safe input-focus guards.
+- [x] P1: Add focused shortcut helper test coverage for keybinding matching + guard behavior.
+- [x] P2: Add release checklist automation script with changelog guard + quality-gate command + artifact verification and docs wiring.
 
 ## Locked Cycle Scope (2026-02-12 | Session 2)
 - [x] P1: Studio OPML import/export for saved feed sets (local-only interoperability).
@@ -341,11 +348,12 @@
 
 ## Pending Features (What Is Still Pending?)
 - P3: Refactor `web/app.js` into smaller modules (state/api/exporters/ui binding).
-- P3: Studio keyboard shortcuts for generation/export actions.
-- P3: Release checklist automation (version bump + changelog guard + artifact verify).
 - P3: Docs split: keep README compact and move deep recipes to `docs/`.
+- P3: Packaging metadata hardening for npm publish readiness (`.npmignore` / files whitelist so built `dist/cli.js` is included intentionally).
 
 ## Delivered Features (Recent)
+- 2026-02-17: Added Studio keyboard shortcuts for high-frequency Step 3/Step 4 actions (`Ctrl/Cmd+Shift+Enter/C/E/B/K/J`) with editable-field guards and UI hints.
+- 2026-02-17: Added `npm run release:check` automation (git clean guard, changelog guard, quality-command execution, artifact checks, and `npm pack --dry-run` warning signal).
 - 2026-02-13: Added `/api/fetch` diagnostics summary fields (`retryAttempts`, `retrySuccesses`, `durationMs`, `slowestFeedMs`) for large-run troubleshooting.
 - 2026-02-13: Added API request-id support in error payloads and `x-request-id` response headers; Studio now appends request IDs to surfaced API error messages.
 - 2026-02-13: Added coverage for fetch diagnostics formatting and server request-id + diagnostics behavior (`test/studioPrefs.test.ts`, `test/server.test.ts`).
@@ -377,5 +385,5 @@
 
 ## Next Cycle Goals
 - Start phased `web/app.js` modularization to reduce maintenance risk while preserving behavior.
-- Add Studio keyboard shortcuts for generate/export and high-frequency review loops.
-- Add release checklist automation and finish docs split so README stays compact while deep recipes move to `docs/`.
+- Finish docs split so README stays compact while deep recipes move to `docs/`.
+- Harden npm packaging metadata for publish-readiness (`dist/cli.js` inclusion policy).

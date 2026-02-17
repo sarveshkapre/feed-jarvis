@@ -7,9 +7,9 @@
 - Gaps found during codebase exploration
 
 ## Locked Cycle Scope (2026-02-17 | Global Cycle 22 Session 1)
-- [ ] P1: Add Studio keyboard shortcuts for Step 3/Step 4 high-frequency actions (generate, export/copy, and agent-feed actions) with safe focus guards.
-- [ ] P1: Add focused shortcut helper tests for keybinding matching and editable-target blocking.
-- [ ] P2: Add release checklist automation command with changelog guard, quality-gate check, and artifact verification.
+- [x] P1: Add Studio keyboard shortcuts for Step 3/Step 4 high-frequency actions (generate, export/copy, and agent-feed actions) with safe focus guards.
+- [x] P1: Add focused shortcut helper tests for keybinding matching and editable-target blocking.
+- [x] P2: Add release checklist automation command with changelog guard, quality-gate check, and artifact verification.
 
 ## Candidate Features To Do
 - [ ] P2: Add Studio-side URL normalization helper for pasted feeds (strip whitespace/tracking junk safely). (Impact 3, Effort 2, Fit 4, Diff 0, Risk 2, Conf 3)
@@ -18,8 +18,6 @@
 - [ ] P3: Add Studio quick action to insert a valid sample `items.json` payload into Step 1 JSON mode. (Impact 2, Effort 1, Fit 3, Diff 0, Risk 1, Conf 4)
 - [ ] P3: Add CLI troubleshooting doc page in `docs/` (invalid input, dry-run, stdin/pipes, private-host fetch limits). (Impact 2, Effort 2, Fit 4, Diff 0, Risk 1, Conf 5)
 - [ ] P3: Refactor `web/app.js` into focused modules (state, API client, exporters, UI bindings) to reduce maintenance risk. (Impact 4, Effort 4, Fit 5, Diff 0, Risk 2, Conf 3)
-- [ ] P3: Add Studio keyboard shortcuts for generate/export actions to speed high-volume review loops. (Impact 3, Effort 2, Fit 3, Diff 1, Risk 1, Conf 4)
-- [ ] P3: Add release checklist automation script (version bump + changelog guard + build artifact verification). (Impact 2, Effort 3, Fit 3, Diff 0, Risk 2, Conf 3)
 - [ ] P3: Document deep command recipes under `docs/` and keep README constrained to quickstart + links (1-2 screens). (Impact 2, Effort 2, Fit 4, Diff 0, Risk 1, Conf 5)
 - [ ] P3: Add persona-card search/filter in Studio for large persona packs (50+). (Impact 3, Effort 2, Fit 3, Diff 1, Risk 1, Conf 4)
 - [ ] P3: Add optional per-persona maxChars override for agent-feed generation workflows. (Impact 3, Effort 3, Fit 3, Diff 1, Risk 2, Conf 3)
@@ -36,6 +34,8 @@
 - [ ] P3: Add release command support for `--skip-check` and `--allow-dirty` flags with explicit warnings. (Impact 2, Effort 2, Fit 3, Diff 0, Risk 2, Conf 3)
 
 ## Implemented
+- [x] 2026-02-17 P1: Added Studio keyboard shortcuts for Step 3/Step 4 actions (`generate`, `copy/export drafts`, `build/copy/download feed`) with editable-target guards and new shortcut helper module/tests. Evidence: `web/keyboardShortcuts.js`, `web/app.js`, `web/index.html`, `web/styles.css`, `test/keyboardShortcuts.test.ts`; verification: `npx vitest run test/keyboardShortcuts.test.ts`, `npm run lint`, `npm run typecheck`, `npm run build`.
+- [x] 2026-02-17 P2: Added release checklist automation via `npm run release:check` with changelog guard, quality-command execution, artifact checks, and docs/Makefile wiring. Evidence: `scripts/release-check.mjs`, `package.json`, `Makefile`, `docs/RELEASE.md`; verification: `npm run release:check -- --allow-dirty --quality-cmd "npm run lint && npm run typecheck && npm run build"`.
 - [x] 2026-02-13 P1: Added `/api/fetch` retry/latency diagnostics in response summary (`retryAttempts`, `retrySuccesses`, `durationMs`, `slowestFeedMs`) for large-run troubleshooting. Evidence: `src/lib/feedFetch.ts`, `src/server.ts`, `web/studioPrefs.js`, `test/server.test.ts`, `test/studioPrefs.test.ts`; verification: `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/studioPrefs.test.ts`.
 - [x] 2026-02-13 P1: Added API request IDs in error payloads and `x-request-id` response headers; Studio now surfaces request IDs in API error text. Evidence: `src/server.ts`, `web/app.js`, `test/server.test.ts`; verification: `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/server.test.ts` (blocked in this sandbox by `listen EPERM`).
 - [x] 2026-02-13 P2: Added server tests for fetch diagnostics + request-id behavior and kept fetch retry unit coverage green with writable cache-dir override. Evidence: `test/server.test.ts`, `test/feedFetch.test.ts`; verification: `FEED_JARVIS_CACHE_DIR=/tmp/feed-jarvis-cache-test npx vitest run test/feedFetch.test.ts`.
@@ -85,6 +85,8 @@
 - [x] 2026-02-08 P2: Synced docs with shipped behavior changes. Evidence: `README.md`, `CHANGELOG.md`, `UPDATE.md`.
 
 ## Insights
+- Shortcut handling should be centralized in a helper that explicitly blocks editable targets, otherwise keybindings become brittle as UI complexity grows.
+- `npm pack --dry-run` can fail in constrained environments due global cache permissions; release checks should isolate npm cache paths for deterministic behavior.
 - API request IDs in both response headers and JSON error payloads make Studio-reported failures directly traceable in logs and support workflows.
 - Retry/latency diagnostics (`retryAttempts`, `retrySuccesses`, `durationMs`, `slowestFeedMs`) are most useful when formatted into one status line rather than hidden as raw JSON.
 - CLI tests are more resilient in sandboxed environments when launched as `node --import tsx src/cli.ts` instead of invoking the `tsx` binary directly (which may require IPC `listen` permissions).

@@ -22,5 +22,4 @@ check:
 	npm run check
 
 release:
-	@echo "See docs/RELEASE.md"
-
+	npm run release:check

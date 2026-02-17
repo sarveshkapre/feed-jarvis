@@ -62,12 +62,21 @@
     - Parity: OPML/URL-file ingestion, retries/concurrency, filter/rule presets, deterministic exports, request-id diagnostics.
     - Differentiator: local-first multi-persona workflow with strict host safety defaults.
 - What features are still pending?
-  - From `PRODUCT_ROADMAP.md`: `web/app.js` modularization, keyboard shortcuts, release checklist automation, docs split.
+  - From `PRODUCT_ROADMAP.md`: `web/app.js` modularization, docs split, and npm packaging metadata hardening.
   - From `CLONE_FEATURES.md`: backlog depth remains above 20 combined pending items across tracker + roadmap.
 - Locked task list for this session:
   - Implement shortcut helper + keyboard bindings for Step 3/4 actions with safe focus guards and UI hints.
   - Add shortcut helper tests.
   - Implement release checklist automation command and docs wiring.
+- Execution outcome:
+  - Completed: Added `web/keyboardShortcuts.js` and wired keybindings in `web/app.js` for load/fetch, generate, copy/export drafts, and Step 4 build/copy/download actions.
+  - Completed: Added shortcut UI hints in `web/index.html` and styling in `web/styles.css`.
+  - Completed: Added `test/keyboardShortcuts.test.ts` coverage for keybinding matching and editable-target guards.
+  - Completed: Added `scripts/release-check.mjs` with git/changelog/quality/artifact checks and npm-cache isolation for `npm pack --dry-run`.
+  - Completed: Wired release checks into `package.json` (`release:check`), `Makefile`, `docs/RELEASE.md`, and README/changelog docs.
+- Anti-drift check:
+  - Confirmed completed items map directly to locked cycle scope and roadmap parity/release-readiness goals.
+UIUX_CHECKLIST: PASS | flow=studio-step3-step4-shortcuts | desktop=verified-shortcut-hints-and-keybindings | mobile=no-layout-regressions-introduced | a11y=keyboard-first-actions-with-editable-guard | risk=medium
 - Quick code review + security sweep:
   - `rg TODO|FIXME|HACK|XXX src web test docs README.md` returned no actionable markers.
   - `rg innerHTML|eval|child_process|exec|spawn|dangerouslySetInnerHTML src web` found no high-risk patterns requiring immediate remediation.
@@ -357,6 +366,8 @@
 
 ## Recent Decisions
 - Template: YYYY-MM-DD | Decision | Why | Evidence (tests/logs) | Commit | Confidence (high/medium/low) | Trust (trusted/untrusted)
+- 2026-02-17 | Add Studio keyboard shortcuts through a dedicated helper with editable-target guards instead of embedding more ad-hoc keydown logic in `web/app.js` | Keeps high-frequency operator UX improvements low-risk while reducing keybinding regressions in a large UI orchestration file | `web/keyboardShortcuts.js`, `web/app.js`, `web/index.html`, `test/keyboardShortcuts.test.ts`, `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/keyboardShortcuts.test.ts` | f2474ae | high | trusted
+- 2026-02-17 | Add `npm run release:check` automation with configurable quality command and npm-cache isolation for pack checks | Release readiness needed repeatable guardrails; local cache isolation removes environment-specific npm permission failures | `scripts/release-check.mjs`, `package.json`, `docs/RELEASE.md`, `npm run release:check -- --allow-dirty --quality-cmd "npm run lint && npm run typecheck && npm run build"` | pending (next commit) | high | trusted
 - 2026-02-13 | Add `/api/fetch` retry/latency diagnostics and API request IDs for Studio troubleshooting | These were the highest-impact remaining parity/reliability gaps after dry-run diagnostics and materially improve large-run debugging confidence | `src/lib/feedFetch.ts`, `src/server.ts`, `web/studioPrefs.js`, `web/app.js`, `test/studioPrefs.test.ts`, `test/server.test.ts`, `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/studioPrefs.test.ts`, `FEED_JARVIS_CACHE_DIR=/tmp/feed-jarvis-cache-test npx vitest run test/feedFetch.test.ts`, `npx vitest run test/server.test.ts` (`listen EPERM` sandbox limitation), `node dist/cli.js generate --input /tmp/feed-jarvis-cycle5-smoke-items.json --persona Analyst --format jsonl --max-chars 180` | f18a12c | high | trusted
 - 2026-02-13 | Ship CLI preflight diagnostics (`generate --dry-run`) plus reliability coverage for session snapshot edge cases and `EPIPE` output piping | This was the highest-impact remaining parity gap from the roadmap and directly improves preflight confidence for repeat CLI workflows without changing normal generation behavior | `src/cli.ts`, `test/cli.test.ts`, `web/studioPrefs.js`, `web/app.js`, `test/studioPrefs.test.ts`, `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/studioPrefs.test.ts`, `npx vitest run test/cli.test.ts -t "reports diagnostics with --dry-run and does not write posts|handles EPIPE cleanly across output formats"`, `node dist/cli.js generate --input /tmp/feed-jarvis-cycle4-items.json --persona Analyst --max-chars 60 --dry-run --format csv` | 02bd0b4 | high | trusted
 - 2026-02-13 | Ship Studio Step 1 filter presets plus per-item domain muting (`site:` tokens) | This was the highest-value remaining repeat-triage parity gap and directly improves daily workflow speed/signal quality | `web/filterPresets.js`, `web/app.js`, `web/index.html`, `web/filters.js`, `test/filterPresets.test.ts`, `test/filters.test.ts`, `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/filterPresets.test.ts test/filters.test.ts`, `node dist/cli.js generate --input /tmp/feed-jarvis-smoke-items-cycle3.json --persona Analyst --format jsonl --max-chars 200` | 2e8f772 | high | trusted
@@ -395,6 +406,7 @@
 
 ## Mistakes And Fixes
 - Template: YYYY-MM-DD | Issue | Root cause | Fix | Prevention rule | Commit | Confidence
+- 2026-02-17 | Initial `release:check` implementation failed on `npm pack --dry-run` in this environment and assumed `dist/cli.js` must be in pack output | Global npm cache permission issue (`~/.npm`) and `.gitignore`-fallback packaging excludes `dist` without explicit npm files config | Added per-command npm cache isolation (`npm_config_cache` temp dir) and downgraded missing packed `dist/cli.js` to an explicit warning while keeping local artifact presence checks strict | Release automation should isolate external caches and treat packaging assumptions as policy checks with clear warnings unless repo publish intent is explicit | pending (next commit) | high
 - 2026-02-11 | New CLI OPML integration test initially timed out | Used `spawnSync` against a test-local HTTP server in the same process, blocking the event loop and starving server responses | Switched the test helper to async `spawn` and awaited process close with streamed stdout/stderr capture | For tests depending on in-process servers, avoid blocking subprocess APIs (`spawnSync`) and prefer async process control | 7c4ae07 | high
 - 2026-02-09 | "Dependabot Updates" Actions workflow failing with 403 | Repo default `GITHUB_TOKEN` workflow permissions were `read` but the dynamic Dependabot workflow requires write access to fetch job details | Updated repo default workflow permissions to `write`; added explicit `permissions: contents: read` to `ci.yml` | Treat repo-level Actions defaults as production config; whenever enabling write defaults, pin every workflow to explicit minimal permissions | c233218 (plus repo setting) | medium
 - 2026-02-10 | CLI `generate --input -` example failing + piping output causing `EPIPE` crash | `parseArgs` treated `-` as a new flag (not a value), and the CLI did not handle stdout `EPIPE` when downstream consumers closed the pipe | Treat `-` as a valid flag value for `--input`/`--out`; exit cleanly on `EPIPE`; add a regression test | Treat README command examples as contract tests; add CLI integration tests for argument edge cases (`-`, pipes) | ffd3299 | high
@@ -403,17 +415,22 @@
 
 ## Next Prioritized Tasks
 - Scoring rubric: Impact (1-5), Effort (1-5, lower is easier), Strategic fit (1-5), Differentiation (1-5), Risk (1-5, lower is safer), Confidence (1-5).
-- Selected (completed in cycle 2026-02-13):
-- Add `/api/fetch` diagnostics fields (`retryAttempts`, `retrySuccesses`, `durationMs`, `slowestFeedMs`) and surface them in Studio status (Impact 5, Effort 2, Fit 5, Diff 0, Risk 1, Conf 4).
-- Add API request-id support in error payloads/headers and surface IDs in Studio errors (Impact 5, Effort 2, Fit 5, Diff 0, Risk 1, Conf 5).
-- Add diagnostics/request-id coverage updates (`test/server.test.ts`, `test/studioPrefs.test.ts`) (Impact 4, Effort 2, Fit 5, Diff 0, Risk 1, Conf 4).
+- Selected (completed in cycle 2026-02-17):
+- Add Studio shortcut helper and keyboard actions for Step 3/Step 4 high-frequency workflows (Impact 5, Effort 2, Fit 5, Diff 1, Risk 1, Conf 4).
+- Add release checklist automation (`npm run release:check`) with changelog guard + quality gate + artifact checks (Impact 4, Effort 2, Fit 5, Diff 0, Risk 1, Conf 4).
 - Remaining backlog:
 - `web/app.js` modularization into smaller modules (state/api/export/ui) (Impact 4, Effort 4, Fit 5, Diff 0, Risk 2, Conf 3).
-- Studio keyboard shortcuts for high-frequency generate/export loops (Impact 4, Effort 2, Fit 4, Diff 1, Risk 1, Conf 4).
-- Release checklist automation (version/changelog/artifact guard) (Impact 3, Effort 3, Fit 4, Diff 0, Risk 1, Conf 3).
+- Docs split from README into deeper `docs/` recipes (Impact 3, Effort 2, Fit 4, Diff 0, Risk 1, Conf 5).
+- Packaging metadata hardening for npm publish-readiness (`dist/cli.js` inclusion policy) (Impact 3, Effort 2, Fit 4, Diff 0, Risk 1, Conf 4).
 
 ## Verification Evidence
 - Template: YYYY-MM-DD | Command | Key output | Status (pass/fail)
+- 2026-02-17 | `npx vitest run test/keyboardShortcuts.test.ts` | `Test Files 1 passed; Tests 4 passed` | pass
+- 2026-02-17 | `npm run lint` | `Checked 50 files ... No fixes applied.` | pass
+- 2026-02-17 | `npm run typecheck` | `tsc -p tsconfig.json --noEmit` completed with no errors | pass
+- 2026-02-17 | `npm run build` | `tsc -p tsconfig.build.json` completed with no errors | pass
+- 2026-02-17 | `npm run release:check -- --allow-dirty --quality-cmd "npm run lint && npm run typecheck && npm run build"` | release check passed; warns that `npm pack --dry-run` currently excludes `dist/cli.js` under existing packaging rules | pass (with warning)
+- 2026-02-17 | `node dist/cli.js generate --input /tmp/feed-jarvis-cycle22-smoke-items.json --persona Analyst --format jsonl --max-chars 180` | emitted two JSONL drafts for smoke payload | pass
 - 2026-02-13 | `gh run list --branch main --limit 3` | `error connecting to api.github.com` in this environment | fail (env)
 - 2026-02-13 | `git push origin main` | `f18a12c..d445b49 main -> main` | pass
 - 2026-02-13 | `git push origin main` | `fd6afc4..f18a12c main -> main` | pass
