@@ -1,8 +1,143 @@
 # Project Memory
 
 ## Historical Summary
-- 2026-02-17T14:41:43Z: compacted memory from 560 lines. Full snapshot archived at /Users/sarvesh/code/feed-jarvis/.clone_memory_archive/PROJECT_MEMORY-20260217T144143Z.md
+- 2026-02-17T08:15:29Z: compacted memory from 578 lines. Full snapshot archived at /Users/sarvesh/code/feed-jarvis/.clone_memory_archive/PROJECT_MEMORY-20260217T081529Z.md
 
+  - `npm run typecheck` -> pass.
+  - `npm run build` -> pass.
+  - `npm test` -> blocked/fail in sandbox (`listen EPERM` for integration tests; home cache-path `EPERM`; CLI fetch test timeouts secondary to blocked listen path).
+- Market strategy entry:
+  - What we learned: best-in-market feed tooling emphasizes failure transparency per source and stable automation settings persistence.
+  - What we are building now: per-feed fetch diagnostic drill-down + versioned storage migration groundwork.
+  - Why this wins now: it reduces operator triage time and lowers future schema-change risk without expanding product surface.
+  - Follow-up experiment: measure whether drill-down detail reduces repeated fetch retries/support ambiguity in smoke sessions.
+- Execution outcome:
+  - Completed: added `/api/fetch` partial-failure diagnostics (`summary.failed` + `failures[]`) and Step 1 fetch details drill-down UI/status messaging.
+  - Completed: added versioned storage migration helper (`schema-version` key, legacy-key upgrade path) and startup migration invocation before reading persisted state.
+  - Completed: updated workflow docs with Studio localStorage key map + migration notes.
+- Recent Decisions:
+  - 2026-02-17 | Added structured per-feed fetch failure diagnostics in API+UI | better Step 1 troubleshooting and lower operator ambiguity | evidence: `src/server.ts`, `web/app.js`, `web/fetchDiagnostics.js`, `test/fetchDiagnostics.test.ts` | commit `a229846` | confidence high | trust label trusted.
+  - 2026-02-17 | Added versioned storage migration helper with startup wiring | future schema changes need safe upgrade path without manual localStorage edits | evidence: `web/studioStorage.js`, `web/app.js`, `test/studioStorage.test.ts` | commit `d8adf8a` | confidence high | trust label trusted.
+- Mistakes And Fixes:
+  - Mistake: initial diagnostics patch reused a callback-local timing variable outside scope in `handleFetchFeed`.
+  - Root cause: rushed refactor from direct result list to outcome union.
+  - Fix/prevention: switched to outcome-carried `durationMs` and re-ran lint/typecheck/build before commit.
+- Verification Evidence:
+  - `npm run lint && npm run typecheck && npm run build && npx vitest run test/studioApi.test.ts test/studioPrefs.test.ts test/fetchDiagnostics.test.ts` -> pass.
+  - `npm run lint && npm run typecheck && npm run build && npx vitest run test/studioStorage.test.ts test/studioApi.test.ts test/studioPrefs.test.ts test/fetchDiagnostics.test.ts` -> pass.
+  - `npm run lint && npm run typecheck && npm run build && npx vitest run test/studioStorage.test.ts test/studioApi.test.ts test/studioPrefs.test.ts test/fetchDiagnostics.test.ts && node dist/cli.js generate --input /tmp/feed-jarvis-cycle3-smoke-items.json --persona Analyst --format jsonl --max-chars 180` -> pass (`"Analysis: Cycle 3 smoke item https://example.com/cycle3"`).
+  - `npm run lint && npm run typecheck && npm run build` (post-doc/tracker sync) -> pass.
+  - `rg -n "TODO|FIXME|HACK|XXX" src web test docs README.md` -> no matches.
+  - `rg -n "OPENAI_API_KEY\\s*=|sk-[A-Za-z0-9]{20,}|BEGIN (RSA|OPENSSH|EC|DSA) PRIVATE KEY|eval\\(|new Function\\(|child_process|exec\\(" src web scripts test package.json` -> expected tooling-only matches, no confirmed high-risk findings.
+- UIUX_CHECKLIST: PASS | flow=Step1 fetch diagnostics drill-down | desktop=verified status+details rendering in fetch card | mobile=verified responsive details block within existing card layout | a11y=semantic details/summary disclosure with existing aria-live status retained | risk=low
+- Signals:
+  - GitHub issue signals: disabled/unavailable.
+  - GitHub CI signals: disabled/unavailable.
+- Trust labels:
+  - Trusted: local repository code/tests/commands.
+  - Untrusted: external market/reference pages.
+
+## Session Notes (2026-02-17 | Global Cycle 5 Session 1)
+- Goal: Ship a targeted cleanup/refactor slice by extracting Step 1 fetch-failure UI binding logic from `web/app.js`, adding copy-ready failures JSON handoff, and strengthening snapshot regression coverage.
+- Success criteria:
+  - Step 1 failure detail rendering/serialization is moved into a dedicated helper module with unchanged behavior.
+  - UI exposes a one-click copy action for structured fetch-failure JSON.
+  - Deterministic session snapshot fixture coverage is added and passing.
+  - Verification commands and outcomes are recorded in this file.
+- Non-goals:
+  - New API/server endpoints or scheduler integrations.
+  - Broad Studio visual redesign.
+  - Full `web/app.js` decomposition in one session.
+- Brainstorming checkpoint (ranked; impact/effort/fit/diff/risk/confidence):
+  1. Extract Step 1 fetch-failure rendering/serialization helpers + copy JSON action (5/2/5/1/1/4) -> selected.
+  2. Add deterministic Studio session snapshot round-trip fixture coverage (4/2/5/0/1/5) -> selected.
+  3. Consolidate Step 1 status helper wiring to reduce `web/app.js` branching noise (4/3/5/0/2/4) -> selected.
+  4. Add release-check `--json` fixture assertions for automation stability (3/2/4/0/1/4) -> pending.
+  5. Add `/api/fetch` `failures[]` contract docs with examples (3/1/4/0/1/4) -> pending.
+  6. Add CI-safe cache-dir isolation defaults for fetch integration tests (3/2/4/0/2/3) -> pending.
+  7. Extract feed/filter preset select wiring from `web/app.js` (4/4/5/0/2/3) -> pending.
+  8. Add smoke check for Step 1 failure-details accordion rendering path (3/2/4/0/2/3) -> pending.
+  9. Add export filename timestamp option for drafts/items downloads (2/2/3/1/1/3) -> pending.
+  10. Add copy-ready trim analytics summary after post edits (2/2/3/1/1/3) -> pending.
+- Product phase checkpoint:
+  - Prompt: "Are we in a good product phase yet?" -> No.
+  - Best-in-market references (untrusted web, bounded scan baseline reused in sandbox): Feedly, RSS.app, Buffer, Inoreader.
+  - Gap map:
+    - Missing: Step 1 copy-ready fetch-failures JSON handoff action.
+    - Missing: deterministic snapshot round-trip fixture coverage.
+    - Weak: Step 1 fetch-failure UI status binding remains in `web/app.js`.
+    - Parity: ingestion interop, retries/concurrency, filters/rules presets, export formats.
+    - Differentiator: local-first multi-persona workflow with strict private-host defaults.
+- Market strategy entry:
+  - What we learned: competing workflows emphasize actionable error handoff and predictable automation/state persistence.
+  - What we are building now: focused Step 1 failure-detail seam extraction + copy JSON action + snapshot fixture hardening.
+  - Why this wins now: it lowers triage/support friction while shrinking the highest-maintenance UI hot path.
+- What features are still pending?
+  - From `PRODUCT_ROADMAP.md`: next `web/app.js` extraction seams and persistence/release smoke depth for M5.
+  - From `CLONE_FEATURES.md`: Step 1 failure JSON quick action, deterministic snapshot fixture, API contract docs, and additional smoke assertions.
+- Locked task list for this session:
+  - Extract Step 1 fetch-failure rendering/serialization logic to a dedicated module and wire copy JSON action.
+  - Add deterministic session snapshot round-trip fixture coverage.
+  - Run quality/security checks and update trackers with anti-drift notes.
+- Session goal checkpoint recorded before implementation per contract.
+- Code review + security sweep (pre-implementation):
+  - `npm run lint && npm run typecheck && npm run build` -> pass.
+  - `npm test` -> blocked/fail in sandbox (`listen EPERM` for integration suites, cache-path `EPERM`, and CLI fetch timeout side effects).
+- Execution outcome:
+  - Completed: extracted Step 1 fetch-failure presentation helpers into `web/fetchFailureDetails.js` and rewired `web/app.js` detail rendering to use the helper model.
+  - Completed: added Step 1 "Copy failures JSON" action with clipboard status feedback and disabled-state safeguards.
+  - Completed: added deterministic Studio session snapshot round-trip fixture coverage in `test/studioStorage.test.ts`.
+- Verification Evidence:
+  - `npm run lint && npm run typecheck && npm run build && npx vitest run test/fetchFailureDetails.test.ts test/fetchDiagnostics.test.ts test/studioApi.test.ts test/studioPrefs.test.ts` -> pass.
+  - `npm run lint && npm run typecheck && npm run build && npx vitest run test/studioStorage.test.ts test/fetchFailureDetails.test.ts test/studioApi.test.ts test/studioPrefs.test.ts` -> pass.
+  - `npm run docs:check-links && npm run security:grep && npm run lint && npm run typecheck && npm run build && npx vitest run test/studioStorage.test.ts test/fetchFailureDetails.test.ts test/fetchDiagnostics.test.ts test/studioApi.test.ts test/studioPrefs.test.ts` -> pass.
+  - `npm run lint` (post-tracker sync) -> pass.
+- Remaining next:
+  - Continue extracting `web/app.js` preset/select/event seams while preserving behavior.
+  - Add `/api/fetch` failure payload contract docs and smoke assertions.
+  - Investigate CI-safe cache/listen isolation defaults for broader integration test reliability.
+- UIUX_CHECKLIST: PASS | flow=Step1 fetch failure details copy handoff | desktop=verified copy action placement and status feedback in fetch details block | mobile=verified button remains reachable and readable in compact details layout | a11y=button has explicit label and existing aria-live status messaging preserved | risk=low
+
+## Session Notes (2026-02-17 | Global Cycle 4 Session 1)
+- Goal: Reduce maintenance/release drift by extracting the Studio export seam from `web/app.js` and adding machine-readable release/docs/security automation hooks.
+- Success criteria:
+  - Export/download serialization helpers are moved from `web/app.js` into a focused module with parity tests.
+  - `npm run release:check -- --json` emits machine-readable status for automation.
+  - `docs:check-links` and `security:grep` scripts run locally and are documented.
+  - Verification commands and outcomes are recorded in this file.
+- Non-goals:
+  - New API endpoints or scheduler/publishing integrations.
+  - Broad UI redesign beyond touched export/status flow polish.
+  - Full `web/app.js` decomposition in one session.
+- Brainstorming checkpoint (ranked; impact/effort/fit/diff/risk/confidence):
+  1. Extract Studio export/download seam from `web/app.js` (`copy`/`download`/draft serialization) into `web/studioExports.js` (5/3/5/0/2/4) -> selected.
+  2. Add `release:check --json` machine output for CI/runtime automation hooks (4/2/4/1/1/4) -> selected.
+  3. Add `docs:check-links` + `security:grep` scripts and docs wiring (3/2/4/0/1/4) -> selected.
+  4. Add snapshot round-trip fixture for session persistence modularization safety (3/2/4/0/1/4) -> pending.
+  5. Add Step 1 "copy fetch failures JSON" debug handoff action (2/2/3/1/1/3) -> pending.
+  6. Add API payload schema notes for `/api/fetch` + `/api/generate` + `/api/agent-feed` (2/2/4/0/1/4) -> pending.
+  7. Add README/docs command-smoke validation script (2/3/3/1/2/3) -> pending.
+  8. Add migration smoke command for schema-key writes (2/2/4/0/1/3) -> pending.
+  9. Add export filename timestamp option for drafts/items downloads (2/2/3/1/1/3) -> pending.
+  10. Add browser smoke assertion for Step 1 failure detail accordion (3/2/4/0/2/3) -> pending.
+- Product phase checkpoint:
+  - Prompt: "Are we in a good product phase yet?" -> No.
+  - Best-in-market signal (untrusted web, bounded scan 2026-02-17): Feedly, RSS.app, Buffer, and Inoreader continue to emphasize robust filtering/automation workflows plus stable interoperability/export contracts.
+  - Gap map:
+    - Missing: export/download seam extraction from `web/app.js`.
+    - Missing: machine-readable release-check output for automation consumers.
+    - Missing: first-class docs link-check and security grep scripts.
+    - Weak: release checks are primarily human-readable.
+    - Parity: ingestion interop (URL file/OPML), retries/concurrency, filter/rule presets, export formats, browser smoke path.
+    - Differentiator: local-first multi-persona workflow with private-host safety defaults.
+- Market strategy entry:
+  - What we learned: comparable tools emphasize repeatable automation and high-signal docs/interop guardrails, not only UI features.
+  - What we are building now: modularized export helpers + machine-readable release checks + repeatable docs/security scripts.
+  - Why this wins now: it lowers regression risk while making release automation easier to consume from CI/runtime pipelines.
+  - Source links (untrusted): `https://feedly.com/new-features/posts/feedly-ai-and-summarization`, `https://help.rss.app/en/articles/10271103-how-to-filter-rss-feeds`, `https://support.buffer.com/article/613-automating-rss-feeds-using-feedly-and-zapier`, `https://www.inoreader.com/blog/2025/11/monitoring-feeds.html`, `https://www.inoreader.com/hu/blog/2015/07/subscribe-to-news-feeds-with-opml.html`.
+- What features are still pending?
+  - From `PRODUCT_ROADMAP.md`: additional `web/app.js` extraction seams plus snapshot/migration smoke fixture hardening for M5.
+  - From `CLONE_FEATURES.md`: snapshot round-trip fixture, Step 1 failure JSON quick action, API payload docs, and UI polish follow-ups.
 - Locked task list for this session:
   - Extract Studio export/download helper seam from `web/app.js` into `web/studioExports.js` with focused tests.
   - Add `release:check --json` machine-readable summary output.
