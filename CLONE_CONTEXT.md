@@ -3,36 +3,36 @@
 Use this file as the first read in every new session for this repository.
 
 ## Goal
-- Current goal: Continue M4/M5 delivery by reducing maintenance and release drift after shipping shortcut + release-check parity.
-- Why this matters now: keyboard and release guardrails landed this session, so the next leverage point is maintainability/docs depth to keep delivery speed high.
+- Current goal: Continue M4/M5 cleanup by finishing phased `web/app.js` modularization and docs-depth cleanup after landing packaging enforcement.
+- Why this matters now: Step 1 helper extraction and release packaging policy are now in place, so the biggest remaining maintenance drag is `web/app.js` size and README/docs depth split.
 
 ## Expected Outcome
 - What should be true after this session:
-  - `web/app.js` modularization starts with a low-risk extraction slice.
-  - README remains compact while deep recipes move to `docs/`.
-  - Packaging policy for `dist/cli.js` inclusion is clarified (`.npmignore`/`files`).
+  - Additional `web/app.js` sections are extracted into focused modules with behavior parity.
+  - README stays quickstart-focused and deep recipes move to dedicated docs pages.
+  - Verification and tracker docs remain current with each shipped cleanup slice.
 - Definition of done for this cycle:
-  - Selected modularization/docs/packaging tasks are completed or explicitly blocked with evidence.
+  - Selected modularization/docs tasks are completed or explicitly blocked with evidence.
   - Verification evidence is logged in `PROJECT_MEMORY.md`.
   - Trackers are updated and backlog depth remains healthy.
 
 ## Current State
 - Completed recently:
-  - Studio now supports keyboard shortcuts for Step 3/Step 4 (`generate`, `copy/export drafts`, `build/copy/download feed`) with editable-field guards.
-  - Added `npm run release:check` automation with changelog guard, quality command execution, artifact checks, and npm-cache isolation for pack validation.
-  - Updated roadmap/features/memory/docs with new parity closure and remaining gaps.
+  - Extracted Step 1 ingestion helpers from `web/app.js` into `web/step1Ingestion.js` and added focused tests (`test/step1Ingestion.test.ts`).
+  - Hardened package publish metadata with `package.json` `files` whitelist and enforced `dist/cli.js` validation in `release:check` via `npm pack --dry-run --json`.
+  - Updated roadmap/feature/memory/release docs and re-verified quality gates.
 - In progress:
-  - No active implementation in progress; session closed after two shipped slices.
+  - No active implementation in progress; session closed after two shipped cleanup slices.
 - Blockers or risks:
   - `web/app.js` remains a high-maintenance hotspot until modularization lands.
-  - `npm pack --dry-run` excludes `dist/cli.js` under current packaging rules (`.gitignore` fallback); release-check warns but does not fail.
+  - README still carries deep workflow content that should move under `docs/` to keep onboarding concise.
 
 ## Immediate Next Actions
-- [ ] 1. Start phased modularization by extracting Step 1 state/actions from `web/app.js` into a dedicated module.
-- [ ] 2. Split deep command/release recipes from `README.md` into `docs/` and keep README at quickstart depth.
-- [ ] 3. Decide npm packaging policy (`files` whitelist or `.npmignore`) so `dist/cli.js` inclusion is intentional and testable.
-- [ ] 4. Add focused tests for any modularized helpers and rerun lint/typecheck/build + smoke path.
-- [ ] 5. Refresh roadmap/feature/memory trackers with post-modularization outcomes and commit/push slices.
+- [ ] 1. Extract next `web/app.js` slice: Step 1 persistence/read-write helpers into a dedicated `web` module with parity tests.
+- [ ] 2. Split deep CLI/release workflow recipes from `README.md` into a new `docs/` page and keep README quickstart-level.
+- [ ] 3. Run `npm run lint`, `npm run typecheck`, `npm run build`, and targeted tests for the extracted module(s).
+- [ ] 4. Run lightweight security grep checks and record evidence in `PROJECT_MEMORY.md`.
+- [ ] 5. Update `PRODUCT_ROADMAP.md`, `CLONE_FEATURES.md`, `PROJECT_MEMORY.md`, and this context file after each shipped slice.
 
 ## Constraints
 - Guardrails:
@@ -51,6 +51,6 @@ Use this file as the first read in every new session for this repository.
 - Agent contract: AGENTS.md
 
 ## Session Handoff
-- Last updated: 2026-02-17T03:00:54Z
-- Updated by: codex autonomous maintainer (global cycle 22)
-- Notes for next session: keyboard/release parity slice is complete; next cycle should prioritize `web/app.js` modularization + docs split + packaging policy hardening.
+- Last updated: 2026-02-17T03:10:05Z
+- Updated by: codex autonomous maintainer (global cycle 23)
+- Notes for next session: packaging policy hardening and Step 1 helper extraction are complete; continue phased `web/app.js` modularization and docs split.

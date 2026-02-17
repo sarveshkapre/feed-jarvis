@@ -88,6 +88,7 @@
   - `rg --line-number "innerHTML|eval\\(|child_process|\\bexec\\b|spawn\\(|dangerouslySetInnerHTML" src web scripts` -> expected matches only (`innerHTML` list resets in `web/app.js`, `execSync` in `scripts/release-check.mjs`); no new high-risk patterns introduced.
 - Anti-drift check:
   - Completed work remains aligned to selected cleanup scope (modularization + release-packaging reliability).
+UIUX_CHECKLIST: PASS | flow=studio-step1-ingestion-helpers | desktop=logic-only-refactor-no-layout-change | mobile=logic-only-refactor-no-layout-change | a11y=no-focus-or-control-behavior-change | risk=low
 
 ## Session Notes (2026-02-17 | Global Cycle 22 Session 1)
 - Goal: Ship the top pending parity slice by adding Studio keyboard shortcuts for high-frequency generation/export actions and release checklist automation.
