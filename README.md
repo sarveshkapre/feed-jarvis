@@ -31,6 +31,8 @@ npm run lint
 npm run typecheck
 npm run build
 npm test
+npm run docs:check-links
+npm run security:grep
 ```
 
 Optional browser smoke paths:

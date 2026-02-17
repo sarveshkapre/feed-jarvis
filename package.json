@@ -19,6 +19,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "biome check .",
     "format": "biome format --write .",
+    "docs:check-links": "node scripts/docs-check-links.mjs",
+    "security:grep": "node scripts/security-grep.mjs",
     "test": "vitest run",
     "smoke:web": "tsx scripts/smoke-web.ts",
     "e2e:web": "node --import tsx scripts/e2e-web.ts",

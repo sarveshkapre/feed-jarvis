@@ -123,6 +123,13 @@ npm run release:check
 
 For CI/runtime automation consumers, append `--json` to emit a machine-readable summary object.
 
+Recommended local hygiene checks before release:
+
+```bash
+npm run docs:check-links
+npm run security:grep
+```
+
 For detailed release notes see `docs/RELEASE.md`.
 
 ## Studio Storage Schema

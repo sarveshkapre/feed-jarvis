@@ -8,6 +8,13 @@
 npm run release:check
 ```
 
+Optional pre-release hygiene checks:
+
+```bash
+npm run docs:check-links
+npm run security:grep
+```
+
 `release:check` validates:
 - clean git working tree (unless `--allow-dirty` is passed)
 - changelog guardrails (`## Unreleased` exists and has bullet entries)
