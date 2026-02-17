@@ -38,6 +38,14 @@ import {
   requestPersonas,
 } from "./studioApi.js";
 import {
+  buildDraftRows as buildDraftExportRows,
+  copyText as copyTextToClipboard,
+  downloadFile as downloadTextFile,
+  toAgentFeedJson as serializeAgentFeedJson,
+  toDraftsCsv as serializeDraftsCsv,
+  toDraftsJsonl as serializeDraftsJsonl,
+} from "./studioExports.js";
+import {
   formatFetchSummary,
   getMaxCharsForChannel,
   setMaxCharsForChannel,
@@ -1514,7 +1522,7 @@ function updateAgentFeedPreview() {
 
 function copyText(text, statusElement = elements.postsStatus) {
   if (!text) return;
-  navigator.clipboard.writeText(text).then(
+  copyTextToClipboard(navigator.clipboard, text).then(
     () => setStatus(statusElement, "Copied to clipboard."),
     () =>
       setStatus(
@@ -1526,15 +1534,7 @@ function copyText(text, statusElement = elements.postsStatus) {
 }
 
 function downloadFile(filename, content) {
-  const blob = new Blob([content], { type: "text/plain" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+  downloadTextFile(document, URL, filename, content);
 }
 
 function resetDrafts() {
@@ -1552,99 +1552,28 @@ function resetAgentFeed() {
   setStatus(elements.agentFeedStatus, "");
 }
 
-function escapeCsv(value) {
-  const text = String(value ?? "");
-  return `"${text.replace(/"/g, '""')}"`;
-}
-
-function buildDraftRows() {
-  if (!state.generatedMeta) return [];
-  const max = Math.min(state.posts.length, state.generatedItems.length);
-  const rows = [];
-  const rules = state.generatedMeta.rules ?? {};
-  const utm = rules.utm ?? {};
-
-  for (let i = 0; i < max; i++) {
-    const item = state.generatedItems[i] ?? {};
-    rows.push({
-      channel: state.generatedMeta.channel,
-      mode: state.generatedMeta.mode ?? "template",
-      llmModel: state.generatedMeta.llmModel ?? "",
-      template: state.generatedMeta.template,
-      personaName: state.generatedMeta.persona?.name ?? "",
-      personaPrefix: state.generatedMeta.persona?.prefix ?? "",
-      rulePrepend: rules.prepend ?? "",
-      ruleAppend: rules.append ?? "",
-      ruleHashtags: rules.hashtags ?? "",
-      utmSource: utm.source ?? "",
-      utmMedium: utm.medium ?? "",
-      utmCampaign: utm.campaign ?? "",
-      title: item.title ?? "",
-      url: item.url ?? "",
-      post: state.posts[i] ?? "",
-    });
-  }
-
-  return rows;
-}
-
 function toDraftsJsonl() {
-  const rows = buildDraftRows();
-  return `${rows.map((row) => JSON.stringify(row)).join("\n")}\n`;
+  return serializeDraftsJsonl(
+    buildDraftExportRows({
+      generatedMeta: state.generatedMeta,
+      posts: state.posts,
+      generatedItems: state.generatedItems,
+    }),
+  );
 }
 
 function toDraftsCsv() {
-  const rows = buildDraftRows();
-  const header = [
-    "channel",
-    "mode",
-    "llm_model",
-    "template",
-    "persona_name",
-    "persona_prefix",
-    "rule_prepend",
-    "rule_append",
-    "rule_hashtags",
-    "utm_source",
-    "utm_medium",
-    "utm_campaign",
-    "title",
-    "url",
-    "post",
-  ].join(",");
-
-  const lines = rows.map((row) => {
-    return [
-      escapeCsv(row.channel),
-      escapeCsv(row.mode),
-      escapeCsv(row.llmModel),
-      escapeCsv(row.template),
-      escapeCsv(row.personaName),
-      escapeCsv(row.personaPrefix),
-      escapeCsv(row.rulePrepend),
-      escapeCsv(row.ruleAppend),
-      escapeCsv(row.ruleHashtags),
-      escapeCsv(row.utmSource),
-      escapeCsv(row.utmMedium),
-      escapeCsv(row.utmCampaign),
-      escapeCsv(row.title),
-      escapeCsv(row.url),
-      escapeCsv(row.post),
-    ].join(",");
-  });
-
-  return `${[header, ...lines].join("\n")}\n`;
+  return serializeDraftsCsv(
+    buildDraftExportRows({
+      generatedMeta: state.generatedMeta,
+      posts: state.posts,
+      generatedItems: state.generatedItems,
+    }),
+  );
 }
 
 function toAgentFeedJson() {
-  return `${JSON.stringify(
-    {
-      meta: state.agentFeedMeta ?? {},
-      feed: state.agentFeed ?? [],
-    },
-    null,
-    2,
-  )}\n`;
+  return serializeAgentFeedJson(state.agentFeedMeta, state.agentFeed);
 }
 
 function mergePersonas(base, overrides) {
