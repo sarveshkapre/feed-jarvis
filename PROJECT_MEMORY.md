@@ -76,6 +76,17 @@
   - `npm run typecheck` -> pass.
   - `npm run build` -> pass.
   - `npx vitest run test/filterPresets.test.ts` -> pass.
+- Commit 5 goal: Add filter-token chips with one-click remove actions in Step 1 triage.
+- Implementation:
+  - Added `web/filterTokens.js` helper (`parseFilterTokens`, `removeFilterToken`) with declaration typing.
+  - Added Step 1 token chip row UI and click handlers for include/exclude token removal.
+  - Wired chip refresh into filter recomputation and persistence flow.
+  - Added focused coverage in `test/filterTokens.test.ts`.
+- Verification evidence:
+  - `npm run lint` -> pass.
+  - `npm run typecheck` -> pass.
+  - `npm run build` -> pass.
+  - `npx vitest run test/filterTokens.test.ts` -> pass.
 
 ## Session Notes (2026-02-17 | Global Cycle 23 Session 1)
 - Goal clarification checkpoint:

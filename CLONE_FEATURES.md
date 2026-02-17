@@ -33,12 +33,13 @@
 - [x] P3: Add Step 4 persona-name search/filter to control large timeline views. (Impact 2, Effort 2, Fit 3, Diff 1, Risk 1, Conf 3)
 - [ ] P3: Add per-feed error detail accordion in Step 1 fetch status for faster debugging. (Impact 3, Effort 3, Fit 4, Diff 0, Risk 2, Conf 3)
 - [x] P3: Add filter preset import/export JSON flow for cross-machine Studio setup reuse. (Impact 2, Effort 2, Fit 3, Diff 1, Risk 1, Conf 3)
-- [ ] P3: Add filter-token chips UI (`keyword`/`site:`) with one-click remove for faster triage edits. (Impact 2, Effort 3, Fit 3, Diff 1, Risk 1, Conf 3)
+- [x] P3: Add filter-token chips UI (`keyword`/`site:`) with one-click remove for faster triage edits. (Impact 2, Effort 3, Fit 3, Diff 1, Risk 1, Conf 3)
 - [ ] P3: Add keyboard shortcut legend dialog (`?`) so power-user actions stay discoverable without doc lookup. (Impact 2, Effort 2, Fit 4, Diff 1, Risk 1, Conf 4)
 - [ ] P3: Add confirm-before-download option for bulk draft export when post count exceeds threshold. (Impact 2, Effort 2, Fit 3, Diff 0, Risk 1, Conf 3)
 - [ ] P3: Add release command support for `--skip-check` and `--allow-dirty` flags with explicit warnings. (Impact 2, Effort 2, Fit 3, Diff 0, Risk 2, Conf 3)
 
 ## Implemented
+- [x] 2026-02-17 P3: Added Step 1 filter-token chips (`include`/`exclude`) with one-click remove actions for faster triage editing. Evidence: `web/filterTokens.js`, `web/filterTokens.d.ts`, `web/app.js`, `web/index.html`, `web/styles.css`, `test/filterTokens.test.ts`; verification: `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/filterTokens.test.ts`.
 - [x] 2026-02-17 P3: Added Step 1 filter-preset import/export JSON flow with deterministic merge behavior for cross-machine Studio setup reuse. Evidence: `web/filterPresets.js`, `web/filterPresets.d.ts`, `web/app.js`, `web/index.html`, `test/filterPresets.test.ts`; verification: `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/filterPresets.test.ts`.
 - [x] 2026-02-17 P3: Added Step 4 agent-feed persona-name filter input and status messaging for large timeline triage, backed by isolated search helper coverage. Evidence: `web/agentFeedSearch.js`, `web/agentFeedSearch.d.ts`, `web/app.js`, `web/index.html`, `web/studioPrefs.js`, `test/agentFeedSearch.test.ts`; verification: `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/agentFeedSearch.test.ts test/studioPrefs.test.ts`.
 - [x] 2026-02-17 P3: Added Studio persona-card search/filter with click-to-select behavior and session persistence for large persona packs. Evidence: `web/personaSearch.js`, `web/app.js`, `web/index.html`, `web/styles.css`, `web/studioPrefs.js`, `test/personaSearch.test.ts`; verification: `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/personaSearch.test.ts test/studioPrefs.test.ts`.

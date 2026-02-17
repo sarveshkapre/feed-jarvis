@@ -444,6 +444,30 @@ button[disabled] {
   color: var(--muted);
 }
 
+.token-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.filter-token {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--ink);
+  padding: 4px 10px;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.filter-token.include {
+  border-color: rgba(15, 118, 110, 0.45);
+}
+
+.filter-token.exclude {
+  border-color: rgba(224, 122, 95, 0.45);
+}
+
 .shortcut-help {
   margin: -4px 0 0;
   font-size: 0.82rem;

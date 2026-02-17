@@ -117,7 +117,7 @@ npm run dev -- fetch --opml feeds.opml --allow-host example.com --allow-host new
 - Studio fetch diagnostics: status includes cache/network split, dedupe/trim counts, retry diagnostics, and latency (`duration`/`slowest`) details.
 - Studio feed sets: save/load named groups of feed URLs and import/export sets as OPML (local-only).
 - Studio rule presets: save/load named text-rule bundles (prepend/append/hashtags/UTM) for repeat runs.
-- Studio filters: include/exclude keywords, enforce minimum title length, save/load named presets, import/export filter presets as JSON, and mute domains with `site:example.com`.
+- Studio filters: include/exclude keywords, enforce minimum title length, save/load named presets, import/export filter presets as JSON, token chips with one-click remove, and mute domains with `site:example.com`.
 - Studio items export: download/copy the filtered item list as `items.json` to move between Studio and CLI.
 - Studio text rules: optional prepend/append/hashtags plus basic UTM tagging while always honoring `maxChars`.
 - Studio draft editing: live `current/max` character warnings with one-click trim for over-limit drafts.

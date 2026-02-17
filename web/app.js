@@ -17,6 +17,7 @@ import {
   upsertFilterPreset,
 } from "./filterPresets.js";
 import { applyItemFilters, normalizeItemFilters } from "./filters.js";
+import { parseFilterTokens, removeFilterToken } from "./filterTokens.js";
 import { matchStudioShortcut } from "./keyboardShortcuts.js";
 import { filterPersonas } from "./personaSearch.js";
 import { getPostLengthStatus, trimPostToMaxChars } from "./postEditing.js";
@@ -108,6 +109,7 @@ const elements = {
   deleteFilterPresetBtn: document.getElementById("deleteFilterPresetBtn"),
   filterPresetStatus: document.getElementById("filterPresetStatus"),
   filterStatus: document.getElementById("filterStatus"),
+  filterTokens: document.getElementById("filterTokens"),
   itemsList: document.getElementById("itemsList"),
   itemsEmpty: document.getElementById("itemsEmpty"),
   personaSelect: document.getElementById("personaSelect"),
@@ -377,8 +379,58 @@ function currentRules() {
 function refreshFilteredItems({ updateStatus = true } = {}) {
   state.filters = currentFilters();
   state.filteredItems = applyItemFilters(state.items, state.filters);
+  updateFilterTokenChips();
   updateItemsPreview();
   if (updateStatus) updateFilterStatus();
+}
+
+function removeFilterChip(kind, token) {
+  if (kind === "include") {
+    elements.filterInclude.value = removeFilterToken(
+      elements.filterInclude.value,
+      token,
+    );
+  } else {
+    elements.filterExclude.value = removeFilterToken(
+      elements.filterExclude.value,
+      token,
+    );
+  }
+
+  refreshFilteredItems();
+  resetAgentFeed();
+  persistSessionSnapshot();
+}
+
+function updateFilterTokenChips() {
+  if (!elements.filterTokens) return;
+  elements.filterTokens.innerHTML = "";
+
+  const tokens = parseFilterTokens({
+    include: elements.filterInclude?.value ?? "",
+    exclude: elements.filterExclude?.value ?? "",
+  });
+
+  const chips = [
+    ...tokens.include.map((token) => ({ kind: "include", token })),
+    ...tokens.exclude.map((token) => ({ kind: "exclude", token })),
+  ];
+
+  if (chips.length === 0) {
+    elements.filterTokens.hidden = true;
+    return;
+  }
+  elements.filterTokens.hidden = false;
+
+  chips.forEach(({ kind, token }) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `filter-token ${kind}`;
+    button.textContent = `${kind}: ${token}`;
+    button.setAttribute("aria-label", `Remove ${kind} token ${token}`);
+    button.addEventListener("click", () => removeFilterChip(kind, token));
+    elements.filterTokens.appendChild(button);
+  });
 }
 
 function setSource(source, { persist = true } = {}) {
