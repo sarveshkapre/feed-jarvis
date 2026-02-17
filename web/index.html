@@ -372,6 +372,17 @@
               id="agentPersonaNames"
               placeholder="Macro Hawk, AI Researcher, News Wire"
             ></textarea>
+            <label for="agentPersonaSearch">
+              Filter rendered feed (optional)
+              <span>Search by persona name after you build the feed.</span>
+            </label>
+            <input
+              id="agentPersonaSearch"
+              type="text"
+              placeholder="Try: macro, ai, wire"
+              autocomplete="off"
+            />
+            <div class="status" id="agentPersonaSearchStatus" role="status" aria-live="polite"></div>
             <label for="agentLayoutSelect">
               Feed layout
               <span>Rotating covers more events. Consensus compares many personas on one event.</span>

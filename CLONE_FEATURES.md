@@ -30,7 +30,7 @@
 - [ ] P3: Add feed-set migration helper when storage schema changes (with versioned upgrade path). (Impact 2, Effort 2, Fit 3, Diff 0, Risk 1, Conf 3)
 - [ ] P3: Add copy-ready "trimmed chars" analytics summary after post edits for QA review. (Impact 2, Effort 2, Fit 3, Diff 1, Risk 1, Conf 3)
 - [ ] P3: Add Studio import support for newline-delimited feed URL files to mirror CLI `--urls-file` workflows. (Impact 2, Effort 2, Fit 3, Diff 0, Risk 1, Conf 4)
-- [ ] P3: Add Step 4 persona-name search/filter to control large timeline views. (Impact 2, Effort 2, Fit 3, Diff 1, Risk 1, Conf 3)
+- [x] P3: Add Step 4 persona-name search/filter to control large timeline views. (Impact 2, Effort 2, Fit 3, Diff 1, Risk 1, Conf 3)
 - [ ] P3: Add per-feed error detail accordion in Step 1 fetch status for faster debugging. (Impact 3, Effort 3, Fit 4, Diff 0, Risk 2, Conf 3)
 - [ ] P3: Add filter preset import/export JSON flow for cross-machine Studio setup reuse. (Impact 2, Effort 2, Fit 3, Diff 1, Risk 1, Conf 3)
 - [ ] P3: Add filter-token chips UI (`keyword`/`site:`) with one-click remove for faster triage edits. (Impact 2, Effort 3, Fit 3, Diff 1, Risk 1, Conf 3)
@@ -39,6 +39,7 @@
 - [ ] P3: Add release command support for `--skip-check` and `--allow-dirty` flags with explicit warnings. (Impact 2, Effort 2, Fit 3, Diff 0, Risk 2, Conf 3)
 
 ## Implemented
+- [x] 2026-02-17 P3: Added Step 4 agent-feed persona-name filter input and status messaging for large timeline triage, backed by isolated search helper coverage. Evidence: `web/agentFeedSearch.js`, `web/agentFeedSearch.d.ts`, `web/app.js`, `web/index.html`, `web/studioPrefs.js`, `test/agentFeedSearch.test.ts`; verification: `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/agentFeedSearch.test.ts test/studioPrefs.test.ts`.
 - [x] 2026-02-17 P3: Added Studio persona-card search/filter with click-to-select behavior and session persistence for large persona packs. Evidence: `web/personaSearch.js`, `web/app.js`, `web/index.html`, `web/styles.css`, `web/studioPrefs.js`, `test/personaSearch.test.ts`; verification: `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/personaSearch.test.ts test/studioPrefs.test.ts`.
 - [x] 2026-02-17 P2: Added CLI `--diagnostics-json` output for `generate --dry-run` so CI/pipelines can ingest machine-readable diagnostics from stdout. Evidence: `src/cli.ts`, `test/cli.test.ts`, `README.md`, `CHANGELOG.md`; verification: `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/cli.test.ts -t "reports diagnostics with --dry-run and does not write posts|prints machine-readable diagnostics with --diagnostics-json|requires --dry-run when --diagnostics-json is set"`.
 - [x] 2026-02-17 P2: Hardened package publish policy by adding `package.json` `files` whitelist and updating `release:check` to parse `npm pack --dry-run --json` and fail when `dist/cli.js` is excluded. Evidence: `package.json`, `scripts/release-check.mjs`, `docs/RELEASE.md`, `README.md`; verification: `npm run release:check -- --allow-dirty --quality-cmd "npm run lint && npm run typecheck && npm run build"`.

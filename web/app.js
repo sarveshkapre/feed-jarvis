@@ -1,3 +1,4 @@
+import { filterAgentFeedByPersonaName } from "./agentFeedSearch.js";
 import {
   FEED_SETS_STORAGE_KEY,
   parseFeedSets,
@@ -148,11 +149,13 @@ const elements = {
   downloadCsvBtn: document.getElementById("downloadCsvBtn"),
   agentPersonaLimit: document.getElementById("agentPersonaLimit"),
   agentPersonaNames: document.getElementById("agentPersonaNames"),
+  agentPersonaSearch: document.getElementById("agentPersonaSearch"),
   agentLayoutSelect: document.getElementById("agentLayoutSelect"),
   buildAgentFeedBtn: document.getElementById("buildAgentFeedBtn"),
   copyAgentFeedBtn: document.getElementById("copyAgentFeedBtn"),
   downloadAgentFeedBtn: document.getElementById("downloadAgentFeedBtn"),
   agentFeedStatus: document.getElementById("agentFeedStatus"),
+  agentPersonaSearchStatus: document.getElementById("agentPersonaSearchStatus"),
   agentFeedList: document.getElementById("agentFeedList"),
   agentFeedEmpty: document.getElementById("agentFeedEmpty"),
 };
@@ -442,6 +445,7 @@ function persistSessionSnapshot() {
     maxChars: elements.maxChars.value,
     agentPersonaLimit: elements.agentPersonaLimit.value,
     agentPersonaNames: elements.agentPersonaNames.value,
+    agentPersonaSearch: elements.agentPersonaSearch?.value ?? "",
     agentLayout: elements.agentLayoutSelect.value,
     rulePresetName: elements.rulePresetSelect?.value ?? "",
     rulePrepend: elements.rulePrepend.value,
@@ -570,6 +574,12 @@ function restoreSessionSnapshot() {
   }
   if (typeof snapshot.agentPersonaNames === "string") {
     elements.agentPersonaNames.value = snapshot.agentPersonaNames;
+  }
+  if (
+    typeof snapshot.agentPersonaSearch === "string" &&
+    elements.agentPersonaSearch
+  ) {
+    elements.agentPersonaSearch.value = snapshot.agentPersonaSearch;
   }
   if (
     typeof snapshot.agentLayout === "string" &&
@@ -1375,10 +1385,14 @@ function updatePostsPreview() {
 
 function updateAgentFeedPreview() {
   elements.agentFeedList.innerHTML = "";
+
+  const query = elements.agentPersonaSearch?.value?.trim?.() ?? "";
+  const visibleFeed = filterAgentFeedByPersonaName(state.agentFeed, query);
   if (!Array.isArray(state.agentFeed) || state.agentFeed.length === 0) {
     elements.agentFeedEmpty.style.display = "block";
     elements.copyAgentFeedBtn.disabled = true;
     elements.downloadAgentFeedBtn.disabled = true;
+    setStatus(elements.agentPersonaSearchStatus, "");
     return;
   }
 
@@ -1386,7 +1400,30 @@ function updateAgentFeedPreview() {
   elements.copyAgentFeedBtn.disabled = false;
   elements.downloadAgentFeedBtn.disabled = false;
 
-  state.agentFeed.forEach((entry) => {
+  if (query && visibleFeed.length === 0) {
+    elements.agentFeedEmpty.style.display = "block";
+    elements.agentFeedEmpty.textContent =
+      "No feed posts match that persona filter.";
+    setStatus(
+      elements.agentPersonaSearchStatus,
+      `No agent feed entries match "${query}".`,
+      "error",
+    );
+    return;
+  }
+
+  elements.agentFeedEmpty.textContent =
+    "Build the agent feed to see the timeline.";
+  if (query) {
+    setStatus(
+      elements.agentPersonaSearchStatus,
+      `Showing ${visibleFeed.length} of ${state.agentFeed.length} feed post(s).`,
+    );
+  } else {
+    setStatus(elements.agentPersonaSearchStatus, "");
+  }
+
+  visibleFeed.forEach((entry) => {
     const wrapper = document.createElement("div");
     wrapper.className = "post-card";
 
@@ -2087,6 +2124,11 @@ function wireEvents() {
 
   elements.utmToggle.addEventListener("change", () => {
     elements.utmFields.hidden = !elements.utmToggle.checked;
+    persistSessionSnapshot();
+  });
+
+  elements.agentPersonaSearch?.addEventListener("input", () => {
+    updateAgentFeedPreview();
     persistSessionSnapshot();
   });
 

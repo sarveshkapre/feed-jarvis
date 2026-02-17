@@ -54,6 +54,17 @@
   - `npm run typecheck` -> pass.
   - `npm run build` -> pass.
   - `npx vitest run test/personaSearch.test.ts test/studioPrefs.test.ts` -> pass.
+- Commit 3 goal: Add Step 4 persona-name filtering for large agent-feed timeline views.
+- Implementation:
+  - Added `web/agentFeedSearch.js` helper and typed declaration for persona-name filtering.
+  - Added Step 4 filter input/status UI and session persistence (`agentPersonaSearch`).
+  - Updated agent-feed preview rendering to apply the persona filter and show filter-state feedback.
+  - Added focused unit coverage in `test/agentFeedSearch.test.ts`.
+- Verification evidence:
+  - `npm run lint` -> pass.
+  - `npm run typecheck` -> pass.
+  - `npm run build` -> pass.
+  - `npx vitest run test/agentFeedSearch.test.ts test/studioPrefs.test.ts` -> pass.
 
 ## Session Notes (2026-02-17 | Global Cycle 23 Session 1)
 - Goal clarification checkpoint:
