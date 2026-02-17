@@ -20,6 +20,43 @@ import {
   writeSessionSnapshot,
 } from "../web/studioStorage.js";
 
+const SESSION_ROUND_TRIP_FIXTURE = Object.freeze({
+  source: "feed",
+  feedUrls: "https://example.com/rss.xml\nhttps://example.com/atom.xml",
+  feedSetName: "Daily feeds",
+  maxItems: "25",
+  fetchConcurrency: "6",
+  dedupe: true,
+  jsonItems: '[{"title":"Hello","url":"https://example.com/post"}]',
+  filterInclude: "launch, update",
+  filterExclude: "hiring",
+  filterMinTitleLength: "10",
+  filterPresetName: "Launch watch",
+  personaName: "Analyst",
+  useCustomPersona: false,
+  customPersonaName: "",
+  customPersonaPrefix: "",
+  personaSearch: "analyst",
+  channel: "linkedin",
+  template: "takeaway",
+  generationMode: "llm",
+  llmModel: "gpt-4.1-mini",
+  maxChars: "700",
+  agentPersonaLimit: "8",
+  agentPersonaNames: "Analyst, Builder",
+  agentPersonaMaxChars: "Analyst:320\nBuilder:280",
+  agentPersonaSearch: "builder",
+  agentLayout: "consensus",
+  rulePresetName: "Launch voice",
+  rulePrepend: "New:",
+  ruleAppend: "Learn more at the link.",
+  ruleHashtags: "#ai #product",
+  utmEnabled: true,
+  utmSource: "newsletter",
+  utmMedium: "social",
+  utmCampaign: "weekly-launch",
+} satisfies Record<string, string | boolean>);
+
 function createStorage(seed: Record<string, string> = {}) {
   const values = new Map(Object.entries(seed));
   let failGet = false;
@@ -222,6 +259,19 @@ describe("studioStorage", () => {
       channel: "x",
       dedupe: true,
     });
+  });
+
+  test("round-trips the deterministic session fixture without drift", () => {
+    const storage = createStorage();
+    const key = "feed-jarvis-studio:v1";
+    writeSessionSnapshot(storage, key, {
+      ...SESSION_ROUND_TRIP_FIXTURE,
+      staleKey: "drop-me",
+    });
+
+    expect(readSessionSnapshot(storage, key)).toEqual(
+      SESSION_ROUND_TRIP_FIXTURE,
+    );
   });
 
   test("returns null for invalid stored session snapshots", () => {

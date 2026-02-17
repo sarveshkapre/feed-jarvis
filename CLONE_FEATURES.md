@@ -63,7 +63,7 @@
 - [x] P2: Add focused tests for storage/session helper edge cases (invalid payloads, storage failures, parser errors). (Impact 3, Effort 2, Fit 5, Diff 0, Risk 1, Conf 4)
 - [x] P2: Move deep CLI/release command recipes to `docs/WORKFLOWS.md` and trim README to quickstart + links. (Impact 3, Effort 2, Fit 5, Diff 0, Risk 1, Conf 5)
 - [x] P3: Add Studio localStorage key map documentation for safer future migrations. (Impact 2, Effort 1, Fit 4, Diff 0, Risk 1, Conf 4)
-- [ ] P3: Add deterministic test fixture for session snapshot round-trips to reduce regressions during ongoing modularization. (Impact 2, Effort 2, Fit 4, Diff 0, Risk 1, Conf 4)
+- [x] P3: Add deterministic test fixture for session snapshot round-trips to reduce regressions during ongoing modularization. (Impact 2, Effort 2, Fit 4, Diff 0, Risk 1, Conf 4)
 - [ ] P3: Add unit coverage for README/docs command snippets via lightweight smoke script validation. (Impact 2, Effort 3, Fit 3, Diff 1, Risk 2, Conf 3)
 - [ ] P3: Add UI empty-state copy polish for Step 1/Step 4 when filters remove all items. (Impact 2, Effort 1, Fit 3, Diff 1, Risk 1, Conf 4)
 - [ ] P3: Add API payload schema notes in docs for `/api/fetch`, `/api/generate`, and `/api/agent-feed`. (Impact 2, Effort 2, Fit 4, Diff 0, Risk 1, Conf 4)
@@ -80,6 +80,7 @@
 - [ ] P3: Add release-check output fixture test to keep `--json` machine output stable for automation clients. (Impact 2, Effort 2, Fit 3, Diff 0, Risk 1, Conf 3)
 
 ## Implemented
+- [x] 2026-02-17 P1: Added deterministic Studio session snapshot round-trip fixture coverage in storage tests to guard refactor drift. Evidence: `test/studioStorage.test.ts`; verification: `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/studioStorage.test.ts test/fetchFailureDetails.test.ts test/studioApi.test.ts test/studioPrefs.test.ts`.
 - [x] 2026-02-17 P1: Extracted Step 1 fetch-failure presentation helpers into `web/fetchFailureDetails.js` and added a Step 1 "Copy failures JSON" action wired to clipboard-safe status feedback. Evidence: `web/fetchFailureDetails.js`, `web/fetchFailureDetails.d.ts`, `web/app.js`, `web/index.html`, `web/styles.css`, `test/fetchFailureDetails.test.ts`; verification: `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/fetchFailureDetails.test.ts test/fetchDiagnostics.test.ts test/studioApi.test.ts test/studioPrefs.test.ts`.
 - [x] 2026-02-17 P1: Extracted Studio export/download serialization helpers from `web/app.js` into `web/studioExports.js` and added focused coverage. Evidence: `web/studioExports.js`, `web/studioExports.d.ts`, `web/app.js`, `test/studioExports.test.ts`; verification: `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/studioExports.test.ts test/studioApi.test.ts test/studioPrefs.test.ts`.
 - [x] 2026-02-17 P1: Added `release:check --json` machine-readable summary output with per-check status + artifact details while preserving existing text mode. Evidence: `scripts/release-check.mjs`, `docs/RELEASE.md`, `docs/WORKFLOWS.md`, `CHANGELOG.md`; verification: `npm run release:check -- --allow-dirty --quality-cmd "npm run lint && npm run typecheck && npm run build"`, `npm run release:check -- --allow-dirty --quality-cmd "npm run lint && npm run typecheck && npm run build" --json`.

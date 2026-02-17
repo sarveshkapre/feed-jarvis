@@ -86,8 +86,10 @@
 - Execution outcome:
   - Completed: extracted Step 1 fetch-failure presentation helpers into `web/fetchFailureDetails.js` and rewired `web/app.js` detail rendering to use the helper model.
   - Completed: added Step 1 "Copy failures JSON" action with clipboard status feedback and disabled-state safeguards.
+  - Completed: added deterministic Studio session snapshot round-trip fixture coverage in `test/studioStorage.test.ts`.
 - Verification Evidence:
   - `npm run lint && npm run typecheck && npm run build && npx vitest run test/fetchFailureDetails.test.ts test/fetchDiagnostics.test.ts test/studioApi.test.ts test/studioPrefs.test.ts` -> pass.
+  - `npm run lint && npm run typecheck && npm run build && npx vitest run test/studioStorage.test.ts test/fetchFailureDetails.test.ts test/studioApi.test.ts test/studioPrefs.test.ts` -> pass.
 - UIUX_CHECKLIST: PASS | flow=Step1 fetch failure details copy handoff | desktop=verified copy action placement and status feedback in fetch details block | mobile=verified button remains reachable and readable in compact details layout | a11y=button has explicit label and existing aria-live status messaging preserved | risk=low
 
 ## Session Notes (2026-02-17 | Global Cycle 4 Session 1)

@@ -48,8 +48,8 @@
   - Modular UI bindings that keep large controller files maintainable.
   - Deterministic local persistence regression coverage for ongoing refactors.
 - Parity gap map:
-  - Missing: deterministic session snapshot round-trip fixture coverage for refactor safety.
   - Weak: Step 1 fetch-failure UI binding modularization is partially complete; additional `web/app.js` seams remain.
+  - Weak: broader snapshot/migration smoke depth beyond unit fixtures is still pending for M5 confidence.
   - Parity: ingestion interop/retries/concurrency, filters/rules presets, export formats, browser smoke path.
   - Differentiator: local-first multi-persona workflow with strict host safety defaults.
 
@@ -60,7 +60,6 @@
   - Snapshot/migration smoke depth for M5 readiness.
   - Release/smoke automation depth improvements.
 - `CLONE_FEATURES.md` pending highlights:
-  - Deterministic session snapshot round-trip fixture.
   - API payload contract docs and focused smoke assertions.
 
 ## Prioritized Session Tasks (2026-02-17 | Global Cycle 5 Session 1)
@@ -76,7 +75,7 @@
 
 ## Locked Cycle Scope (2026-02-17 | Global Cycle 5 Session 1)
 - [x] P1: Extract Step 1 fetch-failure rendering/serialization seam from `web/app.js` into a focused module and wire "copy failures JSON".
-- [ ] P1: Add deterministic session snapshot round-trip fixture coverage.
+- [x] P1: Add deterministic session snapshot round-trip fixture coverage.
 - [ ] P1: Run quality/security checks and update tracker docs with verification evidence.
 
 ## Session Goal Checkpoint (2026-02-17 | Global Cycle 4 Session 1)
