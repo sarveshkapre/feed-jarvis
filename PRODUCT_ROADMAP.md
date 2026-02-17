@@ -57,7 +57,14 @@
 ## Locked Cycle Scope (2026-02-17 | Global Cycle 1 Session 1)
 - [x] P1: Extract Step 1 persistence/session read-write helpers from `web/app.js` into a dedicated `web` module with parity behavior.
 - [x] P1: Add focused tests for extracted persistence helper logic.
-- [ ] P1: Move deep CLI/release workflow recipes from `README.md` into `docs/` and keep README quickstart-level.
+- [x] P1: Move deep CLI/release workflow recipes from `README.md` into `docs/` and keep README quickstart-level.
+
+## Product Phase Checkpoint (2026-02-17 | Global Cycle 1 Session 1 Post-Ship)
+- Prompt: "Are we in a good product phase yet?" -> `No`.
+- Outcome after this session:
+  - Closed this cycle's selected parity/maintainability tasks: persistence helper extraction + README/docs split.
+  - Remaining highest-value gap: continue breaking down `web/app.js` into smaller state/API/export/UI modules.
+  - Remaining roadmap focus: reliability polish (per-feed fetch diagnostics UI, migration tooling, schema/version ergonomics).
 
 ## Session Goal Checkpoint (2026-02-17 | Global Cycle 23 Session 1)
 - Goal: Reduce maintenance/release drift by shipping a targeted `web/app.js` refactor slice plus npm packaging policy hardening.
@@ -423,7 +430,6 @@
 
 ## Pending Features (What Is Still Pending?)
 - P2: Continue phased `web/app.js` modularization (remaining state/api/exporters/ui bindings beyond Step 1 ingestion + persistence helpers).
-- P2: Docs split: keep README compact and move deep recipes to `docs/`.
 - P3: Add CLI troubleshooting playbook in `docs/` (dry-run, stdin, private-host fetch errors, release checks).
 - P3: Add optional export schema version metadata for JSON/JSONL outputs.
 - P3: Add per-feed fetch error drill-down UI in Step 1.
@@ -435,6 +441,7 @@
 - P3: Add release-check flags (`--skip-check`, `--allow-dirty`) with warning rails.
 
 ## Delivered Features (Recent)
+- 2026-02-17: Split deep Studio/CLI/release command recipes from `README.md` into `docs/WORKFLOWS.md` and tightened README to a quickstart-first surface with doc links.
 - 2026-02-17: Extracted Step 1 persistence/session storage helpers from `web/app.js` into `web/studioStorage.js` (channel max chars, feed/filter/rule presets, session snapshots, persona overrides) and rewired app usage to shared helper APIs with new focused tests (`test/studioStorage.test.ts`).
 - 2026-02-17: Hardened npm package publish intent by adding a `package.json` `files` whitelist and enforcing `dist/cli.js` inclusion through `release:check` (`npm pack --dry-run --json` validation).
 - 2026-02-17: Extracted Step 1 ingestion helpers from `web/app.js` into `web/step1Ingestion.js` (`normalizeUrls`, URL validation, JSON payload parsing, invalid-item summary, `items.json` serialization) with focused tests.
@@ -471,4 +478,4 @@
 
 ## Next Cycle Goals
 - Start phased `web/app.js` modularization to reduce maintenance risk while preserving behavior.
-- Finish docs split so README stays compact while deep recipes move to `docs/`.
+- Add higher-signal Step 1 fetch troubleshooting UX (per-feed error drill-down) and continue reliability/docs parity tasks.

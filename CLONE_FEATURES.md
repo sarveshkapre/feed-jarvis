@@ -19,7 +19,7 @@
 ## Locked Cycle Scope (2026-02-17 | Global Cycle 1 Session 1)
 - [x] P1: Extract Step 1 persistence/session read-write helpers out of `web/app.js` into a dedicated module without behavior changes.
 - [x] P1: Add focused tests for extracted persistence/session helper functions.
-- [ ] P1: Split deep README workflows into `docs/` and keep README quickstart-only.
+- [x] P1: Split deep README workflows into `docs/` and keep README quickstart-only.
 
 ## Candidate Features To Do
 - [x] P2: Add Studio-side URL normalization helper for pasted feeds (strip whitespace/tracking junk safely). (Impact 3, Effort 2, Fit 4, Diff 0, Risk 2, Conf 3)
@@ -28,7 +28,7 @@
 - [x] P3: Add Studio quick action to insert a valid sample `items.json` payload into Step 1 JSON mode. (Impact 2, Effort 1, Fit 3, Diff 0, Risk 1, Conf 4)
 - [ ] P3: Add CLI troubleshooting doc page in `docs/` (invalid input, dry-run, stdin/pipes, private-host fetch limits). (Impact 2, Effort 2, Fit 4, Diff 0, Risk 1, Conf 5)
 - [ ] P3: Refactor `web/app.js` into focused modules (state, API client, exporters, UI bindings) to reduce maintenance risk. (Impact 4, Effort 4, Fit 5, Diff 0, Risk 2, Conf 3)
-- [ ] P3: Document deep command recipes under `docs/` and keep README constrained to quickstart + links (1-2 screens). (Impact 2, Effort 2, Fit 4, Diff 0, Risk 1, Conf 5)
+- [x] P3: Document deep command recipes under `docs/` and keep README constrained to quickstart + links (1-2 screens). (Impact 2, Effort 2, Fit 4, Diff 0, Risk 1, Conf 5)
 - [x] P3: Add persona-card search/filter in Studio for large persona packs (50+). (Impact 3, Effort 2, Fit 3, Diff 1, Risk 1, Conf 4)
 - [x] P3: Add optional per-persona maxChars override for agent-feed generation workflows. (Impact 3, Effort 3, Fit 3, Diff 1, Risk 2, Conf 3)
 - [ ] P3: Add benchmark script for feed parse + generation throughput on 1k-item payloads. (Impact 2, Effort 3, Fit 3, Diff 1, Risk 1, Conf 3)
@@ -44,7 +44,7 @@
 - [ ] P3: Add release command support for `--skip-check` and `--allow-dirty` flags with explicit warnings. (Impact 2, Effort 2, Fit 3, Diff 0, Risk 2, Conf 3)
 - [x] P2: Extract Step 1 persistence/session helper module from `web/app.js` and reuse it for feed sets, presets, and snapshots. (Impact 4, Effort 2, Fit 5, Diff 0, Risk 1, Conf 4)
 - [x] P2: Add focused tests for storage/session helper edge cases (invalid payloads, storage failures, parser errors). (Impact 3, Effort 2, Fit 5, Diff 0, Risk 1, Conf 4)
-- [ ] P2: Move deep CLI/release command recipes to `docs/WORKFLOWS.md` and trim README to quickstart + links. (Impact 3, Effort 2, Fit 5, Diff 0, Risk 1, Conf 5)
+- [x] P2: Move deep CLI/release command recipes to `docs/WORKFLOWS.md` and trim README to quickstart + links. (Impact 3, Effort 2, Fit 5, Diff 0, Risk 1, Conf 5)
 - [ ] P3: Add Studio localStorage key map documentation for safer future migrations. (Impact 2, Effort 1, Fit 4, Diff 0, Risk 1, Conf 4)
 - [ ] P3: Add deterministic test fixture for session snapshot round-trips to reduce regressions during ongoing modularization. (Impact 2, Effort 2, Fit 4, Diff 0, Risk 1, Conf 4)
 - [ ] P3: Add unit coverage for README/docs command snippets via lightweight smoke script validation. (Impact 2, Effort 3, Fit 3, Diff 1, Risk 2, Conf 3)
@@ -53,8 +53,12 @@
 - [ ] P3: Add smoke test for README quickstart path (`dev:web` + `/api/personas` + `/api/generate`) to guard onboarding drift. (Impact 3, Effort 2, Fit 4, Diff 0, Risk 1, Conf 4)
 - [ ] P3: Add lightweight `npm run security:grep` script for repeatable static checks of risky patterns/secrets. (Impact 2, Effort 2, Fit 4, Diff 0, Risk 1, Conf 3)
 - [ ] P3: Add export filename timestamp option for drafts/items downloads in Studio. (Impact 2, Effort 2, Fit 3, Diff 1, Risk 1, Conf 3)
+- [ ] P3: Add test cache-dir isolation defaults for feed-fetch integration tests to avoid host cache permission failures. (Impact 2, Effort 2, Fit 4, Diff 0, Risk 1, Conf 4)
+- [ ] P3: Add docs link-check script to prevent README/docs drift and broken local doc references. (Impact 2, Effort 2, Fit 4, Diff 0, Risk 1, Conf 3)
+- [ ] P3: Add release-check machine-readable summary output (`--json`) for CI automation hooks. (Impact 2, Effort 2, Fit 3, Diff 1, Risk 1, Conf 3)
 
 ## Implemented
+- [x] 2026-02-17 P1: Moved deep Studio/CLI/release command recipes into `docs/WORKFLOWS.md` and reduced `README.md` to quickstart-first onboarding with targeted docs links. Evidence: `README.md`, `docs/WORKFLOWS.md`; verification: `npm run lint`, `npm run typecheck`, `npm run build`.
 - [x] 2026-02-17 P1: Extracted Studio persistence/session storage helper module (`web/studioStorage.js`) and rewired `web/app.js` storage flows (channel max chars, feed/filter/rule presets, session snapshots, persona overrides) to shared helpers with parity behavior. Evidence: `web/studioStorage.js`, `web/studioStorage.d.ts`, `web/app.js`, `test/studioStorage.test.ts`; verification: `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/studioStorage.test.ts test/studioPrefs.test.ts`.
 - [x] 2026-02-17 P2: Added world-signal product update from a dated world-state scan (new `World Signal Editor` persona + snapshot playbook doc with source links). Evidence: `personas/world_signal_editor.md`, `docs/WORLD_STATE_2026-02-17.md`, `README.md`, `CHANGELOG.md`; verification: `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/personas.test.ts`.
 - [x] 2026-02-17 P2: Added Step 1 feed URL normalization helper (host/path cleanup + common tracking-param stripping) with coverage updates. Evidence: `web/step1Ingestion.js`, `web/step1Ingestion.d.ts`, `test/step1Ingestion.test.ts`; verification: `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/step1Ingestion.test.ts`.
@@ -119,6 +123,8 @@
 - [x] 2026-02-08 P2: Synced docs with shipped behavior changes. Evidence: `README.md`, `CHANGELOG.md`, `UPDATE.md`.
 
 ## Insights
+- Storage/session helper extraction from `web/app.js` is low-risk when APIs accept `StorageLike` and parser callbacks; this keeps browser wiring simple while enabling isolated tests.
+- README quality improves when it only covers quickstart and links, while deep command recipes stay in a dedicated docs page that can grow without onboarding bloat.
 - Shortcut handling should be centralized in a helper that explicitly blocks editable targets, otherwise keybindings become brittle as UI complexity grows.
 - `npm pack --dry-run` can fail in constrained environments due global cache permissions; release checks should isolate npm cache paths for deterministic behavior.
 - API request IDs in both response headers and JSON error payloads make Studio-reported failures directly traceable in logs and support workflows.

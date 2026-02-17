@@ -20,19 +20,20 @@ Use this file as the first read in every new session for this repository.
 - Completed recently:
   - Extracted Step 1 ingestion helpers from `web/app.js` into `web/step1Ingestion.js` and added focused tests (`test/step1Ingestion.test.ts`).
   - Hardened package publish metadata with `package.json` `files` whitelist and enforced `dist/cli.js` validation in `release:check` via `npm pack --dry-run --json`.
-  - Updated roadmap/feature/memory/release docs and re-verified quality gates.
+  - Extracted Step 1 persistence/session storage helpers into `web/studioStorage.js` and added focused coverage (`test/studioStorage.test.ts`).
+  - Split deep command recipes from `README.md` into `docs/WORKFLOWS.md` and kept README quickstart-focused.
 - In progress:
-  - Active: Global Cycle 1 locked scope execution has completed persistence-helper extraction and is moving to README/docs split.
+  - No active implementation in progress; Global Cycle 1 locked scope completed.
 - Blockers or risks:
   - `web/app.js` remains a high-maintenance hotspot until modularization lands.
   - README still carries deep workflow content that should move under `docs/` to keep onboarding concise.
 
 ## Immediate Next Actions
-- [x] 1. Extract next `web/app.js` slice: Step 1 persistence/read-write helpers into a dedicated `web` module with parity tests.
-- [ ] 2. Split deep CLI/release workflow recipes from `README.md` into a new `docs/` page and keep README quickstart-level.
-- [x] 3. Run `npm run lint`, `npm run typecheck`, `npm run build`, and targeted tests for the extracted module(s).
-- [x] 4. Run lightweight security grep checks and record evidence in `PROJECT_MEMORY.md`.
-- [ ] 5. Update `PRODUCT_ROADMAP.md`, `CLONE_FEATURES.md`, `PROJECT_MEMORY.md`, and this context file after each shipped slice.
+- [ ] 1. Continue phased `web/app.js` modularization by extracting the next high-churn slice (API request helpers + fetch/generate wrappers).
+- [ ] 2. Add Step 1 per-feed error detail drill-down UI/status messaging for fetch troubleshooting.
+- [ ] 3. Add/verify a storage migration helper for future localStorage schema evolution.
+- [ ] 4. Re-run lint/typecheck/build plus targeted tests for the next extracted module slice.
+- [ ] 5. Update roadmap/feature/memory trackers and verify backlog depth remains >=20 pending items.
 
 ## Constraints
 - Guardrails:
@@ -51,6 +52,6 @@ Use this file as the first read in every new session for this repository.
 - Agent contract: AGENTS.md
 
 ## Session Handoff
-- Last updated: 2026-02-17T09:24:00Z
+- Last updated: 2026-02-17T10:02:00Z
 - Updated by: codex autonomous maintainer (global cycle 1)
-- Notes for next session: locked scope is persistence-helper modularization + README/docs split; execute both slices with verification and immediate push after each commit.
+- Notes for next session: persistence-helper extraction and README/docs split are complete; next highest-value work is further `web/app.js` modularization plus fetch-debug UX depth.

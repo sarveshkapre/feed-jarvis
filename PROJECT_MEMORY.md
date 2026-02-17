@@ -49,15 +49,19 @@
   - Extract persistence/session read-write helpers from `web/app.js`.
   - Add focused tests for extracted helper behavior and error handling.
   - Split deep README recipes into dedicated docs and keep README concise.
-- Execution outcome (in progress):
+- Execution outcome:
   - Completed: extracted persistence/session storage helpers into `web/studioStorage.js` and rewired `web/app.js` storage calls to the shared module.
   - Completed: added focused persistence helper coverage in `test/studioStorage.test.ts`.
-  - Pending: README/docs split task remains open in this locked cycle.
-- Verification snapshot (in progress):
+  - Completed: moved deep command recipes into `docs/WORKFLOWS.md` and trimmed `README.md` to quickstart-first content.
+- Verification snapshot:
   - `npm run lint` -> pass.
   - `npm run typecheck` -> pass.
   - `npm run build` -> pass.
   - `npx vitest run test/studioStorage.test.ts test/studioPrefs.test.ts` -> pass (18 tests).
+  - `npm test` -> fail in this sandbox (`listen EPERM` and cache-path `EPERM` for integration suites).
+  - `npm run smoke:web` -> fail in this sandbox (`tsx` IPC `listen EPERM`).
+  - `node dist/cli.js generate --input /tmp/feed-jarvis-cycle1-smoke-items.json --persona Analyst --format jsonl --max-chars 180` -> pass (real local CLI smoke output generated).
+  - `rg -n \"OPENAI_API_KEY\\s*=|sk-[A-Za-z0-9]{20,}|BEGIN (RSA|OPENSSH|EC|DSA) PRIVATE KEY|eval\\(|new Function\\(|child_process|exec\\(\" src web scripts test package.json` -> pass (no secrets/high-risk findings confirmed).
 - Quick code/security sweep (pre-implementation):
   - `rg TODO|FIXME|HACK` found no actionable TODO debt markers in tracked source paths.
   - Security grep highlighted expected `innerHTML = ""` clear-only usage and controlled `child_process` usage in release scripts; no confirmed high-risk secret exposure or code-injection paths found in this checkpoint.
@@ -67,6 +71,7 @@
 - Trust labels:
   - Trusted: local repository code/tests/commands.
   - Untrusted: external market/reference pages.
+- UIUX_CHECKLIST: PASS | flow=README-to-workflows-doc handoff | desktop=docs-only-no-layout-regression | mobile=docs-only-no-layout-regression | a11y=semantic-markdown-headings-and-lists | risk=low
 
 ## Session Notes (2026-02-13 | Cycle 2 Session 1)
 - Goal: Ship the highest-impact remaining parity work by adding deterministic browser E2E coverage for Step 4 agent-feed actions (`build -> copy -> download`).
@@ -287,6 +292,8 @@
 
 ## Recent Decisions
 - Template: YYYY-MM-DD | Decision | Why | Evidence (tests/logs) | Commit | Confidence (high/medium/low) | Trust (trusted/untrusted)
+- 2026-02-17 | Extract localStorage/session helper logic from `web/app.js` into `web/studioStorage.js` with focused tests | This was the highest-impact remaining maintainability gap and reduced hot-spot risk while preserving behavior | `web/studioStorage.js`, `web/app.js`, `test/studioStorage.test.ts`, `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/studioStorage.test.ts test/studioPrefs.test.ts` | b760105 | high | trusted
+- 2026-02-17 | Move deep command recipes out of README into `docs/WORKFLOWS.md` and keep README quickstart-only | Reduces onboarding noise and keeps operational playbooks maintainable without expanding the top-level entrypoint | `README.md`, `docs/WORKFLOWS.md`, `npm run lint`, `npm run typecheck`, `npm run build` | pending-commit | high | trusted
 - 2026-02-17 | Add Studio keyboard shortcuts through a dedicated helper with editable-target guards instead of embedding more ad-hoc keydown logic in `web/app.js` | Keeps high-frequency operator UX improvements low-risk while reducing keybinding regressions in a large UI orchestration file | `web/keyboardShortcuts.js`, `web/app.js`, `web/index.html`, `test/keyboardShortcuts.test.ts`, `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/keyboardShortcuts.test.ts` | f2474ae | high | trusted
 - 2026-02-17 | Add `npm run release:check` automation with configurable quality command and npm-cache isolation for pack checks | Release readiness needed repeatable guardrails; local cache isolation removes environment-specific npm permission failures | `scripts/release-check.mjs`, `package.json`, `docs/RELEASE.md`, `npm run release:check -- --allow-dirty --quality-cmd "npm run lint && npm run typecheck && npm run build"` | bbabf4c | high | trusted
 - 2026-02-13 | Add `/api/fetch` retry/latency diagnostics and API request IDs for Studio troubleshooting | These were the highest-impact remaining parity/reliability gaps after dry-run diagnostics and materially improve large-run debugging confidence | `src/lib/feedFetch.ts`, `src/server.ts`, `web/studioPrefs.js`, `web/app.js`, `test/studioPrefs.test.ts`, `test/server.test.ts`, `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/studioPrefs.test.ts`, `FEED_JARVIS_CACHE_DIR=/tmp/feed-jarvis-cache-test npx vitest run test/feedFetch.test.ts`, `npx vitest run test/server.test.ts` (`listen EPERM` sandbox limitation), `node dist/cli.js generate --input /tmp/feed-jarvis-cycle5-smoke-items.json --persona Analyst --format jsonl --max-chars 180` | f18a12c | high | trusted
@@ -346,6 +353,15 @@
 
 ## Verification Evidence
 - Template: YYYY-MM-DD | Command | Key output | Status (pass/fail)
+- 2026-02-17 | `npm run lint` | `Checked 68 files ... No fixes applied.` | pass
+- 2026-02-17 | `npm run typecheck` | `tsc -p tsconfig.json --noEmit` completed with no errors | pass
+- 2026-02-17 | `npm run build` | `tsc -p tsconfig.build.json` completed with no errors | pass
+- 2026-02-17 | `npx vitest run test/studioStorage.test.ts test/studioPrefs.test.ts` | `Test Files 2 passed; Tests 18 passed` | pass
+- 2026-02-17 | `npm test` | integration suites failed in sandbox (`listen EPERM` / cache-path `EPERM`) while unit suites passed | fail (env)
+- 2026-02-17 | `npm run smoke:web` | failed in sandbox before script startup due `tsx` IPC `listen EPERM` | fail (env)
+- 2026-02-17 | `node dist/cli.js generate --input /tmp/feed-jarvis-cycle1-smoke-items.json --persona Analyst --format jsonl --max-chars 180` | emitted two JSONL drafts for smoke payload | pass
+- 2026-02-17 | `rg -n \"OPENAI_API_KEY\\s*=|sk-[A-Za-z0-9]{20,}|BEGIN (RSA|OPENSSH|EC|DSA) PRIVATE KEY|eval\\(|new Function\\(|child_process|exec\\(\" src web scripts test package.json` | matched expected tooling patterns only; no exposed secrets/high-risk findings confirmed | pass
+- 2026-02-17 | `git push origin main` | `ac405d4..b760105 main -> main` | pass
 - 2026-02-17 | `npx vitest run test/keyboardShortcuts.test.ts` | `Test Files 1 passed; Tests 4 passed` | pass
 - 2026-02-17 | `npm run lint` | `Checked 50 files ... No fixes applied.` | pass
 - 2026-02-17 | `npm run typecheck` | `tsc -p tsconfig.json --noEmit` completed with no errors | pass
