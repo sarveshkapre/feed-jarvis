@@ -27,6 +27,12 @@ import {
   toItemsJson,
 } from "./step1Ingestion.js";
 import {
+  requestAgentFeed,
+  requestFeedFetch,
+  requestGeneratePosts,
+  requestPersonas,
+} from "./studioApi.js";
+import {
   formatFetchSummary,
   getMaxCharsForChannel,
   setMaxCharsForChannel,
@@ -218,54 +224,6 @@ function getErrorMessage(err, fallback) {
     if (typeof message === "string" && message.trim()) return message.trim();
   }
   return fallback;
-}
-
-async function readApiPayload(res) {
-  const contentType = res.headers.get("content-type") ?? "";
-  const text = await res.text().catch(() => "");
-  const trimmed = text.trim();
-  const probablyJson =
-    contentType.includes("application/json") ||
-    trimmed.startsWith("{") ||
-    trimmed.startsWith("[");
-
-  if (probablyJson) {
-    try {
-      return { kind: "json", value: JSON.parse(text) };
-    } catch {
-      // Fall back to text for non-JSON payloads.
-    }
-  }
-
-  return { kind: "text", value: text };
-}
-
-function getApiError(res, payload, fallback) {
-  if (payload?.kind === "json") {
-    const value = payload.value;
-    if (value && typeof value === "object") {
-      const error = Reflect.get(value, "error");
-      const requestId = Reflect.get(value, "requestId");
-      const requestIdText =
-        typeof requestId === "string" && requestId.trim()
-          ? ` (request id: ${requestId.trim()})`
-          : "";
-      if (typeof error === "string" && error.trim()) {
-        return `${error.trim()}${requestIdText}`;
-      }
-    }
-  }
-
-  if (payload?.kind === "text") {
-    const text = typeof payload.value === "string" ? payload.value.trim() : "";
-    if (text) {
-      const snippet = text.length > 240 ? `${text.slice(0, 240)}…` : text;
-      return `${fallback}: ${snippet}`;
-    }
-  }
-
-  const statusText = `${res.status} ${res.statusText}`.trim();
-  return statusText ? `${fallback} (${statusText})` : fallback;
 }
 
 function getActiveSource() {
@@ -1733,15 +1691,7 @@ function applyPersonas(base, overrides) {
 
 async function loadPersonas() {
   try {
-    const res = await fetch("/api/personas");
-    const payload = await readApiPayload(res);
-    if (!res.ok) {
-      throw new Error(getApiError(res, payload, "Failed to load personas"));
-    }
-    if (payload.kind !== "json") {
-      throw new Error("Unexpected response while loading personas.");
-    }
-    const data = payload.value;
+    const data = await requestPersonas(fetch);
     const personas =
       data && typeof data === "object" ? Reflect.get(data, "personas") : [];
     const basePersonas = Array.isArray(personas) ? personas : [];
@@ -1782,20 +1732,12 @@ async function fetchItems() {
   setButtonLoading(elements.fetchBtn, true, "Fetching...");
 
   try {
-    const res = await fetch("/api/fetch", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ urls, maxItems, dedupe, fetchConcurrency }),
+    const data = await requestFeedFetch(fetch, {
+      urls,
+      maxItems,
+      dedupe,
+      fetchConcurrency,
     });
-
-    const payload = await readApiPayload(res);
-    if (!res.ok) {
-      throw new Error(getApiError(res, payload, "Failed to fetch feed"));
-    }
-    if (payload.kind !== "json") {
-      throw new Error("Unexpected response while fetching feed.");
-    }
-    const data = payload.value;
 
     const items =
       data && typeof data === "object" ? Reflect.get(data, "items") : [];
@@ -2002,19 +1944,7 @@ async function generatePosts() {
   setButtonLoading(elements.generateBtn, true, "Generating...");
 
   try {
-    const res = await fetch("/api/generate", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    const payloadResult = await readApiPayload(res);
-    if (!res.ok) {
-      throw new Error(getApiError(res, payloadResult, "Generation failed"));
-    }
-    if (payloadResult.kind !== "json") {
-      throw new Error("Unexpected response while generating drafts.");
-    }
-    const data = payloadResult.value;
+    const data = await requestGeneratePosts(fetch, payload);
     const posts =
       data && typeof data === "object" ? Reflect.get(data, "posts") : [];
     state.posts = Array.isArray(posts) ? posts : [];
@@ -2131,20 +2061,7 @@ async function buildAgentFeed() {
   setButtonLoading(elements.buildAgentFeedBtn, true, "Building...");
 
   try {
-    const res = await fetch("/api/agent-feed", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    const payloadResult = await readApiPayload(res);
-    if (!res.ok) {
-      throw new Error(getApiError(res, payloadResult, "Agent feed failed"));
-    }
-    if (payloadResult.kind !== "json") {
-      throw new Error("Unexpected response while building agent feed.");
-    }
-
-    const data = payloadResult.value;
+    const data = await requestAgentFeed(fetch, payload);
     const feed =
       data && typeof data === "object" ? Reflect.get(data, "feed") : [];
     state.agentFeed = Array.isArray(feed) ? feed : [];

@@ -24,6 +24,47 @@
 ## Current Milestone
 - M4 UX Polish + Throughput
 
+## Session Goal Checkpoint (2026-02-17 | Global Cycle 2 Session 1)
+- Goal: Reduce `web/app.js` maintenance risk by extracting Studio API payload/error/request helpers into a dedicated module and rewiring fetch/generate flows to shared wrappers.
+- Success criteria:
+  - `web/studioApi.js` owns API payload parsing, request-id aware error shaping, and endpoint wrappers for personas/fetch/generate/agent-feed.
+  - `web/app.js` uses wrapper calls instead of inlined API parsing/error logic with no behavioral regressions.
+  - Focused tests cover the extracted module edge cases.
+  - Verification/security evidence and tracker updates are captured.
+- Non-goals:
+  - Broad Studio UI redesign.
+  - Server/API surface changes.
+  - Full `web/app.js` decomposition in one session.
+
+## Product Phase Checkpoint (2026-02-17 | Global Cycle 2 Session 1)
+- Prompt: "Are we in a good product phase yet?" -> `No`.
+- Best-in-market references (untrusted web, bounded scan baseline reused; live scan blocked in this sandbox by DNS/network restrictions):
+  - Feedly keyboard/operator baseline (`https://docs.feedly.com/article/67-how-to-customize-keyboard-shortcuts-in-feedly`).
+  - RSS.app filtering baseline (`https://help.rss.app/en/articles/10271103-how-to-filter-rss-feeds`).
+  - Buffer automation reliability baseline (`https://support.buffer.com/article/613-automating-rss-feeds-using-feedly-and-zapier`).
+  - Inoreader automation throughput baseline (`https://www.inoreader.com/blog/2026/01/save-time-with-automations.html`).
+- Core expected capabilities in this segment:
+  - Maintainable UI code where high-churn flows live in focused modules.
+  - High-signal troubleshooting feedback when fetch/generate operations fail.
+  - Reliable local verification paths with repeatable quality gates.
+- Parity gap map:
+  - Missing: extraction of shared Studio API wrappers from `web/app.js`.
+  - Weak: per-feed fetch troubleshooting depth in Step 1 UI.
+  - Parity: ingestion interop, retries/concurrency, filters/rules presets, export formats, browser E2E.
+  - Differentiator: local-first multi-persona workflow with strict host safety defaults.
+
+## Locked Cycle Scope (2026-02-17 | Global Cycle 2 Session 1)
+- [x] P1: Extract shared Studio API helper module for payload parsing, request-id error handling, and endpoint wrappers.
+- [x] P1: Rewire `web/app.js` API call sites (`loadPersonas`, `fetchItems`, `generatePosts`, `buildAgentFeed`) to use the shared module.
+- [x] P1: Add focused unit coverage for the new API helper module and re-run quality gates.
+
+## Product Phase Checkpoint (2026-02-17 | Global Cycle 2 Session 1 Post-Ship)
+- Prompt: "Are we in a good product phase yet?" -> `No`.
+- Outcome after this session:
+  - Closed the highest-impact modularization seam by moving Studio API wrappers out of `web/app.js` into `web/studioApi.js`.
+  - Added focused coverage for API payload parsing and request-id aware error handling.
+  - Remaining highest-value gaps: Step 1 per-feed fetch diagnostics UI and storage migration/versioning ergonomics.
+
 ## Session Goal Checkpoint (2026-02-17 | Global Cycle 1 Session 1)
 - Goal: Close the highest-value remaining maintenance/documentation gaps by extracting `web/app.js` persistence helpers and splitting deep workflows out of README.
 - Success criteria:
@@ -429,7 +470,7 @@
 - [x] P1: Studio pasted JSON URL validation (`http/https` only) with actionable user feedback.
 
 ## Pending Features (What Is Still Pending?)
-- P2: Continue phased `web/app.js` modularization (remaining state/api/exporters/ui bindings beyond Step 1 ingestion + persistence helpers).
+- P2: Continue phased `web/app.js` modularization (remaining state/exporters/UI bindings beyond Step 1 ingestion + persistence + API helper slices).
 - P3: Add CLI troubleshooting playbook in `docs/` (dry-run, stdin, private-host fetch errors, release checks).
 - P3: Add optional export schema version metadata for JSON/JSONL outputs.
 - P3: Add per-feed fetch error drill-down UI in Step 1.
@@ -441,6 +482,7 @@
 - P3: Add release-check flags (`--skip-check`, `--allow-dirty`) with warning rails.
 
 ## Delivered Features (Recent)
+- 2026-02-17: Extracted shared Studio API helper module (`web/studioApi.js`) and rewired app API flows (`loadPersonas`, `fetchItems`, `generatePosts`, `buildAgentFeed`) to shared wrappers with focused coverage (`test/studioApi.test.ts`).
 - 2026-02-17: Split deep Studio/CLI/release command recipes from `README.md` into `docs/WORKFLOWS.md` and tightened README to a quickstart-first surface with doc links.
 - 2026-02-17: Extracted Step 1 persistence/session storage helpers from `web/app.js` into `web/studioStorage.js` (channel max chars, feed/filter/rule presets, session snapshots, persona overrides) and rewired app usage to shared helper APIs with new focused tests (`test/studioStorage.test.ts`).
 - 2026-02-17: Hardened npm package publish intent by adding a `package.json` `files` whitelist and enforcing `dist/cli.js` inclusion through `release:check` (`npm pack --dry-run --json` validation).
@@ -477,5 +519,5 @@
 - Active blockers: none currently.
 
 ## Next Cycle Goals
-- Start phased `web/app.js` modularization to reduce maintenance risk while preserving behavior.
+- Continue phased `web/app.js` modularization to reduce maintenance risk while preserving behavior.
 - Add higher-signal Step 1 fetch troubleshooting UX (per-feed error drill-down) and continue reliability/docs parity tasks.

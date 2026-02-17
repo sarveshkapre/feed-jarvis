@@ -47,6 +47,67 @@
   - Trusted: local repository code/tests/commands.
   - Untrusted: external market/reference pages.
 
+## Session Notes (2026-02-17 | Global Cycle 2 Session 1)
+- Goal: Reduce `web/app.js` maintenance risk by extracting Studio API payload/error/request helpers and rewiring fetch/generate flows to shared wrappers.
+- Success criteria:
+  - Shared API helper module exists and replaces inlined API parsing/error logic in `web/app.js`.
+  - Focused unit tests cover payload parsing and request-id-aware error formatting.
+  - Lint/typecheck/build and targeted tests pass (or are explicitly environment-blocked with evidence).
+  - Tracker docs and backlog state remain current.
+- Non-goals:
+  - New server API endpoints.
+  - Broad visual redesign.
+  - Full `web/app.js` modularization in one pass.
+- Brainstorming checkpoint (ranked; impact/effort/fit/diff/risk/confidence):
+  1. Extract Studio API helper module + wrappers from `web/app.js` (5/2/5/0/1/5) -> selected.
+  2. Add per-feed Step 1 fetch error drill-down UI/status messaging (4/3/4/1/2/3) -> pending.
+  3. Add storage migration helper for localStorage schema evolution (4/3/4/0/1/3) -> pending.
+  4. Add docs for storage key map and migration policy (3/1/4/0/1/4) -> pending.
+  5. Add release-check JSON summary output for CI automation hooks (3/2/3/1/1/3) -> pending.
+  6. Add docs-link check script for README/docs drift (2/2/3/0/1/3) -> pending.
+  7. Add deterministic snapshot round-trip fixture for session persistence (2/2/4/0/1/4) -> pending.
+  8. Add Step 1 empty-state copy polish for zero-filter results (2/1/3/1/1/4) -> pending.
+  9. Add lightweight `npm run security:grep` helper script (2/2/4/0/1/3) -> pending.
+  10. Add throughput benchmark script for 1k-item generate paths (2/3/3/1/1/3) -> pending.
+- Product phase checkpoint:
+  - Prompt: "Are we in a good product phase yet?" -> No.
+  - Market scan status: fresh external scan blocked in this environment (`curl` DNS failure); using recent untrusted baseline references already tracked in this file and roadmap.
+  - Gap map:
+    - Missing: extracted shared API wrappers for Studio client calls.
+    - Weak: fetch failure diagnostics depth per feed in Step 1.
+    - Parity: ingestion interop, retries/concurrency, filters/rules, export formats, browser E2E.
+    - Differentiator: strict local-first multi-persona flow with private-host safeguards.
+- What features are still pending?
+  - From `PRODUCT_ROADMAP.md`: `web/app.js` modularization continuation, Step 1 fetch drill-down UX, schema/migration ergonomics, docs/reliability polish.
+  - From `CLONE_FEATURES.md`: 21 unchecked candidates remain (backlog depth healthy, >=20).
+- Quick code/security sweep before implementation:
+  - `rg -n "TODO|FIXME|XXX|HACK" src web test docs README.md CLONE_FEATURES.md PRODUCT_ROADMAP.md` -> no actionable in-code debt markers.
+  - `rg -n "OPENAI_API_KEY\\s*=|sk-[A-Za-z0-9]{20,}|BEGIN (RSA|OPENSSH|EC|DSA) PRIVATE KEY|eval\\(|new Function\\(|child_process|exec\\(" src web scripts test package.json` -> expected tooling usage only (`release-check` and tests), no confirmed high-risk findings.
+  - `curl -I --max-time 5 https://docs.feedly.com/article/51-how-to-import-opml-into-feedly` -> failed (`Could not resolve host`), confirming bounded web scan is environment-blocked.
+- Locked task list for this session:
+  - Extract Studio API helper module and wrappers.
+  - Rewire app call-sites to shared API helpers.
+  - Add focused API helper tests and run verification gates.
+- Execution outcome:
+  - Completed: added `web/studioApi.js` + `web/studioApi.d.ts` for shared API payload parsing, request-id aware error shaping, and endpoint wrappers.
+  - Completed: rewired `web/app.js` API call paths (`loadPersonas`, `fetchItems`, `generatePosts`, `buildAgentFeed`) to shared wrapper helpers with parity behavior.
+  - Completed: added focused coverage in `test/studioApi.test.ts` and verified targeted suites.
+- Product phase checkpoint (post-ship):
+  - Prompt: "Are we in a good product phase yet?" -> No.
+  - Closed gap: shared Studio API wrappers are no longer inlined in `web/app.js`.
+  - Remaining top gaps: Step 1 per-feed fetch diagnostics UI and storage-schema migration ergonomics.
+- Market strategy entry:
+  - Sources (untrusted, reused due blocked live scan): `https://docs.feedly.com/article/67-how-to-customize-keyboard-shortcuts-in-feedly`, `https://help.rss.app/en/articles/10271103-how-to-filter-rss-feeds`, `https://support.buffer.com/article/613-automating-rss-feeds-using-feedly-and-zapier`, `https://www.inoreader.com/blog/2026/01/save-time-with-automations.html`.
+  - Decision: keep prioritizing maintainability/refactor slices that reduce iteration cost on high-frequency workflows before adding larger feature surface.
+  - Follow-up experiment: deliver per-feed fetch-error detail UI and evaluate triage speed/clarity in smoke flow.
+- UIUX_CHECKLIST: PASS | flow=Step1/Step3/Step4 API-action wiring (no visual redesign) | desktop=verified no UI contract changes from wrapper extraction | mobile=verified no layout changes introduced | a11y=existing labels/focus behavior unchanged | risk=low
+- Signals:
+  - GitHub issue signals: disabled/unavailable.
+  - GitHub CI signals: disabled/unavailable.
+- Trust labels:
+  - Trusted: local repository code/tests/commands.
+  - Untrusted: external market/reference pages.
+
 ## Session Notes (2026-02-13 | Cycle 1 Session 4)
 - Goal: Improve large-run fetch reliability by shipping bounded configurable fetch concurrency across CLI + Studio and validating it with integration tests.
 - Success criteria:
@@ -216,6 +277,7 @@
 
 ## Recent Decisions
 - Template: YYYY-MM-DD | Decision | Why | Evidence (tests/logs) | Commit | Confidence (high/medium/low) | Trust (trusted/untrusted)
+- 2026-02-17 | Extract shared Studio API request helpers (`web/studioApi.js`) and rewire `web/app.js` API paths to wrappers | This was the highest-impact next modularization seam and removes duplicated payload/error logic while preserving request-id diagnostics behavior | `web/studioApi.js`, `web/app.js`, `test/studioApi.test.ts`, `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/studioApi.test.ts test/studioPrefs.test.ts`, `node dist/cli.js generate --input /tmp/feed-jarvis-cycle2-smoke-items.json --persona Analyst --format jsonl --max-chars 180` | pending-commit | high | trusted
 - 2026-02-17 | Extract localStorage/session helper logic from `web/app.js` into `web/studioStorage.js` with focused tests | This was the highest-impact remaining maintainability gap and reduced hot-spot risk while preserving behavior | `web/studioStorage.js`, `web/app.js`, `test/studioStorage.test.ts`, `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/studioStorage.test.ts test/studioPrefs.test.ts` | b760105 | high | trusted
 - 2026-02-17 | Move deep command recipes out of README into `docs/WORKFLOWS.md` and keep README quickstart-only | Reduces onboarding noise and keeps operational playbooks maintainable without expanding the top-level entrypoint | `README.md`, `docs/WORKFLOWS.md`, `npm run lint`, `npm run typecheck`, `npm run build` | pending-commit | high | trusted
 - 2026-02-17 | Add Studio keyboard shortcuts through a dedicated helper with editable-target guards instead of embedding more ad-hoc keydown logic in `web/app.js` | Keeps high-frequency operator UX improvements low-risk while reducing keybinding regressions in a large UI orchestration file | `web/keyboardShortcuts.js`, `web/app.js`, `web/index.html`, `test/keyboardShortcuts.test.ts`, `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/keyboardShortcuts.test.ts` | f2474ae | high | trusted
@@ -268,15 +330,21 @@
 ## Next Prioritized Tasks
 - Scoring rubric: Impact (1-5), Effort (1-5, lower is easier), Strategic fit (1-5), Differentiation (1-5), Risk (1-5, lower is safer), Confidence (1-5).
 - Selected (completed in cycle 2026-02-17):
-- Add Studio shortcut helper and keyboard actions for Step 3/Step 4 high-frequency workflows (Impact 5, Effort 2, Fit 5, Diff 1, Risk 1, Conf 4).
-- Add release checklist automation (`npm run release:check`) with changelog guard + quality gate + artifact checks (Impact 4, Effort 2, Fit 5, Diff 0, Risk 1, Conf 4).
+- Extract Studio API wrapper helpers from `web/app.js` into `web/studioApi.js` with focused tests (Impact 5, Effort 2, Fit 5, Diff 0, Risk 1, Conf 5).
 - Remaining backlog:
-- `web/app.js` modularization into smaller modules (state/api/export/ui) (Impact 4, Effort 4, Fit 5, Diff 0, Risk 2, Conf 3).
-- Docs split from README into deeper `docs/` recipes (Impact 3, Effort 2, Fit 4, Diff 0, Risk 1, Conf 5).
-- Packaging metadata hardening for npm publish-readiness (`dist/cli.js` inclusion policy) (Impact 3, Effort 2, Fit 4, Diff 0, Risk 1, Conf 4).
+- Step 1 per-feed fetch error detail UI/status messaging (Impact 4, Effort 3, Fit 4, Diff 1, Risk 2, Conf 3).
+- Feed-set/storage schema migration helper with versioned upgrade path (Impact 4, Effort 3, Fit 4, Diff 0, Risk 1, Conf 3).
+- Continue `web/app.js` modularization into export/state/UI binding slices (Impact 4, Effort 4, Fit 5, Diff 0, Risk 2, Conf 3).
 
 ## Verification Evidence
 - Template: YYYY-MM-DD | Command | Key output | Status (pass/fail)
+- 2026-02-17 | `npm run lint` | `Checked 71 files ... No fixes applied.` | pass
+- 2026-02-17 | `npm run typecheck` | `tsc -p tsconfig.json --noEmit` completed with no errors | pass
+- 2026-02-17 | `npm run build` | `tsc -p tsconfig.build.json` completed with no errors | pass
+- 2026-02-17 | `npx vitest run test/studioApi.test.ts test/studioPrefs.test.ts` | `Test Files 2 passed; Tests 16 passed` | pass
+- 2026-02-17 | `node dist/cli.js generate --input /tmp/feed-jarvis-cycle2-smoke-items.json --persona Analyst --format jsonl --max-chars 180` | emitted two JSONL drafts for smoke payload | pass
+- 2026-02-17 | `rg -n "OPENAI_API_KEY\\s*=|sk-[A-Za-z0-9]{20,}|BEGIN (RSA|OPENSSH|EC|DSA) PRIVATE KEY|eval\\(|new Function\\(|child_process|exec\\(" src web scripts test package.json` | matched expected tooling/test patterns only; no confirmed high-risk findings | pass
+- 2026-02-17 | `npm test` | server/listen and cache-path suites failed in sandbox (`listen EPERM`, cache write `EPERM`); unit-focused suites (including `studioApi`) passed | fail (env)
 - 2026-02-17 | `npm run lint` | `Checked 68 files ... No fixes applied.` | pass
 - 2026-02-17 | `npm run typecheck` | `tsc -p tsconfig.json --noEmit` completed with no errors | pass
 - 2026-02-17 | `npm run build` | `tsc -p tsconfig.build.json` completed with no errors | pass

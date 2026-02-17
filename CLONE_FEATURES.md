@@ -6,6 +6,11 @@
 - Test and build failures
 - Gaps found during codebase exploration
 
+## Locked Cycle Scope (2026-02-17 | Global Cycle 2 Session 1)
+- [x] P1: Extract shared Studio API helper module (`web/studioApi.js`) for response parsing, request-id aware API error shaping, and endpoint wrappers.
+- [x] P1: Rewire `web/app.js` API call paths (`loadPersonas`, `fetchItems`, `generatePosts`, `buildAgentFeed`) to use shared wrappers.
+- [x] P1: Add focused tests for the extracted API helper module and re-run quality gates.
+
 ## Locked Cycle Scope (2026-02-17 | Global Cycle 22 Session 1)
 - [x] P1: Add Studio keyboard shortcuts for Step 3/Step 4 high-frequency actions (generate, export/copy, and agent-feed actions) with safe focus guards.
 - [x] P1: Add focused shortcut helper tests for keybinding matching and editable-target blocking.
@@ -28,6 +33,7 @@
 - [x] P3: Add Studio quick action to insert a valid sample `items.json` payload into Step 1 JSON mode. (Impact 2, Effort 1, Fit 3, Diff 0, Risk 1, Conf 4)
 - [ ] P3: Add CLI troubleshooting doc page in `docs/` (invalid input, dry-run, stdin/pipes, private-host fetch limits). (Impact 2, Effort 2, Fit 4, Diff 0, Risk 1, Conf 5)
 - [ ] P3: Refactor `web/app.js` into focused modules (state, API client, exporters, UI bindings) to reduce maintenance risk. (Impact 4, Effort 4, Fit 5, Diff 0, Risk 2, Conf 3)
+- [x] P2: Extract Studio API payload/error/request helpers into `web/studioApi.js` as the next `web/app.js` modularization slice. (Impact 4, Effort 2, Fit 5, Diff 0, Risk 1, Conf 5)
 - [x] P3: Document deep command recipes under `docs/` and keep README constrained to quickstart + links (1-2 screens). (Impact 2, Effort 2, Fit 4, Diff 0, Risk 1, Conf 5)
 - [x] P3: Add persona-card search/filter in Studio for large persona packs (50+). (Impact 3, Effort 2, Fit 3, Diff 1, Risk 1, Conf 4)
 - [x] P3: Add optional per-persona maxChars override for agent-feed generation workflows. (Impact 3, Effort 3, Fit 3, Diff 1, Risk 2, Conf 3)
@@ -58,6 +64,7 @@
 - [ ] P3: Add release-check machine-readable summary output (`--json`) for CI automation hooks. (Impact 2, Effort 2, Fit 3, Diff 1, Risk 1, Conf 3)
 
 ## Implemented
+- [x] 2026-02-17 P1: Extracted Studio API helper module (`web/studioApi.js`) and rewired `web/app.js` API flows (`loadPersonas`, `fetchItems`, `generatePosts`, `buildAgentFeed`) to shared wrappers with request-id aware error handling preserved. Evidence: `web/studioApi.js`, `web/studioApi.d.ts`, `web/app.js`, `test/studioApi.test.ts`; verification: `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/studioApi.test.ts test/studioPrefs.test.ts`, `node dist/cli.js generate --input /tmp/feed-jarvis-cycle2-smoke-items.json --persona Analyst --format jsonl --max-chars 180`.
 - [x] 2026-02-17 P1: Moved deep Studio/CLI/release command recipes into `docs/WORKFLOWS.md` and reduced `README.md` to quickstart-first onboarding with targeted docs links. Evidence: `README.md`, `docs/WORKFLOWS.md`; verification: `npm run lint`, `npm run typecheck`, `npm run build`.
 - [x] 2026-02-17 P1: Extracted Studio persistence/session storage helper module (`web/studioStorage.js`) and rewired `web/app.js` storage flows (channel max chars, feed/filter/rule presets, session snapshots, persona overrides) to shared helpers with parity behavior. Evidence: `web/studioStorage.js`, `web/studioStorage.d.ts`, `web/app.js`, `test/studioStorage.test.ts`; verification: `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/studioStorage.test.ts test/studioPrefs.test.ts`.
 - [x] 2026-02-17 P2: Added world-signal product update from a dated world-state scan (new `World Signal Editor` persona + snapshot playbook doc with source links). Evidence: `personas/world_signal_editor.md`, `docs/WORLD_STATE_2026-02-17.md`, `README.md`, `CHANGELOG.md`; verification: `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/personas.test.ts`.
@@ -124,6 +131,7 @@
 
 ## Insights
 - Storage/session helper extraction from `web/app.js` is low-risk when APIs accept `StorageLike` and parser callbacks; this keeps browser wiring simple while enabling isolated tests.
+- API payload parsing/error shaping should stay in a shared client helper (`web/studioApi.js`) so request-id handling and non-JSON fallback behavior remain consistent across personas/fetch/generate/agent-feed flows.
 - README quality improves when it only covers quickstart and links, while deep command recipes stay in a dedicated docs page that can grow without onboarding bloat.
 - Shortcut handling should be centralized in a helper that explicitly blocks editable targets, otherwise keybindings become brittle as UI complexity grows.
 - `npm pack --dry-run` can fail in constrained environments due global cache permissions; release checks should isolate npm cache paths for deterministic behavior.
