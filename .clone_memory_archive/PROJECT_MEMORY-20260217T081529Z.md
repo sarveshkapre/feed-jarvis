@@ -1,8 +1,161 @@
 # Project Memory
 
 ## Historical Summary
-- 2026-02-17T08:15:29Z: compacted memory from 578 lines. Full snapshot archived at /Users/sarvesh/code/feed-jarvis/.clone_memory_archive/PROJECT_MEMORY-20260217T081529Z.md
+- 2026-02-17T06:37:23Z: compacted memory from 501 lines. Full snapshot archived at /Users/sarvesh/code/feed-jarvis/.clone_memory_archive/PROJECT_MEMORY-20260217T063723Z.md
 
+  - Verification commands and tracker updates are recorded.
+- Non-goals:
+  - New scheduler/queue integrations.
+  - Large `web/app.js` architectural refactor.
+  - New feature surface outside Step 4 validation depth.
+- Brainstorming checkpoint (ranked; impact/effort/fit/diff/risk/confidence):
+  1. Step 4 browser E2E path (`build -> copy -> download`) in `scripts/e2e-web.ts` (5/2/5/1/1/4) -> selected.
+  2. Step 4 E2E assertion depth for metadata + downloaded JSON schema (4/2/5/0/1/4) -> selected.
+  3. Saved filter presets (include/exclude/min-title) (4/3/4/1/1/3) -> pending.
+  4. Per-item mute-domain quick action in Studio (4/3/4/2/1/3) -> pending.
+  5. CLI `generate --dry-run` diagnostics mode (4/3/4/1/1/3) -> pending.
+  6. Session-persistence edge-case coverage (3/2/4/0/1/4) -> pending.
+  7. API request-id field for better support diagnostics (3/2/4/0/1/4) -> pending.
+  8. `web/app.js` modularization (4/4/5/0/2/3) -> pending.
+  9. Studio keyboard shortcuts for generate/export (3/2/3/1/1/4) -> pending.
+  10. Fetch telemetry summary fields (`durationMs`, `slowestFeedMs`) (3/2/4/0/1/3) -> pending.
+- Product phase checkpoint:
+  - Prompt: "Are we in a good product phase yet?" -> No.
+  - Best-in-market signal (untrusted web, bounded scan 2026-02-13): Feedly/Buffer/Sprout/RSS.app/Inoreader set baseline expectations around ingestion interoperability, filtering, and robust automation controls; product trust improves when browser-level flows are regression tested end-to-end.
+  - Gap map:
+    - Missing: Step 4 browser E2E assertions for build/copy/download timeline flow.
+    - Weak: Step 4 regression detection relative to already-covered Step 3 flow.
+    - Parity: OPML + URL-file ingestion, retries, bounded concurrency, filters/rules, Step 3 browser E2E.
+    - Differentiator: local-first multi-persona drafting with strict private-host defaults.
+- What features are still pending?
+  - From `PRODUCT_ROADMAP.md`: saved filter presets, mute-domain action, dry-run diagnostics, session-persistence hardening, and app modularization are pending.
+  - From `CLONE_FEATURES.md`: backlog remains >20 candidates after cycle-2 replenishment.
+- Locked task list for this session:
+  - Extend existing Playwright E2E smoke to include Step 4 agent feed build/copy/download path.
+  - Add deterministic assertions for Step 4 feed metadata and JSON download payload shape.
+- Execution outcome:
+  - Completed: Extended `scripts/e2e-web.ts` to include Step 4 build flow assertions (`personaLimit=3`, `consensus` layout, card rendering checks).
+  - Completed: Added Step 4 action assertions for `Copy feed` status and `Download feed .json` payload structure (`meta.layout`, `meta.mode`, `meta.personaLimit`, feed rows).
+  - Completed: Synced roadmap/changelog/backlog trackers to mark Step 4 E2E parity gap closed.
+- Quick code review sweep:
+  - `rg TODO/FIXME` returned no markers in tracked source/docs paths.
+  - `web/app.js` remains a high-maintenance hotspot (~2058 LOC), so this session keeps scope to targeted Step 4 coverage only.
+- Signals:
+  - GitHub issue signals: disabled/unavailable.
+  - GitHub CI signals: disabled/unavailable.
+- Trust labels:
+  - Trusted: local repository code/tests/commands.
+  - Untrusted: external market/reference pages.
+
+## Session Notes (2026-02-17 | Global Cycle 2 Session 1)
+- Goal: Reduce `web/app.js` maintenance risk by extracting Studio API payload/error/request helpers and rewiring fetch/generate flows to shared wrappers.
+- Success criteria:
+  - Shared API helper module exists and replaces inlined API parsing/error logic in `web/app.js`.
+  - Focused unit tests cover payload parsing and request-id-aware error formatting.
+  - Lint/typecheck/build and targeted tests pass (or are explicitly environment-blocked with evidence).
+  - Tracker docs and backlog state remain current.
+- Non-goals:
+  - New server API endpoints.
+  - Broad visual redesign.
+  - Full `web/app.js` modularization in one pass.
+- Brainstorming checkpoint (ranked; impact/effort/fit/diff/risk/confidence):
+  1. Extract Studio API helper module + wrappers from `web/app.js` (5/2/5/0/1/5) -> selected.
+  2. Add per-feed Step 1 fetch error drill-down UI/status messaging (4/3/4/1/2/3) -> pending.
+  3. Add storage migration helper for localStorage schema evolution (4/3/4/0/1/3) -> pending.
+  4. Add docs for storage key map and migration policy (3/1/4/0/1/4) -> pending.
+  5. Add release-check JSON summary output for CI automation hooks (3/2/3/1/1/3) -> pending.
+  6. Add docs-link check script for README/docs drift (2/2/3/0/1/3) -> pending.
+  7. Add deterministic snapshot round-trip fixture for session persistence (2/2/4/0/1/4) -> pending.
+  8. Add Step 1 empty-state copy polish for zero-filter results (2/1/3/1/1/4) -> pending.
+  9. Add lightweight `npm run security:grep` helper script (2/2/4/0/1/3) -> pending.
+  10. Add throughput benchmark script for 1k-item generate paths (2/3/3/1/1/3) -> pending.
+- Product phase checkpoint:
+  - Prompt: "Are we in a good product phase yet?" -> No.
+  - Market scan status: fresh external scan blocked in this environment (`curl` DNS failure); using recent untrusted baseline references already tracked in this file and roadmap.
+  - Gap map:
+    - Missing: extracted shared API wrappers for Studio client calls.
+    - Weak: fetch failure diagnostics depth per feed in Step 1.
+    - Parity: ingestion interop, retries/concurrency, filters/rules, export formats, browser E2E.
+    - Differentiator: strict local-first multi-persona flow with private-host safeguards.
+- What features are still pending?
+  - From `PRODUCT_ROADMAP.md`: `web/app.js` modularization continuation, Step 1 fetch drill-down UX, schema/migration ergonomics, docs/reliability polish.
+  - From `CLONE_FEATURES.md`: 21 unchecked candidates remain (backlog depth healthy, >=20).
+- Quick code/security sweep before implementation:
+  - `rg -n "TODO|FIXME|XXX|HACK" src web test docs README.md CLONE_FEATURES.md PRODUCT_ROADMAP.md` -> no actionable in-code debt markers.
+  - `rg -n "OPENAI_API_KEY\\s*=|sk-[A-Za-z0-9]{20,}|BEGIN (RSA|OPENSSH|EC|DSA) PRIVATE KEY|eval\\(|new Function\\(|child_process|exec\\(" src web scripts test package.json` -> expected tooling usage only (`release-check` and tests), no confirmed high-risk findings.
+  - `curl -I --max-time 5 https://docs.feedly.com/article/51-how-to-import-opml-into-feedly` -> failed (`Could not resolve host`), confirming bounded web scan is environment-blocked.
+- Locked task list for this session:
+  - Extract Studio API helper module and wrappers.
+  - Rewire app call-sites to shared API helpers.
+  - Add focused API helper tests and run verification gates.
+- Execution outcome:
+  - Completed: added `web/studioApi.js` + `web/studioApi.d.ts` for shared API payload parsing, request-id aware error shaping, and endpoint wrappers.
+  - Completed: rewired `web/app.js` API call paths (`loadPersonas`, `fetchItems`, `generatePosts`, `buildAgentFeed`) to shared wrapper helpers with parity behavior.
+  - Completed: added focused coverage in `test/studioApi.test.ts` and verified targeted suites.
+- Product phase checkpoint (post-ship):
+  - Prompt: "Are we in a good product phase yet?" -> No.
+  - Closed gap: shared Studio API wrappers are no longer inlined in `web/app.js`.
+  - Remaining top gaps: Step 1 per-feed fetch diagnostics UI and storage-schema migration ergonomics.
+- Market strategy entry:
+  - Sources (untrusted, reused due blocked live scan): `https://docs.feedly.com/article/67-how-to-customize-keyboard-shortcuts-in-feedly`, `https://help.rss.app/en/articles/10271103-how-to-filter-rss-feeds`, `https://support.buffer.com/article/613-automating-rss-feeds-using-feedly-and-zapier`, `https://www.inoreader.com/blog/2026/01/save-time-with-automations.html`.
+  - Decision: keep prioritizing maintainability/refactor slices that reduce iteration cost on high-frequency workflows before adding larger feature surface.
+  - Follow-up experiment: deliver per-feed fetch-error detail UI and evaluate triage speed/clarity in smoke flow.
+- UIUX_CHECKLIST: PASS | flow=Step1/Step3/Step4 API-action wiring (no visual redesign) | desktop=verified no UI contract changes from wrapper extraction | mobile=verified no layout changes introduced | a11y=existing labels/focus behavior unchanged | risk=low
+- Signals:
+  - GitHub issue signals: disabled/unavailable.
+  - GitHub CI signals: disabled/unavailable.
+- Trust labels:
+  - Trusted: local repository code/tests/commands.
+  - Untrusted: external market/reference pages.
+
+## Session Notes (2026-02-17 | Global Cycle 3 Session 1)
+- Goal: Ship the next reliability+maintainability slice by adding Step 1 per-feed fetch diagnostics depth and versioned localStorage migration groundwork.
+- Success criteria:
+  - `/api/fetch` returns structured per-feed failure diagnostics while preserving summary metrics.
+  - Step 1 UI presents failure drill-down details with clear status messaging.
+  - Studio startup executes a tested storage migration helper with explicit schema-version handling.
+  - Verification evidence + tracker updates are captured.
+- Non-goals:
+  - Broad Studio visual redesign.
+  - Scheduler/publishing integrations.
+  - Full `web/app.js` modularization in one session.
+- Brainstorming checkpoint (ranked; impact/effort/fit/diff/risk/confidence):
+  1. Per-feed fetch failure diagnostics payload + Step 1 drill-down UI (5/3/5/1/2/4) -> selected.
+  2. Storage schema migration helper + startup integration (4/2/5/0/1/4) -> selected.
+  3. Storage key-map + migration docs update (3/1/4/0/1/5) -> selected.
+  4. `web/app.js` next extraction seam for export/status helpers (4/4/5/0/2/3) -> pending.
+  5. Release-check JSON output for CI hooks (3/2/3/1/1/3) -> pending.
+  6. Docs link-check script (2/2/4/0/1/3) -> pending.
+  7. Security grep helper command (2/2/4/0/1/3) -> pending.
+  8. Step 1 empty-state copy polish (2/1/3/1/1/4) -> pending.
+  9. Throughput benchmark script (2/3/3/1/1/3) -> pending.
+  10. Snapshot round-trip fixture hardening (2/2/4/0/1/4) -> pending.
+- Product phase checkpoint:
+  - Prompt: "Are we in a good product phase yet?" -> No.
+  - Best-in-market references (untrusted web, bounded scan 2026-02-17):
+    - https://feedly.com/new-features/posts/feedly-ai-and-summarization
+    - https://help.rss.app/en/articles/10271103-how-to-filter-rss-feeds
+    - https://www.inoreader.com/blog/2026/01/save-time-with-automations.html
+    - https://support.buffer.com/article/613-automating-rss-feeds-using-feedly-and-zapier
+    - https://dlvrit.com/
+  - Gap map:
+    - Missing: per-feed fetch failure diagnostics surfaced in Studio.
+    - Missing: explicit storage schema migration/version helper.
+    - Weak: `web/app.js` Step 1 wiring remains dense.
+    - Parity: feed ingestion interop, retries/concurrency, presets, export formats.
+    - Differentiator: local-first multi-persona workflow with strict host safety defaults.
+- What features are still pending?
+  - From `PRODUCT_ROADMAP.md`: Step 1 drill-down diagnostics, storage migration/version ergonomics, and continued `web/app.js` extraction seams.
+  - From `CLONE_FEATURES.md`: >20 pending candidates remain across docs/reliability/refactor/security/test depth.
+- Locked task list for this session:
+  - Add `/api/fetch` structured per-feed failure diagnostics + Step 1 failure drill-down UI.
+  - Add versioned storage migration helper and wire startup migration before state reads.
+  - Add focused tests/docs/tracker updates and run required quality gates.
+- Quick code/security sweep before implementation:
+  - `rg -n "TODO|FIXME|HACK|XXX" src web test docs README.md` -> no markers found.
+  - `rg -n "OPENAI_API_KEY\\s*=|sk-[A-Za-z0-9]{20,}|BEGIN (RSA|OPENSSH|EC|DSA) PRIVATE KEY|eval\\(|new Function\\(|child_process|exec\\(" src web scripts test package.json` -> expected tooling-only matches (`test/cli.test.ts`, `scripts/release-check.mjs`), no confirmed high-risk findings.
+- Baseline verification before implementation:
+  - `npm run lint` -> pass.
   - `npm run typecheck` -> pass.
   - `npm run build` -> pass.
   - `npm test` -> blocked/fail in sandbox (`listen EPERM` for integration tests; home cache-path `EPERM`; CLI fetch test timeouts secondary to blocked listen path).
