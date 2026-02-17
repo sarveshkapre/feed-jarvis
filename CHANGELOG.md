@@ -2,6 +2,7 @@
 
 ## Unreleased
 - Docs: add explicit `/api/fetch` payload contract notes (`failures[]`, partial success, and all-failure error semantics) in `docs/API_CONTRACTS.md`.
+- Testing: extend `npm run smoke:web` with a mixed-success `/api/fetch` assertion path that validates `failures[]` contract semantics.
 - Studio UI: extract export/download serialization helpers from `web/app.js` into `web/studioExports.js` with focused test coverage.
 - Release: add `release:check --json` machine-readable summary output for CI/runtime automation hooks.
 - Tooling: add `npm run docs:check-links` and `npm run security:grep` quality-gate scripts.
