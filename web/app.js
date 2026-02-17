@@ -6,6 +6,11 @@ import {
   upsertFeedSet,
 } from "./feedSets.js";
 import {
+  formatFetchFailureLine,
+  normalizeFetchFailures,
+  summarizeFetchFailures,
+} from "./fetchDiagnostics.js";
+import {
   mergeFilterPresets,
   parseFilterPresets,
   removeFilterPreset,
@@ -103,6 +108,9 @@ const elements = {
   insertSampleItemsBtn: document.getElementById("insertSampleItemsBtn"),
   jsonItems: document.getElementById("jsonItems"),
   itemsStatus: document.getElementById("itemsStatus"),
+  itemsFailureDetails: document.getElementById("itemsFailureDetails"),
+  itemsFailureSummary: document.getElementById("itemsFailureSummary"),
+  itemsFailureList: document.getElementById("itemsFailureList"),
   jsonStatus: document.getElementById("jsonStatus"),
   downloadItemsBtn: document.getElementById("downloadItemsBtn"),
   copyItemsBtn: document.getElementById("copyItemsBtn"),
@@ -197,6 +205,51 @@ function setStatus(element, message, tone = "info") {
   element.textContent = message;
   element.classList.add("visible");
   element.classList.toggle("error", tone === "error");
+}
+
+function clearFetchFailureDetails() {
+  if (elements.itemsFailureList) {
+    elements.itemsFailureList.innerHTML = "";
+  }
+  if (elements.itemsFailureSummary) {
+    elements.itemsFailureSummary.textContent = "Feed fetch details";
+  }
+  if (elements.itemsFailureDetails) {
+    elements.itemsFailureDetails.hidden = true;
+    elements.itemsFailureDetails.open = false;
+  }
+}
+
+function renderFetchFailureDetails(failures, { open = false } = {}) {
+  const list = elements.itemsFailureList;
+  const summary = elements.itemsFailureSummary;
+  const details = elements.itemsFailureDetails;
+  if (!list || !summary || !details) return;
+
+  const normalized = normalizeFetchFailures(failures);
+  list.innerHTML = "";
+  if (normalized.length === 0) {
+    clearFetchFailureDetails();
+    return;
+  }
+
+  for (const failure of normalized) {
+    const line = formatFetchFailureLine(failure);
+    if (!line) continue;
+    const item = document.createElement("li");
+    item.textContent = line;
+    list.appendChild(item);
+  }
+
+  if (list.childElementCount === 0) {
+    clearFetchFailureDetails();
+    return;
+  }
+
+  const summaryText = summarizeFetchFailures(normalized);
+  summary.textContent = summaryText || "Feed fetch details";
+  details.hidden = false;
+  details.open = Boolean(open);
 }
 
 function setButtonLoading(button, isLoading, text) {
@@ -1713,6 +1766,7 @@ async function loadPersonas() {
 
 async function fetchItems() {
   setStatus(elements.itemsStatus, "");
+  clearFetchFailureDetails();
   const urls = normalizeUrls(elements.feedUrls.value);
   if (urls.length === 0) {
     setStatus(elements.itemsStatus, "Add at least one feed URL.", "error");
@@ -1748,16 +1802,36 @@ async function fetchItems() {
 
     const summary =
       data && typeof data === "object" ? Reflect.get(data, "summary") : null;
-    setStatus(
-      elements.itemsStatus,
-      formatFetchSummary(summary, state.items.length, urls.length),
+    const failures =
+      data && typeof data === "object" ? Reflect.get(data, "failures") : null;
+    const normalizedFailures = normalizeFetchFailures(failures);
+    const summaryMessage = formatFetchSummary(
+      summary,
+      state.items.length,
+      urls.length,
     );
-  } catch (err) {
+    const failureMessage = summarizeFetchFailures(normalizedFailures);
+    const message = failureMessage
+      ? `${summaryMessage} ${failureMessage}`
+      : summaryMessage;
     setStatus(
       elements.itemsStatus,
-      getErrorMessage(err, "Feed fetch failed."),
+      message,
+      normalizedFailures.length > 0 ? "error" : "info",
+    );
+    renderFetchFailureDetails(normalizedFailures);
+  } catch (err) {
+    const details =
+      err && typeof err === "object" ? Reflect.get(err, "details") : null;
+    const normalizedFailures = normalizeFetchFailures(details);
+    const failureMessage = summarizeFetchFailures(normalizedFailures);
+    const message = getErrorMessage(err, "Feed fetch failed.");
+    setStatus(
+      elements.itemsStatus,
+      failureMessage ? `${message} ${failureMessage}` : message,
       "error",
     );
+    renderFetchFailureDetails(normalizedFailures, { open: true });
   } finally {
     setButtonLoading(elements.fetchBtn, false);
   }
@@ -1765,6 +1839,7 @@ async function fetchItems() {
 
 function loadItemsFromJson() {
   setStatus(elements.jsonStatus, "");
+  clearFetchFailureDetails();
   const raw = elements.jsonItems.value.trim();
   if (!raw) {
     setStatus(elements.jsonStatus, "Paste a JSON array to continue.", "error");

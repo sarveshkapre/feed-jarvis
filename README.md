@@ -44,6 +44,7 @@ npm run e2e:web
 ## Core Capabilities
 
 - Studio + CLI ingestion from direct feed URL, newline URL file, OPML, or JSON payload.
+- Step 1 fetch diagnostics include aggregate summary metrics and per-feed failure drill-down details.
 - Local-first persistence for feed sets, filter presets, rule presets, personas, and session state.
 - Feed triage controls: include/exclude filters, `site:` mute tokens, min-title filter, token chips.
 - Draft generation in template mode or GPT mode (`OPENAI_API_KEY` required for GPT).

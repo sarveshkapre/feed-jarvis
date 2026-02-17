@@ -178,6 +178,10 @@ export function formatFetchSummary(summary, itemsCount, fallbackSources) {
     summary && typeof summary === "object"
       ? coerceNonNegativeInt(Reflect.get(summary, "network"))
       : null;
+  const failed =
+    summary && typeof summary === "object"
+      ? coerceNonNegativeInt(Reflect.get(summary, "failed"))
+      : null;
   const dedupe =
     summary && typeof summary === "object"
       ? Reflect.get(summary, "dedupe") === true
@@ -221,6 +225,9 @@ export function formatFetchSummary(summary, itemsCount, fallbackSources) {
   const parts = [];
   if (cache !== null && network !== null) {
     parts.push(`${cache} cache`, `${network} network`);
+  }
+  if (failed !== null && failed > 0) {
+    parts.push(`${failed} failed`);
   }
   if (dedupe && deduped !== null && deduped > 0) {
     parts.push(`${deduped} deduped`);

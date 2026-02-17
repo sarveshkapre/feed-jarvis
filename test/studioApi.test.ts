@@ -99,6 +99,35 @@ describe("studioApi", () => {
     ).rejects.toThrow("Nope (request id: req_456)");
   });
 
+  test("attaches structured failure details to api errors when present", async () => {
+    const failures = [
+      {
+        url: "https://example.com/rss",
+        message: "Timed out",
+        durationMs: 33,
+      },
+    ];
+    const fetchFn = vi.fn(async () =>
+      jsonResponse(
+        { error: "Failed to fetch 1 feed.", requestId: "req_789", failures },
+        { status: 400, statusText: "Bad Request" },
+      ),
+    );
+
+    try {
+      await requestApiJson(fetchFn as typeof fetch, "/api/fetch");
+      throw new Error("Expected requestApiJson to throw.");
+    } catch (err) {
+      expect(err).toBeInstanceOf(Error);
+      expect(String((err as Error).message)).toContain("req_789");
+      const details =
+        err && typeof err === "object"
+          ? Reflect.get(err, "details")
+          : undefined;
+      expect(details).toEqual(failures);
+    }
+  });
+
   test("endpoint wrappers target expected paths and methods", async () => {
     const fetchFn = vi.fn(async (_path: string, _init?: RequestInit) =>
       jsonResponse({ ok: true }),

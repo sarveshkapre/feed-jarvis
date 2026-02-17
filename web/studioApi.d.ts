@@ -10,6 +10,8 @@ export type RequestApiJsonOptions = {
   unexpectedPayloadError?: string;
 };
 
+export type ApiRequestError = Error & { details?: unknown[] };
+
 export function readApiPayload(res: Response): Promise<ApiPayload>;
 export function getApiError(
   res: Response,

@@ -367,6 +367,32 @@ button[disabled] {
   display: block;
 }
 
+.status-details {
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(224, 122, 95, 0.32);
+  background: rgba(224, 122, 95, 0.08);
+  color: #7c3427;
+  padding: 8px 12px;
+}
+
+.status-details summary {
+  cursor: pointer;
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+
+.status-details ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 6px;
+}
+
+.status-details li {
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
 .filters {
   margin-top: 16px;
   padding: 16px;

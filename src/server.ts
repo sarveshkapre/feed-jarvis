@@ -74,6 +74,22 @@ type RuntimeOptions = {
   llmModel: string;
 };
 
+type FetchFailureDetail = {
+  url: string;
+  message: string;
+  durationMs: number;
+};
+
+class FetchBatchError extends Error {
+  failures: FetchFailureDetail[];
+
+  constructor(message: string, failures: FetchFailureDetail[]) {
+    super(message);
+    this.name = "FetchBatchError";
+    this.failures = failures;
+  }
+}
+
 function sendJson(
   res: import("node:http").ServerResponse,
   status: number,
@@ -230,28 +246,69 @@ async function handleFetchFeed(body: unknown, options: RuntimeOptions) {
   );
 
   const startedAtMs = Date.now();
-  const results = await mapWithConcurrency(
+  const outcomes = await mapWithConcurrency(
     urls,
     fetchConcurrency,
     async (url) => {
       const feedStartedAtMs = Date.now();
-      const result = await fetchFeed(url, {
-        allowHosts,
-        allowPrivateHosts: options.allowPrivateHosts,
-        cache: true,
-        cacheTtlMs: DEFAULT_CACHE_TTL_MS,
-        fetchFn: options.fetchFn,
-        maxBytes: DEFAULT_MAX_BYTES,
-        maxItems,
-        timeoutMs: DEFAULT_TIMEOUT_MS,
-      });
-      return {
-        ...result,
-        durationMs: Math.max(0, Date.now() - feedStartedAtMs),
-      };
+      try {
+        const result = await fetchFeed(url, {
+          allowHosts,
+          allowPrivateHosts: options.allowPrivateHosts,
+          cache: true,
+          cacheTtlMs: DEFAULT_CACHE_TTL_MS,
+          fetchFn: options.fetchFn,
+          maxBytes: DEFAULT_MAX_BYTES,
+          maxItems,
+          timeoutMs: DEFAULT_TIMEOUT_MS,
+        });
+        return {
+          ok: true,
+          url,
+          result,
+          durationMs: Math.max(0, Date.now() - feedStartedAtMs),
+        } as const;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Fetch failed.";
+        return {
+          ok: false,
+          failure: {
+            url,
+            message,
+            durationMs: Math.max(0, Date.now() - feedStartedAtMs),
+          },
+        } as const;
+      }
     },
   );
   const durationMs = Math.max(0, Date.now() - startedAtMs);
+
+  const failures: FetchFailureDetail[] = [];
+  const results: Array<
+    Awaited<ReturnType<typeof fetchFeed>> & { durationMs: number; url: string }
+  > = [];
+  for (const outcome of outcomes) {
+    if (outcome.ok) {
+      results.push({
+        ...outcome.result,
+        durationMs: outcome.durationMs,
+        url: outcome.url,
+      });
+      continue;
+    }
+    failures.push(outcome.failure);
+  }
+
+  if (results.length === 0 && failures.length > 0) {
+    const firstMessage = failures[0]?.message ?? "Fetch failed.";
+    const count = failures.length;
+    throw new FetchBatchError(
+      count === 1
+        ? `Failed to fetch 1 feed. ${firstMessage}`
+        : `Failed to fetch ${count} feed(s). First error: ${firstMessage}`,
+      failures,
+    );
+  }
 
   const items = results.flatMap((result) => result.items);
   const dedupedItems = dedupe ? dedupeByUrl(items) : items;
@@ -275,9 +332,10 @@ async function handleFetchFeed(body: unknown, options: RuntimeOptions) {
   return {
     items: finalItems,
     summary: {
-      sources: results.length,
+      sources: urls.length,
       cache: cacheCount,
       network: results.length - cacheCount,
+      failed: failures.length,
       concurrency: fetchConcurrency,
       dedupe: dedupe,
       deduped: dedupe ? items.length - dedupedItems.length : 0,
@@ -287,6 +345,7 @@ async function handleFetchFeed(body: unknown, options: RuntimeOptions) {
       durationMs,
       slowestFeedMs,
     },
+    failures,
   };
 }
 
@@ -789,6 +848,14 @@ export function createStudioServer(options: StudioServerOptions = {}): Server {
         const payload = await handleFetchFeed(body, runtimeOptions);
         sendJsonResponse(200, payload);
       } catch (err) {
+        if (err instanceof FetchBatchError) {
+          sendJsonResponse(400, {
+            error: err.message,
+            failures: err.failures,
+            requestId,
+          });
+          return;
+        }
         const message = err instanceof Error ? err.message : "Request failed.";
         sendRequestError(400, message);
       }

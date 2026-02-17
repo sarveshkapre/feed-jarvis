@@ -112,6 +112,10 @@
               <span class="kbd">Ctrl / Cmd + Enter</span>
             </div>
             <div class="status" id="itemsStatus" role="status" aria-live="polite"></div>
+            <details class="status-details" id="itemsFailureDetails" hidden>
+              <summary id="itemsFailureSummary">Feed fetch details</summary>
+              <ul id="itemsFailureList"></ul>
+            </details>
           </div>
           <div class="controls" data-panel="json" hidden>
             <label for="jsonItems">

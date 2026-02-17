@@ -52,6 +52,14 @@ export function getApiError(res, payload, fallback) {
   return statusText ? `${fallback} (${statusText})` : fallback;
 }
 
+function getPayloadArrayField(payload, fieldName) {
+  if (!payload || payload.kind !== "json") return [];
+  const value = payload.value;
+  if (!value || typeof value !== "object") return [];
+  const field = Reflect.get(value, fieldName);
+  return Array.isArray(field) ? field : [];
+}
+
 function toRequestInit(options) {
   if (!options || typeof options !== "object") return undefined;
 
@@ -85,7 +93,12 @@ export async function requestApiJson(
   const res = await fetchFn(path, toRequestInit(requestOptions));
   const payload = await readApiPayload(res);
   if (!res.ok) {
-    throw new Error(getApiError(res, payload, errorFallback));
+    const error = new Error(getApiError(res, payload, errorFallback));
+    const failures = getPayloadArrayField(payload, "failures");
+    if (failures.length > 0) {
+      Reflect.set(error, "details", failures);
+    }
+    throw error;
   }
   if (payload.kind !== "json") {
     throw new Error(unexpectedPayloadError);

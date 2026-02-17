@@ -101,6 +101,24 @@ describe("studioPrefs", () => {
     );
   });
 
+  test("includes failed-feed count in fetch summary details", () => {
+    expect(
+      formatFetchSummary(
+        {
+          sources: 3,
+          cache: 1,
+          network: 1,
+          failed: 1,
+          dedupe: false,
+          deduped: 0,
+          limited: 0,
+        },
+        4,
+        3,
+      ),
+    ).toBe("Loaded 4 item(s) from 3 feed(s). (1 cache, 1 network, 1 failed)");
+  });
+
   test("returns null for invalid or non-object session snapshots", () => {
     expect(parseStudioSessionSnapshot("not json")).toBeNull();
     expect(parseStudioSessionSnapshot(JSON.stringify(["bad"]))).toBeNull();

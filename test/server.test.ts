@@ -515,6 +515,58 @@ describe("studio server", () => {
     });
   });
 
+  it("returns partial success with per-feed failure details", async () => {
+    const nonce = `partial-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    const okUrl = `http://localhost/${nonce}-ok.xml`;
+    const badUrl = `http://localhost/${nonce}-bad.xml`;
+    const fetchFn: typeof fetch = async (href) => {
+      const url = String(href);
+      if (url.includes("-bad.xml")) {
+        return new Response("upstream unavailable", {
+          status: 503,
+          statusText: "Service Unavailable",
+          headers: { "content-type": "text/plain" },
+        });
+      }
+      const xml = `<?xml version="1.0"?>
+<rss version="2.0"><channel>
+  <item><title>ok</title><link>http://localhost/ok</link></item>
+</channel></rss>`;
+      return new Response(xml, {
+        status: 200,
+        headers: { "content-type": "application/rss+xml" },
+      });
+    };
+
+    await withServer({ allowPrivateHosts: true, fetchFn }, async (baseUrl) => {
+      const res = await fetch(`${baseUrl}/api/fetch`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          urls: [okUrl, badUrl],
+          maxItems: 10,
+          dedupe: true,
+        }),
+      });
+
+      expect(res.status).toBe(200);
+      const payload = await res.json();
+      expect(payload.items).toHaveLength(1);
+      expect(payload.summary).toMatchObject({
+        sources: 2,
+        failed: 1,
+      });
+      expect(payload.failures).toMatchObject([
+        {
+          url: badUrl,
+        },
+      ]);
+      expect(String(payload.failures[0].message)).toMatch(
+        /Fetch failed: 503 Service Unavailable/i,
+      );
+    });
+  });
+
   it("reports retry and latency diagnostics in fetch summary", async () => {
     const nonce = `diagnostics-${Date.now()}-${Math.random().toString(16).slice(2)}`;
     const retryUrl = `http://localhost/${nonce}-retry.xml`;
