@@ -108,6 +108,88 @@
   - Trusted: local repository code/tests/commands.
   - Untrusted: external market/reference pages.
 
+## Session Notes (2026-02-17 | Global Cycle 3 Session 1)
+- Goal: Ship the next reliability+maintainability slice by adding Step 1 per-feed fetch diagnostics depth and versioned localStorage migration groundwork.
+- Success criteria:
+  - `/api/fetch` returns structured per-feed failure diagnostics while preserving summary metrics.
+  - Step 1 UI presents failure drill-down details with clear status messaging.
+  - Studio startup executes a tested storage migration helper with explicit schema-version handling.
+  - Verification evidence + tracker updates are captured.
+- Non-goals:
+  - Broad Studio visual redesign.
+  - Scheduler/publishing integrations.
+  - Full `web/app.js` modularization in one session.
+- Brainstorming checkpoint (ranked; impact/effort/fit/diff/risk/confidence):
+  1. Per-feed fetch failure diagnostics payload + Step 1 drill-down UI (5/3/5/1/2/4) -> selected.
+  2. Storage schema migration helper + startup integration (4/2/5/0/1/4) -> selected.
+  3. Storage key-map + migration docs update (3/1/4/0/1/5) -> selected.
+  4. `web/app.js` next extraction seam for export/status helpers (4/4/5/0/2/3) -> pending.
+  5. Release-check JSON output for CI hooks (3/2/3/1/1/3) -> pending.
+  6. Docs link-check script (2/2/4/0/1/3) -> pending.
+  7. Security grep helper command (2/2/4/0/1/3) -> pending.
+  8. Step 1 empty-state copy polish (2/1/3/1/1/4) -> pending.
+  9. Throughput benchmark script (2/3/3/1/1/3) -> pending.
+  10. Snapshot round-trip fixture hardening (2/2/4/0/1/4) -> pending.
+- Product phase checkpoint:
+  - Prompt: "Are we in a good product phase yet?" -> No.
+  - Best-in-market references (untrusted web, bounded scan 2026-02-17):
+    - https://feedly.com/new-features/posts/feedly-ai-and-summarization
+    - https://help.rss.app/en/articles/10271103-how-to-filter-rss-feeds
+    - https://www.inoreader.com/blog/2026/01/save-time-with-automations.html
+    - https://support.buffer.com/article/613-automating-rss-feeds-using-feedly-and-zapier
+    - https://dlvrit.com/
+  - Gap map:
+    - Missing: per-feed fetch failure diagnostics surfaced in Studio.
+    - Missing: explicit storage schema migration/version helper.
+    - Weak: `web/app.js` Step 1 wiring remains dense.
+    - Parity: feed ingestion interop, retries/concurrency, presets, export formats.
+    - Differentiator: local-first multi-persona workflow with strict host safety defaults.
+- What features are still pending?
+  - From `PRODUCT_ROADMAP.md`: Step 1 drill-down diagnostics, storage migration/version ergonomics, and continued `web/app.js` extraction seams.
+  - From `CLONE_FEATURES.md`: >20 pending candidates remain across docs/reliability/refactor/security/test depth.
+- Locked task list for this session:
+  - Add `/api/fetch` structured per-feed failure diagnostics + Step 1 failure drill-down UI.
+  - Add versioned storage migration helper and wire startup migration before state reads.
+  - Add focused tests/docs/tracker updates and run required quality gates.
+- Quick code/security sweep before implementation:
+  - `rg -n "TODO|FIXME|HACK|XXX" src web test docs README.md` -> no markers found.
+  - `rg -n "OPENAI_API_KEY\\s*=|sk-[A-Za-z0-9]{20,}|BEGIN (RSA|OPENSSH|EC|DSA) PRIVATE KEY|eval\\(|new Function\\(|child_process|exec\\(" src web scripts test package.json` -> expected tooling-only matches (`test/cli.test.ts`, `scripts/release-check.mjs`), no confirmed high-risk findings.
+- Baseline verification before implementation:
+  - `npm run lint` -> pass.
+  - `npm run typecheck` -> pass.
+  - `npm run build` -> pass.
+  - `npm test` -> blocked/fail in sandbox (`listen EPERM` for integration tests; home cache-path `EPERM`; CLI fetch test timeouts secondary to blocked listen path).
+- Market strategy entry:
+  - What we learned: best-in-market feed tooling emphasizes failure transparency per source and stable automation settings persistence.
+  - What we are building now: per-feed fetch diagnostic drill-down + versioned storage migration groundwork.
+  - Why this wins now: it reduces operator triage time and lowers future schema-change risk without expanding product surface.
+  - Follow-up experiment: measure whether drill-down detail reduces repeated fetch retries/support ambiguity in smoke sessions.
+- Execution outcome:
+  - Completed: added `/api/fetch` partial-failure diagnostics (`summary.failed` + `failures[]`) and Step 1 fetch details drill-down UI/status messaging.
+  - Completed: added versioned storage migration helper (`schema-version` key, legacy-key upgrade path) and startup migration invocation before reading persisted state.
+  - Completed: updated workflow docs with Studio localStorage key map + migration notes.
+- Recent Decisions:
+  - 2026-02-17 | Added structured per-feed fetch failure diagnostics in API+UI | better Step 1 troubleshooting and lower operator ambiguity | evidence: `src/server.ts`, `web/app.js`, `web/fetchDiagnostics.js`, `test/fetchDiagnostics.test.ts` | commit `a229846` | confidence high | trust label trusted.
+  - 2026-02-17 | Added versioned storage migration helper with startup wiring | future schema changes need safe upgrade path without manual localStorage edits | evidence: `web/studioStorage.js`, `web/app.js`, `test/studioStorage.test.ts` | commit `d8adf8a` | confidence high | trust label trusted.
+- Mistakes And Fixes:
+  - Mistake: initial diagnostics patch reused a callback-local timing variable outside scope in `handleFetchFeed`.
+  - Root cause: rushed refactor from direct result list to outcome union.
+  - Fix/prevention: switched to outcome-carried `durationMs` and re-ran lint/typecheck/build before commit.
+- Verification Evidence:
+  - `npm run lint && npm run typecheck && npm run build && npx vitest run test/studioApi.test.ts test/studioPrefs.test.ts test/fetchDiagnostics.test.ts` -> pass.
+  - `npm run lint && npm run typecheck && npm run build && npx vitest run test/studioStorage.test.ts test/studioApi.test.ts test/studioPrefs.test.ts test/fetchDiagnostics.test.ts` -> pass.
+  - `npm run lint && npm run typecheck && npm run build && npx vitest run test/studioStorage.test.ts test/studioApi.test.ts test/studioPrefs.test.ts test/fetchDiagnostics.test.ts && node dist/cli.js generate --input /tmp/feed-jarvis-cycle3-smoke-items.json --persona Analyst --format jsonl --max-chars 180` -> pass (`"Analysis: Cycle 3 smoke item https://example.com/cycle3"`).
+  - `npm run lint && npm run typecheck && npm run build` (post-doc/tracker sync) -> pass.
+  - `rg -n "TODO|FIXME|HACK|XXX" src web test docs README.md` -> no matches.
+  - `rg -n "OPENAI_API_KEY\\s*=|sk-[A-Za-z0-9]{20,}|BEGIN (RSA|OPENSSH|EC|DSA) PRIVATE KEY|eval\\(|new Function\\(|child_process|exec\\(" src web scripts test package.json` -> expected tooling-only matches, no confirmed high-risk findings.
+- UIUX_CHECKLIST: PASS | flow=Step1 fetch diagnostics drill-down | desktop=verified status+details rendering in fetch card | mobile=verified responsive details block within existing card layout | a11y=semantic details/summary disclosure with existing aria-live status retained | risk=low
+- Signals:
+  - GitHub issue signals: disabled/unavailable.
+  - GitHub CI signals: disabled/unavailable.
+- Trust labels:
+  - Trusted: local repository code/tests/commands.
+  - Untrusted: external market/reference pages.
+
 ## Session Notes (2026-02-13 | Cycle 1 Session 4)
 - Goal: Improve large-run fetch reliability by shipping bounded configurable fetch concurrency across CLI + Studio and validating it with integration tests.
 - Success criteria:

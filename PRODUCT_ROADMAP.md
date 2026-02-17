@@ -5,7 +5,7 @@
 
 ## Good Product Phase Status
 - Status: `No` (checkpoint run on 2026-02-17).
-- Why not yet: core local-first workflows are strong and keyboard/release parity improved this session, but maintainability/docs depth gaps remain (`web/app.js` modularization + docs split for long-form workflows).
+- Why not yet: core local-first workflows are strong and Step 1 diagnostics + storage migration parity closed this session, but maintainability/automation gaps remain (`web/app.js` extraction depth + release/docs automation polish).
 
 ## Definition Of Done
 - Core Studio + CLI workflows are complete for repeated daily use.
@@ -23,6 +23,69 @@
 
 ## Current Milestone
 - M4 UX Polish + Throughput
+
+## Session Goal Checkpoint (2026-02-17 | Global Cycle 3 Session 1)
+- Goal: Ship Step 1 fetch troubleshooting depth and localStorage schema migration groundwork without regressing local-first Studio behavior.
+- Success criteria:
+  - Step 1 surfaces per-feed fetch failure details (URL + actionable reason) with readable drill-down UI.
+  - Server/API payloads preserve existing summary metrics while exposing structured fetch-failure details.
+  - Studio startup runs a versioned storage migration helper with tests proving legacy-key upgrade behavior.
+  - Verification/security evidence and tracker updates are captured.
+- Non-goals:
+  - Broad Studio visual redesign.
+  - New hosted scheduler/publisher integrations.
+  - Full `web/app.js` decomposition in one pass.
+
+## Product Phase Checkpoint (2026-02-17 | Global Cycle 3 Session 1)
+- Prompt: "Are we in a good product phase yet?" -> `No`.
+- Best-in-market references (untrusted web, bounded scan 2026-02-17):
+  - Feedly Team Feeds baseline (`https://feedly.com/new-features/posts/feedly-ai-and-summarization`).
+  - RSS.app filtering baseline (`https://help.rss.app/en/articles/10271103-how-to-filter-rss-feeds`).
+  - Inoreader automation throughput baseline (`https://www.inoreader.com/blog/2026/01/save-time-with-automations.html`).
+  - Buffer RSS automation reliability baseline (`https://support.buffer.com/article/613-automating-rss-feeds-using-feedly-and-zapier`).
+  - dlvr.it RSS automation positioning baseline (`https://dlvrit.com/`).
+- Core expected capabilities in this segment:
+  - Per-feed, high-signal fetch diagnostics (not only aggregate failure text).
+  - Safe persistence evolution with explicit schema versioning/migration.
+  - Stable local-first batch workflows with repeatable verification evidence.
+- Parity gap map:
+  - Missing: per-feed fetch error drill-down payload + UI rendering.
+  - Missing: explicit storage schema version + migration entrypoint.
+  - Weak: `web/app.js` maintainability for Step 1 control/status wiring.
+  - Parity: ingestion interop, retries/concurrency, filters/rules presets, export formats, browser-assisted smoke flow.
+  - Differentiator: local-first multi-persona workflow with strict host safety defaults.
+
+## Pending Feature Checkpoint (2026-02-17 | Global Cycle 3 Session 1)
+- Prompt: "What features are still pending?"
+- `PRODUCT_ROADMAP.md` pending highlights:
+  - Step 1 per-feed failure drill-down UX.
+  - Storage schema migration/version ergonomics.
+  - Next `web/app.js` extraction seam (state/export UI bindings).
+- `CLONE_FEATURES.md` pending highlights:
+  - Storage key-map docs, snapshot round-trip fixture, throughput benchmark, release-check JSON output, security grep script, docs link-check, UI empty-state polish, and additional Step 1/Step 4 UX hardening.
+
+## Prioritized Session Tasks (2026-02-17 | Global Cycle 3 Session 1)
+- Selected first (score: impact/effort/strategic-fit/differentiation/risk/confidence):
+  1. Step 1 per-feed fetch error diagnostics across API + UI (5/3/5/1/2/4).
+  2. Versioned storage migration helper with startup wiring + tests (4/2/5/0/1/4).
+  3. Storage migration docs/key-map + verification evidence refresh (3/1/4/0/1/5).
+- Additional ranked candidates (not locked this session):
+  1. `web/app.js` next extraction seam (`export` + status bindings) (4/4/5/0/2/3).
+  2. Release-check `--json` summary for CI hooks (3/2/3/1/1/3).
+  3. Docs link-check script (2/2/4/0/1/3).
+  4. Security grep helper command (2/2/4/0/1/3).
+
+## Locked Cycle Scope (2026-02-17 | Global Cycle 3 Session 1)
+- [x] P1: Add structured per-feed fetch failure details in `/api/fetch` responses/errors and Step 1 status drill-down UI.
+- [x] P1: Add versioned Studio storage migration helper and run it during app startup before reading persisted state.
+- [x] P1: Add/refresh tests + docs/tracker updates for fetch diagnostics and storage migration behavior.
+
+## Product Phase Checkpoint (2026-02-17 | Global Cycle 3 Session 1 Post-Ship)
+- Prompt: "Are we in a good product phase yet?" -> `No`.
+- Outcome after this session:
+  - Closed missing parity items for Step 1 troubleshooting depth (per-feed diagnostics payload + UI drill-down).
+  - Closed missing storage-schema evolution groundwork via versioned migration helper + startup invocation + migration tests.
+  - Remaining highest-value gap: continue `web/app.js` extraction seams for state/export/UI bindings and complete additional reliability automation (`release:check --json`, docs link checks).
 
 ## Session Goal Checkpoint (2026-02-17 | Global Cycle 2 Session 1)
 - Goal: Reduce `web/app.js` maintenance risk by extracting Studio API payload/error/request helpers into a dedicated module and rewiring fetch/generate flows to shared wrappers.

@@ -6,6 +6,11 @@
 - Test and build failures
 - Gaps found during codebase exploration
 
+## Locked Cycle Scope (2026-02-17 | Global Cycle 3 Session 1)
+- [x] P1: Add Step 1 per-feed fetch failure drill-down status/details UI backed by structured API diagnostics.
+- [x] P1: Add versioned storage migration helper and wire it into Studio startup before persisted-state reads.
+- [x] P1: Add focused tests and documentation updates for fetch diagnostics + storage migration behavior.
+
 ## Locked Cycle Scope (2026-02-17 | Global Cycle 2 Session 1)
 - [x] P1: Extract shared Studio API helper module (`web/studioApi.js`) for response parsing, request-id aware API error shaping, and endpoint wrappers.
 - [x] P1: Rewire `web/app.js` API call paths (`loadPersonas`, `fetchItems`, `generatePosts`, `buildAgentFeed`) to use shared wrappers.
@@ -38,11 +43,11 @@
 - [x] P3: Add persona-card search/filter in Studio for large persona packs (50+). (Impact 3, Effort 2, Fit 3, Diff 1, Risk 1, Conf 4)
 - [x] P3: Add optional per-persona maxChars override for agent-feed generation workflows. (Impact 3, Effort 3, Fit 3, Diff 1, Risk 2, Conf 3)
 - [ ] P3: Add benchmark script for feed parse + generation throughput on 1k-item payloads. (Impact 2, Effort 3, Fit 3, Diff 1, Risk 1, Conf 3)
-- [ ] P3: Add feed-set migration helper when storage schema changes (with versioned upgrade path). (Impact 2, Effort 2, Fit 3, Diff 0, Risk 1, Conf 3)
+- [x] P3: Add feed-set migration helper when storage schema changes (with versioned upgrade path). (Impact 2, Effort 2, Fit 3, Diff 0, Risk 1, Conf 3)
 - [ ] P3: Add copy-ready "trimmed chars" analytics summary after post edits for QA review. (Impact 2, Effort 2, Fit 3, Diff 1, Risk 1, Conf 3)
 - [ ] P3: Add Studio import support for newline-delimited feed URL files to mirror CLI `--urls-file` workflows. (Impact 2, Effort 2, Fit 3, Diff 0, Risk 1, Conf 4)
 - [x] P3: Add Step 4 persona-name search/filter to control large timeline views. (Impact 2, Effort 2, Fit 3, Diff 1, Risk 1, Conf 3)
-- [ ] P3: Add per-feed error detail accordion in Step 1 fetch status for faster debugging. (Impact 3, Effort 3, Fit 4, Diff 0, Risk 2, Conf 3)
+- [x] P3: Add per-feed error detail accordion in Step 1 fetch status for faster debugging. (Impact 3, Effort 3, Fit 4, Diff 0, Risk 2, Conf 3)
 - [x] P3: Add filter preset import/export JSON flow for cross-machine Studio setup reuse. (Impact 2, Effort 2, Fit 3, Diff 1, Risk 1, Conf 3)
 - [x] P3: Add filter-token chips UI (`keyword`/`site:`) with one-click remove for faster triage edits. (Impact 2, Effort 3, Fit 3, Diff 1, Risk 1, Conf 3)
 - [x] P3: Add keyboard shortcut legend dialog (`?`) so power-user actions stay discoverable without doc lookup. (Impact 2, Effort 2, Fit 4, Diff 1, Risk 1, Conf 4)
@@ -51,7 +56,7 @@
 - [x] P2: Extract Step 1 persistence/session helper module from `web/app.js` and reuse it for feed sets, presets, and snapshots. (Impact 4, Effort 2, Fit 5, Diff 0, Risk 1, Conf 4)
 - [x] P2: Add focused tests for storage/session helper edge cases (invalid payloads, storage failures, parser errors). (Impact 3, Effort 2, Fit 5, Diff 0, Risk 1, Conf 4)
 - [x] P2: Move deep CLI/release command recipes to `docs/WORKFLOWS.md` and trim README to quickstart + links. (Impact 3, Effort 2, Fit 5, Diff 0, Risk 1, Conf 5)
-- [ ] P3: Add Studio localStorage key map documentation for safer future migrations. (Impact 2, Effort 1, Fit 4, Diff 0, Risk 1, Conf 4)
+- [x] P3: Add Studio localStorage key map documentation for safer future migrations. (Impact 2, Effort 1, Fit 4, Diff 0, Risk 1, Conf 4)
 - [ ] P3: Add deterministic test fixture for session snapshot round-trips to reduce regressions during ongoing modularization. (Impact 2, Effort 2, Fit 4, Diff 0, Risk 1, Conf 4)
 - [ ] P3: Add unit coverage for README/docs command snippets via lightweight smoke script validation. (Impact 2, Effort 3, Fit 3, Diff 1, Risk 2, Conf 3)
 - [ ] P3: Add UI empty-state copy polish for Step 1/Step 4 when filters remove all items. (Impact 2, Effort 1, Fit 3, Diff 1, Risk 1, Conf 4)
@@ -62,8 +67,15 @@
 - [ ] P3: Add test cache-dir isolation defaults for feed-fetch integration tests to avoid host cache permission failures. (Impact 2, Effort 2, Fit 4, Diff 0, Risk 1, Conf 4)
 - [ ] P3: Add docs link-check script to prevent README/docs drift and broken local doc references. (Impact 2, Effort 2, Fit 4, Diff 0, Risk 1, Conf 3)
 - [ ] P3: Add release-check machine-readable summary output (`--json`) for CI automation hooks. (Impact 2, Effort 2, Fit 3, Diff 1, Risk 1, Conf 3)
+- [ ] P3: Add Step 1 "copy fetch failures JSON" quick action for support/debug handoff. (Impact 2, Effort 2, Fit 3, Diff 1, Risk 1, Conf 3)
+- [ ] P3: Add migration smoke command (`npm run storage:migrate:check`) to validate schema key/version writes in CI-safe mode. (Impact 2, Effort 2, Fit 4, Diff 0, Risk 1, Conf 3)
+- [ ] P3: Add API contract docs for `/api/fetch` `failures[]` payload shape and partial-success semantics. (Impact 2, Effort 1, Fit 4, Diff 0, Risk 1, Conf 4)
+- [ ] P3: Add focused browser smoke assertion ensuring Step 1 fetch failure details accordion renders for mixed success/failure fixtures. (Impact 3, Effort 2, Fit 4, Diff 0, Risk 2, Conf 3)
 
 ## Implemented
+- [x] 2026-02-17 P1: Added Step 1 per-feed fetch failure diagnostics across server/client/UI (`/api/fetch` `failures` payload + Step 1 drill-down details panel) while preserving summary metrics. Evidence: `src/server.ts`, `web/app.js`, `web/index.html`, `web/styles.css`, `web/fetchDiagnostics.js`, `test/fetchDiagnostics.test.ts`, `test/studioApi.test.ts`, `test/studioPrefs.test.ts`, `test/server.test.ts`; verification: `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/studioApi.test.ts test/studioPrefs.test.ts test/fetchDiagnostics.test.ts`.
+- [x] 2026-02-17 P1: Added versioned Studio storage migration helper with startup wiring and legacy-key upgrade path (`feed-jarvis-studio`, `feed-jarvis-personas`, `feed-jarvis-studio:channel-maxchars` -> `:v1`). Evidence: `web/studioStorage.js`, `web/studioStorage.d.ts`, `web/app.js`, `test/studioStorage.test.ts`; verification: `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/studioStorage.test.ts`.
+- [x] 2026-02-17 P1: Documented Studio storage schema key map and migration behavior in workflows docs. Evidence: `docs/WORKFLOWS.md`; verification: `npm run lint`.
 - [x] 2026-02-17 P1: Extracted Studio API helper module (`web/studioApi.js`) and rewired `web/app.js` API flows (`loadPersonas`, `fetchItems`, `generatePosts`, `buildAgentFeed`) to shared wrappers with request-id aware error handling preserved. Evidence: `web/studioApi.js`, `web/studioApi.d.ts`, `web/app.js`, `test/studioApi.test.ts`; verification: `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/studioApi.test.ts test/studioPrefs.test.ts`, `node dist/cli.js generate --input /tmp/feed-jarvis-cycle2-smoke-items.json --persona Analyst --format jsonl --max-chars 180`.
 - [x] 2026-02-17 P1: Moved deep Studio/CLI/release command recipes into `docs/WORKFLOWS.md` and reduced `README.md` to quickstart-first onboarding with targeted docs links. Evidence: `README.md`, `docs/WORKFLOWS.md`; verification: `npm run lint`, `npm run typecheck`, `npm run build`.
 - [x] 2026-02-17 P1: Extracted Studio persistence/session storage helper module (`web/studioStorage.js`) and rewired `web/app.js` storage flows (channel max chars, feed/filter/rule presets, session snapshots, persona overrides) to shared helpers with parity behavior. Evidence: `web/studioStorage.js`, `web/studioStorage.d.ts`, `web/app.js`, `test/studioStorage.test.ts`; verification: `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/studioStorage.test.ts test/studioPrefs.test.ts`.
@@ -130,6 +142,8 @@
 - [x] 2026-02-08 P2: Synced docs with shipped behavior changes. Evidence: `README.md`, `CHANGELOG.md`, `UPDATE.md`.
 
 ## Insights
+- Structured `/api/fetch` failure payloads (`failures[]`) let Step 1 show partial-success diagnostics without regressing existing summary cards.
+- Storage migrations are safest when schema versioning is explicit and startup migrations run before any read path touches user state.
 - Storage/session helper extraction from `web/app.js` is low-risk when APIs accept `StorageLike` and parser callbacks; this keeps browser wiring simple while enabling isolated tests.
 - API payload parsing/error shaping should stay in a shared client helper (`web/studioApi.js`) so request-id handling and non-JSON fallback behavior remain consistent across personas/fetch/generate/agent-feed flows.
 - README quality improves when it only covers quickstart and links, while deep command recipes stay in a dedicated docs page that can grow without onboarding bloat.

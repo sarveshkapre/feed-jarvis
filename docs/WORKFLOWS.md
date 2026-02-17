@@ -123,9 +123,24 @@ npm run release:check
 
 For detailed release notes see `docs/RELEASE.md`.
 
+## Studio Storage Schema
+
+Studio local persistence is versioned.
+
+- Schema version key: `feed-jarvis-studio:schema-version` (current: `2`).
+- Session snapshot: `feed-jarvis-studio:v1`.
+- Imported personas overrides: `feed-jarvis-personas:v1`.
+- Per-channel max chars: `feed-jarvis-studio:channel-maxchars:v1`.
+- Feed sets: `feed-jarvis-studio:feed-sets:v1`.
+- Filter presets: `feed-jarvis-studio:filter-presets:v1`.
+- Rule presets: `feed-jarvis-studio:rule-presets:v1`.
+
+On startup, Studio runs a safe migration helper that upgrades known legacy keys (`feed-jarvis-studio`, `feed-jarvis-personas`, and `feed-jarvis-studio:channel-maxchars`) into versioned keys when needed.
+
 ## Troubleshooting
 
 - Validate payloads before generation with `--dry-run`.
 - Use `--diagnostics-json` for CI/pipeline parsing.
+- In Step 1 fetch mode, expand the fetch details panel to inspect per-feed failures (URL + reason + timing).
 - If fetch fails for private or localhost hosts, confirm `FEED_JARVIS_ALLOW_PRIVATE_HOSTS=true` in trusted local-only runs.
 - For recurring parser issues, export filtered Studio items (`items.json`) and run CLI dry-run diagnostics against that file.

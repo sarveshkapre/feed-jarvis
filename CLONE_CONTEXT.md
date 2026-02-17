@@ -3,15 +3,14 @@
 Use this file as the first read in every new session for this repository.
 
 ## Goal
-- Current goal: Continue M4/M5 hardening by shipping the next reliability+maintainability slice after API-helper extraction (Step 1 fetch drill-down UX and storage migration groundwork).
-- Why this matters now: the API wrapper modularization seam is now closed, so the highest-value remaining gaps are troubleshooting depth in Step 1 and future-safe local storage schema evolution.
+- Current goal: Continue M4/M5 maintainability hardening by extracting the next `web/app.js` seam (state/export UI bindings) after closing Step 1 diagnostics + storage migration parity.
+- Why this matters now: troubleshooting and schema migration gaps were closed this cycle, so the next leverage point is reducing `web/app.js` maintenance hotspots.
 
 ## Expected Outcome
 - What should be true after this session:
-  - Step 1 fetch flows provide higher-signal failure detail per feed.
-  - Storage schema evolution has a documented and tested migration path.
-  - `web/app.js` modularization continues in small, low-risk slices.
-  - Verification and tracker docs remain current with each shipped cleanup slice.
+  - Next extraction seam from `web/app.js` lands with focused tests and no behavior regressions.
+  - Release/readme/docs trackers remain synchronized with current behavior.
+  - Verification evidence continues to rely on runnable local gates in sandbox-safe paths.
 - Definition of done for this cycle:
   - Selected reliability/modularization tasks are completed or explicitly blocked with evidence.
   - Verification evidence is logged in `PROJECT_MEMORY.md`.
@@ -24,17 +23,20 @@ Use this file as the first read in every new session for this repository.
   - Extracted Step 1 persistence/session storage helpers into `web/studioStorage.js` and added focused coverage (`test/studioStorage.test.ts`).
   - Split deep command recipes from `README.md` into `docs/WORKFLOWS.md` and kept README quickstart-focused.
   - Extracted shared Studio API request helpers into `web/studioApi.js` and rewired `loadPersonas`/`fetchItems`/`generatePosts`/`buildAgentFeed` in `web/app.js` with focused tests (`test/studioApi.test.ts`).
+  - Added Step 1 per-feed fetch diagnostics (`/api/fetch` `failures[]` + UI details drill-down + status summary updates) with focused tests.
+  - Added versioned Studio storage migration helper (`feed-jarvis-studio:schema-version` current `2`) and startup migration wiring with focused tests.
+  - Added Studio localStorage key-map + migration behavior docs in `docs/WORKFLOWS.md`.
 - In progress:
-  - No active implementation in progress; Global Cycle 2 locked scope completed.
+  - No active implementation in progress; Global Cycle 3 locked scope completed.
 - Blockers or risks:
   - `web/app.js` remains a high-maintenance hotspot until API/export/UI helper slices are extracted.
-  - Sandboxed environment blocks network-based scans and listen-based integration tests (`curl` DNS failures, `listen EPERM`), so verification relies on lint/typecheck/build + targeted unit suites + CLI smoke paths.
+  - Sandboxed environment blocks listen-based integration tests (`listen EPERM`) and default home-cache writes (`EPERM`), so verification relies on lint/typecheck/build + targeted unit suites + CLI smoke paths.
 
 ## Immediate Next Actions
-- [ ] 1. Add Step 1 per-feed fetch error detail drill-down UI/status messaging for faster troubleshooting.
-- [ ] 2. Add/verify a storage migration helper for future localStorage schema revisions.
-- [ ] 3. Continue phased `web/app.js` modularization with the next extraction seam (export/state UI bindings).
-- [ ] 4. Run lint/typecheck/build + targeted tests + smoke flow and log exact evidence in `PROJECT_MEMORY.md`.
+- [ ] 1. Extract the next `web/app.js` seam (state/export UI bindings) into focused `web/` modules with parity tests.
+- [ ] 2. Add release-check `--json` summary output for CI/runtime automation hooks.
+- [ ] 3. Add docs link-check/security helper scripts from pending backlog candidates.
+- [ ] 4. Run lint/typecheck/build + targeted tests + CLI smoke flow and log evidence in `PROJECT_MEMORY.md`.
 - [ ] 5. Refresh roadmap/feature/context trackers and keep backlog depth >=20 pending candidates.
 
 ## Constraints
@@ -54,6 +56,6 @@ Use this file as the first read in every new session for this repository.
 - Agent contract: AGENTS.md
 
 ## Session Handoff
-- Last updated: 2026-02-17T22:45:00Z
-- Updated by: codex autonomous maintainer (global cycle 2)
-- Notes for next session: API helper modularization slice is complete with parity tests; next highest-value work is Step 1 fetch diagnostics depth plus schema migration tooling.
+- Last updated: 2026-02-17T07:47:22Z
+- Updated by: codex autonomous maintainer (global cycle 3)
+- Notes for next session: Global Cycle 3 shipped per-feed Step 1 diagnostics and storage migration groundwork (`a229846`, `d8adf8a`); next highest-value work is continued `web/app.js` extraction and release/docs automation depth.

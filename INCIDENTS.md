@@ -12,6 +12,16 @@
 - Confidence
 
 ## Entries
+- Date: 2026-02-17
+- Trigger: Refactor of `/api/fetch` outcome handling referenced a callback-local timer variable outside scope during local validation.
+- Impact: Temporary local type/build failure before commit (no released regression).
+- Root Cause: Timing field ownership changed during outcome-union refactor, but one reference was not updated.
+- Fix: Carried `durationMs` on each outcome and consumed that value when building success results.
+- Prevention Rule: After mapper-refactor work, run immediate `npm run lint && npm run typecheck && npm run build` before writing tests to catch scope/type drift early.
+- Evidence: `src/server.ts`, local gate output in `PROJECT_MEMORY.md`.
+- Commit: a229846
+- Confidence: high
+
 - Date: 2026-02-11
 - Trigger: New CLI `fetch --opml` test failed with timeout in local `make check`
 - Impact: Temporary false-negative test failure blocked the quality gate during implementation
