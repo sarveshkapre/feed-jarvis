@@ -433,6 +433,7 @@ UIUX_CHECKLIST: PASS | flow=studio-step3-step4-shortcuts | desktop=verified-shor
 - 2026-02-17 | `node dist/cli.js generate --input /tmp/feed-jarvis-cycle22-smoke-items.json --persona Analyst --format jsonl --max-chars 180` | emitted two JSONL drafts for smoke payload | pass
 - 2026-02-17 | `git push origin main` | `1065913..f2474ae main -> main` | pass
 - 2026-02-17 | `git push origin main` | `f2474ae..bbabf4c main -> main` | pass
+- 2026-02-17 | `gh run list --branch main --limit 3` | `error connecting to api.github.com` in this environment | fail (env)
 - 2026-02-13 | `gh run list --branch main --limit 3` | `error connecting to api.github.com` in this environment | fail (env)
 - 2026-02-13 | `git push origin main` | `f18a12c..d445b49 main -> main` | pass
 - 2026-02-13 | `git push origin main` | `fd6afc4..f18a12c main -> main` | pass
