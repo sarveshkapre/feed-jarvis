@@ -277,7 +277,7 @@
 
 ## Recent Decisions
 - Template: YYYY-MM-DD | Decision | Why | Evidence (tests/logs) | Commit | Confidence (high/medium/low) | Trust (trusted/untrusted)
-- 2026-02-17 | Extract shared Studio API request helpers (`web/studioApi.js`) and rewire `web/app.js` API paths to wrappers | This was the highest-impact next modularization seam and removes duplicated payload/error logic while preserving request-id diagnostics behavior | `web/studioApi.js`, `web/app.js`, `test/studioApi.test.ts`, `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/studioApi.test.ts test/studioPrefs.test.ts`, `node dist/cli.js generate --input /tmp/feed-jarvis-cycle2-smoke-items.json --persona Analyst --format jsonl --max-chars 180` | pending-commit | high | trusted
+- 2026-02-17 | Extract shared Studio API request helpers (`web/studioApi.js`) and rewire `web/app.js` API paths to wrappers | This was the highest-impact next modularization seam and removes duplicated payload/error logic while preserving request-id diagnostics behavior | `web/studioApi.js`, `web/app.js`, `test/studioApi.test.ts`, `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/studioApi.test.ts test/studioPrefs.test.ts`, `node dist/cli.js generate --input /tmp/feed-jarvis-cycle2-smoke-items.json --persona Analyst --format jsonl --max-chars 180` | 205d07f | high | trusted
 - 2026-02-17 | Extract localStorage/session helper logic from `web/app.js` into `web/studioStorage.js` with focused tests | This was the highest-impact remaining maintainability gap and reduced hot-spot risk while preserving behavior | `web/studioStorage.js`, `web/app.js`, `test/studioStorage.test.ts`, `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/studioStorage.test.ts test/studioPrefs.test.ts` | b760105 | high | trusted
 - 2026-02-17 | Move deep command recipes out of README into `docs/WORKFLOWS.md` and keep README quickstart-only | Reduces onboarding noise and keeps operational playbooks maintainable without expanding the top-level entrypoint | `README.md`, `docs/WORKFLOWS.md`, `npm run lint`, `npm run typecheck`, `npm run build` | pending-commit | high | trusted
 - 2026-02-17 | Add Studio keyboard shortcuts through a dedicated helper with editable-target guards instead of embedding more ad-hoc keydown logic in `web/app.js` | Keeps high-frequency operator UX improvements low-risk while reducing keybinding regressions in a large UI orchestration file | `web/keyboardShortcuts.js`, `web/app.js`, `web/index.html`, `test/keyboardShortcuts.test.ts`, `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/keyboardShortcuts.test.ts` | f2474ae | high | trusted
@@ -338,6 +338,9 @@
 
 ## Verification Evidence
 - Template: YYYY-MM-DD | Command | Key output | Status (pass/fail)
+- 2026-02-17 | `npm run lint && npm run typecheck && npm run build && npx vitest run test/studioApi.test.ts test/studioPrefs.test.ts` | lint/typecheck/build passed; targeted tests passed (`2 files`, `16 tests`) | pass
+- 2026-02-17 | `git push origin main` | `c5cea29..205d07f main -> main` | pass
+- 2026-02-17 | `gh run list --branch main --limit 3` | `error connecting to api.github.com` in this environment | fail (env)
 - 2026-02-17 | `npm run lint` | `Checked 71 files ... No fixes applied.` | pass
 - 2026-02-17 | `npm run typecheck` | `tsc -p tsconfig.json --noEmit` completed with no errors | pass
 - 2026-02-17 | `npm run build` | `tsc -p tsconfig.build.json` completed with no errors | pass
