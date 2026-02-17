@@ -21,6 +21,7 @@
 - Studio UI: add one-click sample `items.json` insertion action in Step 1 JSON mode.
 - Studio ingestion: normalize Step 1 feed URLs and strip common tracking query params before fetch.
 - Personas/docs: add `World Signal Editor` persona and a dated world-state snapshot playbook (`docs/WORLD_STATE_2026-02-17.md`).
+- CI: switch GitHub Actions jobs to `self-hosted` runners and add self-hosted runner preflight/setup docs.
 - Testing: add CLI regression coverage for `EPIPE` output piping behavior across `text/json/jsonl/csv` formats.
 - Testing: add session persistence edge-case coverage for invalid snapshots, stale keys, and partial snapshot payloads.
 - Studio UI: add local-only Step 1 filter presets (save/load/delete) for include/exclude/min-title triage settings.

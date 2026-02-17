@@ -58,6 +58,7 @@ npm run e2e:web
 
 - Deep command recipes and workflow playbooks: `docs/WORKFLOWS.md`
 - Release checklist and publish checks: `docs/RELEASE.md`
+- Self-hosted Actions runner setup: `docs/SELF_HOSTED_RUNNER.md`
 - Security policy: `docs/SECURITY.md`
 - World-state snapshot: `docs/WORLD_STATE_2026-02-17.md`
 

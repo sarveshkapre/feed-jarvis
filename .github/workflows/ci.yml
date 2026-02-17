@@ -5,7 +5,8 @@ on:
 
 jobs:
   check:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
+    timeout-minutes: 45
     permissions:
       contents: read
     steps:
@@ -14,8 +15,10 @@ jobs:
         with:
           node-version: "20"
           cache: "npm"
+      - name: Verify self-hosted runner prerequisites
+        run: bash scripts/ci-self-hosted-preflight.sh
       - run: npm ci
-      - run: npx playwright install --with-deps chromium
+      - run: npx playwright install chromium
       - run: make check
       - run: npm run smoke:web
       - run: npm run e2e:web
