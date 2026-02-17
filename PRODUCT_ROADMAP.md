@@ -24,6 +24,35 @@
 ## Current Milestone
 - M4 UX Polish + Throughput
 
+## Session Goal Checkpoint (2026-02-17 | Global Cycle 23 Session 1)
+- Goal: Reduce maintenance/release drift by shipping a targeted `web/app.js` refactor slice plus npm packaging policy hardening.
+- Success criteria:
+  - Step 1 ingestion/state helper logic is extracted from `web/app.js` into a focused module with no behavior change.
+  - Focused unit coverage exists for extracted helpers.
+  - Packaging metadata intentionally includes `dist/cli.js` in `npm pack --dry-run` when build artifacts are present.
+  - Verification evidence and tracker updates are captured.
+- Non-goals:
+  - Broad UI redesign or workflow changes.
+  - New API endpoints or scheduler integrations.
+  - Multi-file architecture rewrite beyond the selected cleanup slice.
+
+## Product Phase Checkpoint (2026-02-17 | Global Cycle 23 Session 1)
+- Prompt: "Are we in a good product phase yet?" -> `No`.
+- Best-in-market references (untrusted web, bounded scan):
+  - Feedly keyboard/operator workflow baseline (`https://docs.feedly.com/article/67-how-to-customize-keyboard-shortcuts-in-feedly`).
+  - RSS.app filtering baseline (`https://help.rss.app/en/articles/10271103-how-to-filter-rss-feeds`).
+  - Buffer automation reliability baseline (`https://support.buffer.com/article/613-automating-rss-feeds-using-feedly-and-zapier`).
+  - Inoreader automation throughput baseline (`https://www.inoreader.com/blog/2026/01/save-time-with-automations.html`).
+- Core expected capabilities in this segment:
+  - Maintainable UI code for frequent feature iteration.
+  - Release packaging and artifact expectations that are deterministic and enforceable.
+  - Stable local-first ingest/filter/generate/export flows.
+- Parity gap map:
+  - Missing: modularized Step 1 helper boundaries in `web/app.js`.
+  - Weak: npm packaging intent for built CLI artifact (`dist/cli.js`).
+  - Parity: ingestion interop, retries/concurrency, filter/rule presets, deterministic exports, browser E2E.
+  - Differentiator: private local-first multi-persona workflow with strict host safety defaults.
+
 ## Session Goal Checkpoint (2026-02-17 | Global Cycle 22 Session 1)
 - Goal: Close the highest-value remaining parity gaps by shipping Studio keyboard shortcuts for high-frequency generate/export loops and release checklist automation.
 - Success criteria:
@@ -309,6 +338,11 @@
 - [x] P1: Add focused shortcut helper test coverage for keybinding matching + guard behavior.
 - [x] P2: Add release checklist automation script with changelog guard + quality-gate command + artifact verification and docs wiring.
 
+## Locked Cycle Scope (2026-02-17 | Global Cycle 23 Session 1)
+- [x] P1: Extract Step 1 ingestion/state helpers from `web/app.js` into a focused module without behavior changes.
+- [x] P1: Add focused helper test coverage for extracted Step 1 utilities.
+- [ ] P2: Harden npm packaging metadata so `npm pack --dry-run` intentionally includes `dist/cli.js` after build.
+
 ## Locked Cycle Scope (2026-02-12 | Session 2)
 - [x] P1: Studio OPML import/export for saved feed sets (local-only interoperability).
 - [x] P1: Studio live over-max-char warnings while editing drafts + one-click trim suggestion.
@@ -347,11 +381,12 @@
 - [x] P1: Studio pasted JSON URL validation (`http/https` only) with actionable user feedback.
 
 ## Pending Features (What Is Still Pending?)
-- P3: Refactor `web/app.js` into smaller modules (state/api/exporters/ui binding).
+- P3: Continue phased `web/app.js` modularization (remaining state/api/exporters/ui bindings beyond Step 1 ingestion helpers).
 - P3: Docs split: keep README compact and move deep recipes to `docs/`.
 - P3: Packaging metadata hardening for npm publish readiness (`.npmignore` / files whitelist so built `dist/cli.js` is included intentionally).
 
 ## Delivered Features (Recent)
+- 2026-02-17: Extracted Step 1 ingestion helpers from `web/app.js` into `web/step1Ingestion.js` (`normalizeUrls`, URL validation, JSON payload parsing, invalid-item summary, `items.json` serialization) with focused tests.
 - 2026-02-17: Added Studio keyboard shortcuts for high-frequency Step 3/Step 4 actions (`Ctrl/Cmd+Shift+Enter/C/E/B/K/J`) with editable-field guards and UI hints.
 - 2026-02-17: Added `npm run release:check` automation (git clean guard, changelog guard, quality-command execution, artifact checks, and `npm pack --dry-run` warning signal).
 - 2026-02-13: Added `/api/fetch` diagnostics summary fields (`retryAttempts`, `retrySuccesses`, `durationMs`, `slowestFeedMs`) for large-run troubleshooting.

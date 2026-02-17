@@ -31,6 +31,60 @@
   - Trusted: local repository code/tests/commands.
   - Untrusted: external market/reference pages.
 
+## Session Notes (2026-02-17 | Global Cycle 23 Session 1)
+- Goal clarification checkpoint:
+  - Goal (one sentence): Reduce maintenance and release drift by shipping a safe modularization slice for Step 1 helpers and hardening npm packaging intent.
+  - Success criteria:
+    - Step 1 ingestion/state helper logic is extracted from `web/app.js` into a dedicated module with unchanged behavior.
+    - Focused tests cover extracted helper behavior.
+    - Packaging metadata ensures `dist/cli.js` is intentionally included in `npm pack --dry-run` after build output exists.
+    - Verification evidence is recorded in this file.
+  - Non-goals:
+    - Broad visual redesign.
+    - API/scheduler feature expansion.
+    - Large multi-module rewrite of Studio orchestration.
+  - Concrete tasks:
+    1. Extract low-risk Step 1 helper functions (`normalizeUrls`, JSON payload validation helpers, URL guard, JSON export helper) from `web/app.js`.
+    2. Add targeted tests for extracted helper module.
+    3. Add npm packaging policy (`files` whitelist) and verify pack output includes `dist/cli.js`.
+    4. Update roadmap/feature/context docs and re-verify lint/typecheck/build + touched tests.
+- Brainstorming checkpoint (ranked; impact/effort/fit/diff/risk/confidence):
+  1. Extract Step 1 ingestion helpers into `web` module + tests (5/2/5/0/1/5) -> selected.
+  2. Packaging metadata hardening via `package.json` `files` whitelist (4/1/5/0/1/5) -> selected.
+  3. Move Step 1 localStorage wrappers into dedicated persistence module (4/2/5/0/1/4) -> pending.
+  4. README docs split into dedicated `docs/` recipes page (3/2/4/0/1/4) -> pending.
+  5. Add Step 1 helper type declarations cleanup (`.d.ts` coverage) (3/1/4/0/1/5) -> selected with #1.
+  6. Add targeted smoke command for `npm pack --dry-run` in release docs (2/1/4/0/1/5) -> pending.
+  7. Refactor Step 1 fetch API call code path into standalone client utility (3/3/4/0/2/3) -> pending.
+  8. Remove dormant/duplicated status message helpers if unused (2/2/3/0/2/3) -> pending.
+- Product phase checkpoint:
+  - Prompt: "Are we in a good product phase yet?" -> No.
+  - Best-in-market signal (untrusted web, bounded scan 2026-02-17): Feedly/Inoreader/Buffer/RSS.app patterns still emphasize fast repeat workflows and deterministic reliability guardrails, which depend on maintainable frontend orchestration and predictable release packaging.
+  - Gap map:
+    - Missing: modular boundaries for Step 1 helper logic in `web/app.js`.
+    - Weak: explicit packaging intent for `dist/cli.js` in publish artifacts.
+    - Parity: ingestion interop, retries/concurrency, filter/rule presets, deterministic exports, browser E2E.
+    - Differentiator: local-first multi-persona drafting with strict host safety defaults.
+- What features are still pending?
+  - From `PRODUCT_ROADMAP.md`: `web/app.js` modularization continuation, docs split, and packaging hardening.
+  - From `CLONE_FEATURES.md`: backlog depth remains above 20 candidates.
+- Locked task list for this session:
+  - Extract Step 1 ingestion/state helper module and wire `web/app.js` to it.
+  - Add focused tests for extracted helpers.
+  - Harden npm packaging metadata and verify pack output includes `dist/cli.js`.
+- Execution outcome (in progress):
+  - Completed: Extracted Step 1 ingestion helpers from `web/app.js` into `web/step1Ingestion.js` and added declaration typing (`web/step1Ingestion.d.ts`).
+  - Completed: Rewired `web/app.js` to import shared Step 1 helper utilities (no behavior changes).
+  - Completed: Added focused regression coverage in `test/step1Ingestion.test.ts` for URL normalization, URL scheme guardrails, JSON payload parsing, invalid summary formatting, and JSON export shape.
+  - Pending: npm packaging metadata hardening and release-pack validation.
+- Verification evidence:
+  - `npm run lint` -> pass.
+  - `npm run typecheck` -> pass.
+  - `npm run build` -> pass.
+  - `npx vitest run test/step1Ingestion.test.ts` -> pass (6 tests).
+- Anti-drift check:
+  - Completed work remains aligned to selected cleanup scope (modularization + reliability checks), with packaging hardening remaining as the next slice.
+
 ## Session Notes (2026-02-17 | Global Cycle 22 Session 1)
 - Goal: Ship the top pending parity slice by adding Studio keyboard shortcuts for high-frequency generation/export actions and release checklist automation.
 - Success criteria:

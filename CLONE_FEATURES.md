@@ -11,6 +11,11 @@
 - [x] P1: Add focused shortcut helper tests for keybinding matching and editable-target blocking.
 - [x] P2: Add release checklist automation command with changelog guard, quality-gate check, and artifact verification.
 
+## Locked Cycle Scope (2026-02-17 | Global Cycle 23 Session 1)
+- [x] P1: Extract Step 1 ingestion helpers out of `web/app.js` into a dedicated module without behavior changes.
+- [x] P1: Add focused tests for extracted Step 1 ingestion helpers.
+- [ ] P2: Harden npm packaging metadata so `npm pack --dry-run` intentionally includes `dist/cli.js`.
+
 ## Candidate Features To Do
 - [ ] P2: Add Studio-side URL normalization helper for pasted feeds (strip whitespace/tracking junk safely). (Impact 3, Effort 2, Fit 4, Diff 0, Risk 2, Conf 3)
 - [ ] P2: Add optional output schema versioning metadata in JSON/JSONL exports for stable downstream imports. (Impact 3, Effort 2, Fit 3, Diff 1, Risk 1, Conf 3)
@@ -34,6 +39,7 @@
 - [ ] P3: Add release command support for `--skip-check` and `--allow-dirty` flags with explicit warnings. (Impact 2, Effort 2, Fit 3, Diff 0, Risk 2, Conf 3)
 
 ## Implemented
+- [x] 2026-02-17 P1: Extracted Step 1 ingestion helper logic into `web/step1Ingestion.js` and rewired `web/app.js` to use shared exports (`normalizeUrls`, `safeHttpUrl`, JSON payload parse/summary, `toItemsJson`). Evidence: `web/step1Ingestion.js`, `web/step1Ingestion.d.ts`, `web/app.js`, `test/step1Ingestion.test.ts`; verification: `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/step1Ingestion.test.ts`.
 - [x] 2026-02-17 P1: Added Studio keyboard shortcuts for Step 3/Step 4 actions (`generate`, `copy/export drafts`, `build/copy/download feed`) with editable-target guards and new shortcut helper module/tests. Evidence: `web/keyboardShortcuts.js`, `web/app.js`, `web/index.html`, `web/styles.css`, `test/keyboardShortcuts.test.ts`; verification: `npx vitest run test/keyboardShortcuts.test.ts`, `npm run lint`, `npm run typecheck`, `npm run build`.
 - [x] 2026-02-17 P2: Added release checklist automation via `npm run release:check` with changelog guard, quality-command execution, artifact checks, and docs/Makefile wiring. Evidence: `scripts/release-check.mjs`, `package.json`, `Makefile`, `docs/RELEASE.md`; verification: `npm run release:check -- --allow-dirty --quality-cmd "npm run lint && npm run typecheck && npm run build"`.
 - [x] 2026-02-13 P1: Added `/api/fetch` retry/latency diagnostics in response summary (`retryAttempts`, `retrySuccesses`, `durationMs`, `slowestFeedMs`) for large-run troubleshooting. Evidence: `src/lib/feedFetch.ts`, `src/server.ts`, `web/studioPrefs.js`, `test/server.test.ts`, `test/studioPrefs.test.ts`; verification: `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/studioPrefs.test.ts`.
