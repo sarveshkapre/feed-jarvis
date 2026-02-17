@@ -1,8 +1,84 @@
 # Project Memory
 
 ## Historical Summary
-- 2026-02-17T06:37:23Z: compacted memory from 501 lines. Full snapshot archived at /Users/sarvesh/code/feed-jarvis/.clone_memory_archive/PROJECT_MEMORY-20260217T063723Z.md
+- 2026-02-17T05:46:30Z: compacted memory from 740 lines. Full snapshot archived at /Users/sarvesh/code/feed-jarvis/.clone_memory_archive/PROJECT_MEMORY-20260217T054630Z.md
 
+  - GitHub CI signals: disabled/unavailable.
+- Trust labels:
+  - Trusted: local repository code/tests/commands.
+  - Untrusted: external market/reference pages.
+
+## Session Notes (2026-02-17 | Global Cycle 1 Session 1)
+- Goal: Ship the highest-value pending maintenance slice by modularizing `web/app.js` persistence helpers and splitting deep README workflows into dedicated docs.
+- Success criteria:
+  - Storage/session read-write helpers move from `web/app.js` to a dedicated `web` module with behavior parity.
+  - Focused tests cover extracted persistence helpers and failure-handling paths.
+  - README is quickstart-first and deep workflows move under `docs/`.
+  - Verification evidence (lint/typecheck/build/tests/smoke/security grep) is recorded.
+- Non-goals:
+  - New API endpoints or scheduler integrations.
+  - Large UI layout changes.
+  - Full `web/app.js` decomposition beyond the selected persistence-helper slice.
+- Brainstorming checkpoint (ranked; impact/effort/fit/diff/risk/confidence):
+  1. Extract persistence/session storage helpers from `web/app.js` into a focused module (5/2/5/0/1/4) -> selected.
+  2. Add focused parity tests for extracted storage helpers (4/2/5/0/1/4) -> selected.
+  3. Split deep workflows from README into dedicated docs pages (4/2/5/0/1/5) -> selected.
+  4. Add CLI troubleshooting docs with dry-run/stdin/private-host guidance (3/2/4/0/1/4) -> pending.
+  5. Add output schema-version metadata for JSON/JSONL exports (3/2/3/1/1/3) -> pending.
+  6. Add per-feed Step 1 error drill-down UI (3/3/4/0/2/3) -> pending.
+  7. Add benchmark script for 1k-item throughput checks (2/3/3/1/1/3) -> pending.
+  8. Add feed-set migration helper for storage schema changes (2/2/3/0/1/3) -> pending.
+  9. Add docs-backed API payload schema references (2/2/4/0/1/4) -> pending.
+  10. Continue modularization into API/export/UI binding modules after this slice (4/4/5/0/2/3) -> pending.
+- Product phase checkpoint:
+  - Prompt: "Are we in a good product phase yet?" -> No.
+  - Best-in-market signal (untrusted web, bounded scan 2026-02-17): Feedly/RSS.app/Buffer/Inoreader docs emphasize (1) reliable filtering/triage workflows, (2) deterministic automation/release expectations, and (3) strong operator docs for repeat workflows.
+  - Gap map:
+    - Missing: extracted persistence/session seams in `web/app.js`.
+    - Weak: onboarding/readme signal due long deep workflow sections.
+    - Parity: ingestion interop, retry/concurrency, presets/filters, export formats, browser E2E.
+    - Differentiator: local-first multi-persona drafting with strict host safety defaults.
+- Market strategy entry:
+  - Sources (untrusted): `https://feedly.helpscoutdocs.com/article/345-mute-filters`, `https://help.rss.app/en/articles/10271103-how-to-filter-rss-feeds`, `https://support.buffer.com/article/613-automating-rss-feeds-using-feedly-and-zapier`, `https://www.inoreader.com/blog/2026/01/save-time-with-automations.html`, `https://docs.feedly.com/article/51-how-to-import-opml-into-feedly`.
+  - Decision: prioritize maintainability/docs parity work this session because feature parity is already strong and maintainability now constrains delivery speed.
+  - Follow-up experiments: measure `web/app.js` line-count reduction per modularization slice and track onboarding completion time after README trim.
+- What features are still pending?
+  - From `PRODUCT_ROADMAP.md`: persistence-helper extraction, docs split, and continued `web/app.js` modularization remain active.
+  - From `CLONE_FEATURES.md`: backlog includes >20 pending items spanning reliability, docs, UX polish, and release safety.
+- Locked task list for this session:
+  - Extract persistence/session read-write helpers from `web/app.js`.
+  - Add focused tests for extracted helper behavior and error handling.
+  - Split deep README recipes into dedicated docs and keep README concise.
+- Execution outcome:
+  - Completed: extracted persistence/session storage helpers into `web/studioStorage.js` and rewired `web/app.js` storage calls to the shared module.
+  - Completed: added focused persistence helper coverage in `test/studioStorage.test.ts`.
+  - Completed: moved deep command recipes into `docs/WORKFLOWS.md` and trimmed `README.md` to quickstart-first content.
+- Verification snapshot:
+  - `npm run lint` -> pass.
+  - `npm run typecheck` -> pass.
+  - `npm run build` -> pass.
+  - `npx vitest run test/studioStorage.test.ts test/studioPrefs.test.ts` -> pass (18 tests).
+  - `npm test` -> fail in this sandbox (`listen EPERM` and cache-path `EPERM` for integration suites).
+  - `npm run smoke:web` -> fail in this sandbox (`tsx` IPC `listen EPERM`).
+  - `node dist/cli.js generate --input /tmp/feed-jarvis-cycle1-smoke-items.json --persona Analyst --format jsonl --max-chars 180` -> pass (real local CLI smoke output generated).
+  - `rg -n \"OPENAI_API_KEY\\s*=|sk-[A-Za-z0-9]{20,}|BEGIN (RSA|OPENSSH|EC|DSA) PRIVATE KEY|eval\\(|new Function\\(|child_process|exec\\(\" src web scripts test package.json` -> pass (no secrets/high-risk findings confirmed).
+- Quick code/security sweep (pre-implementation):
+  - `rg TODO|FIXME|HACK` found no actionable TODO debt markers in tracked source paths.
+  - Security grep highlighted expected `innerHTML = ""` clear-only usage and controlled `child_process` usage in release scripts; no confirmed high-risk secret exposure or code-injection paths found in this checkpoint.
+- Signals:
+  - GitHub issue signals: disabled/unavailable.
+  - GitHub CI signals: disabled/unavailable.
+- Trust labels:
+  - Trusted: local repository code/tests/commands.
+  - Untrusted: external market/reference pages.
+- UIUX_CHECKLIST: PASS | flow=README-to-workflows-doc handoff | desktop=docs-only-no-layout-regression | mobile=docs-only-no-layout-regression | a11y=semantic-markdown-headings-and-lists | risk=low
+
+## Session Notes (2026-02-13 | Cycle 2 Session 1)
+- Goal: Ship the highest-impact remaining parity work by adding deterministic browser E2E coverage for Step 4 agent-feed actions (`build -> copy -> download`).
+- Success criteria:
+  - Existing Playwright smoke run covers Step 4 build flow and verifies feed entries render.
+  - E2E verifies Step 4 copy action succeeds and download payload is structurally correct.
+  - Step 3 fetch/generate/export assertions remain passing in the same script.
   - Verification commands and tracker updates are recorded.
 - Non-goals:
   - New scheduler/queue integrations.
