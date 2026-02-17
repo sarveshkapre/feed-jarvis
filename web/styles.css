@@ -381,6 +381,15 @@ button[disabled] {
   font-weight: 600;
 }
 
+.status-details-actions {
+  margin-top: 8px;
+}
+
+.status-details-actions button {
+  font-size: 0.78rem;
+  padding: 6px 10px;
+}
+
 .status-details ul {
   margin: 8px 0 0;
   padding-left: 18px;

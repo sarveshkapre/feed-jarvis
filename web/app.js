@@ -6,10 +6,13 @@ import {
   upsertFeedSet,
 } from "./feedSets.js";
 import {
-  formatFetchFailureLine,
   normalizeFetchFailures,
   summarizeFetchFailures,
 } from "./fetchDiagnostics.js";
+import {
+  buildFetchFailureDetails,
+  toFetchFailuresJson,
+} from "./fetchFailureDetails.js";
 import {
   mergeFilterPresets,
   parseFilterPresets,
@@ -80,6 +83,7 @@ const state = {
   generatedMeta: null,
   agentFeed: [],
   agentFeedMeta: null,
+  lastFetchFailures: [],
   feedSets: [],
   filterPresets: [],
   rulePresets: [],
@@ -119,6 +123,7 @@ const elements = {
   itemsStatus: document.getElementById("itemsStatus"),
   itemsFailureDetails: document.getElementById("itemsFailureDetails"),
   itemsFailureSummary: document.getElementById("itemsFailureSummary"),
+  copyFetchFailuresBtn: document.getElementById("copyFetchFailuresBtn"),
   itemsFailureList: document.getElementById("itemsFailureList"),
   jsonStatus: document.getElementById("jsonStatus"),
   downloadItemsBtn: document.getElementById("downloadItemsBtn"),
@@ -217,11 +222,15 @@ function setStatus(element, message, tone = "info") {
 }
 
 function clearFetchFailureDetails() {
+  state.lastFetchFailures = [];
   if (elements.itemsFailureList) {
     elements.itemsFailureList.innerHTML = "";
   }
   if (elements.itemsFailureSummary) {
     elements.itemsFailureSummary.textContent = "Feed fetch details";
+  }
+  if (elements.copyFetchFailuresBtn) {
+    elements.copyFetchFailuresBtn.disabled = true;
   }
   if (elements.itemsFailureDetails) {
     elements.itemsFailureDetails.hidden = true;
@@ -235,16 +244,15 @@ function renderFetchFailureDetails(failures, { open = false } = {}) {
   const details = elements.itemsFailureDetails;
   if (!list || !summary || !details) return;
 
-  const normalized = normalizeFetchFailures(failures);
+  const model = buildFetchFailureDetails(failures);
+  state.lastFetchFailures = model.failures;
   list.innerHTML = "";
-  if (normalized.length === 0) {
+  if (!model.hasFailures) {
     clearFetchFailureDetails();
     return;
   }
 
-  for (const failure of normalized) {
-    const line = formatFetchFailureLine(failure);
-    if (!line) continue;
+  for (const line of model.lines) {
     const item = document.createElement("li");
     item.textContent = line;
     list.appendChild(item);
@@ -255,8 +263,10 @@ function renderFetchFailureDetails(failures, { open = false } = {}) {
     return;
   }
 
-  const summaryText = summarizeFetchFailures(normalized);
-  summary.textContent = summaryText || "Feed fetch details";
+  summary.textContent = model.summary;
+  if (elements.copyFetchFailuresBtn) {
+    elements.copyFetchFailuresBtn.disabled = false;
+  }
   details.hidden = false;
   details.open = Boolean(open);
 }
@@ -2314,6 +2324,24 @@ function wireEvents() {
         setStatus(
           elements.itemsExportStatus,
           "Copy failed. Download items.json instead.",
+          "error",
+        ),
+    );
+  });
+
+  elements.copyFetchFailuresBtn?.addEventListener("click", () => {
+    const payload = toFetchFailuresJson(state.lastFetchFailures);
+    if (!payload) {
+      setStatus(elements.itemsStatus, "No fetch failures to copy.", "error");
+      return;
+    }
+
+    navigator.clipboard.writeText(payload).then(
+      () => setStatus(elements.itemsStatus, "Copied fetch failures JSON."),
+      () =>
+        setStatus(
+          elements.itemsStatus,
+          "Copy failed. Expand details and copy manually.",
           "error",
         ),
     );

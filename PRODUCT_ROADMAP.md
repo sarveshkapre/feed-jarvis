@@ -24,6 +24,61 @@
 ## Current Milestone
 - M4 UX Polish + Throughput
 
+## Session Goal Checkpoint (2026-02-17 | Global Cycle 5 Session 1)
+- Goal: Complete a targeted cleanup/refactor pass by extracting the next Step 1 UI/status seam from `web/app.js`, shipping the pending fetch-failure JSON handoff action, and hardening snapshot test coverage.
+- Success criteria:
+  - Fetch-failure detail rendering/serialization logic moves to a focused `web/` helper module with parity behavior.
+  - Step 1 exposes a one-click "copy fetch failures JSON" support/debug action.
+  - Deterministic session snapshot round-trip coverage is added for modularization safety.
+  - Lint/typecheck/build + targeted tests + security/doc checks pass (or are explicitly blocked with evidence).
+- Non-goals:
+  - New API endpoints, schedulers, or hosted integrations.
+  - Broad Studio visual redesign.
+  - Full `web/app.js` decomposition in one pass.
+
+## Product Phase Checkpoint (2026-02-17 | Global Cycle 5 Session 1)
+- Prompt: "Are we in a good product phase yet?" -> `No`.
+- Best-in-market references (untrusted web, bounded scan baseline reused due sandboxed network constraints):
+  - Feedly (`https://feedly.com/new-features/posts/feedly-ai-and-summarization`)
+  - RSS.app (`https://help.rss.app/en/articles/10271103-how-to-filter-rss-feeds`)
+  - Buffer (`https://support.buffer.com/article/613-automating-rss-feeds-using-feedly-and-zapier`)
+  - Inoreader (`https://www.inoreader.com/blog/2025/11/monitoring-feeds.html`)
+- Core expected capabilities in this segment:
+  - High-signal troubleshooting actions with fast operator handoff payloads.
+  - Modular UI bindings that keep large controller files maintainable.
+  - Deterministic local persistence regression coverage for ongoing refactors.
+- Parity gap map:
+  - Missing: deterministic session snapshot round-trip fixture coverage for refactor safety.
+  - Weak: Step 1 fetch-failure UI binding modularization is partially complete; additional `web/app.js` seams remain.
+  - Parity: ingestion interop/retries/concurrency, filters/rules presets, export formats, browser smoke path.
+  - Differentiator: local-first multi-persona workflow with strict host safety defaults.
+
+## Pending Feature Checkpoint (2026-02-17 | Global Cycle 5 Session 1)
+- Prompt: "What features are still pending?"
+- `PRODUCT_ROADMAP.md` pending highlights:
+  - Next `web/app.js` state/UI seam extraction.
+  - Snapshot/migration smoke depth for M5 readiness.
+  - Release/smoke automation depth improvements.
+- `CLONE_FEATURES.md` pending highlights:
+  - Deterministic session snapshot round-trip fixture.
+  - API payload contract docs and focused smoke assertions.
+
+## Prioritized Session Tasks (2026-02-17 | Global Cycle 5 Session 1)
+- Selected first (score: impact/effort/strategic-fit/differentiation/risk/confidence):
+  1. Extract Step 1 fetch-failure UI/status helpers from `web/app.js` and add copy-failures JSON action (5/2/5/1/1/4).
+  2. Add deterministic snapshot round-trip fixture coverage for Studio session storage (4/2/5/0/1/5).
+  3. Tighten docs/verification evidence for cleanup slice delivery and anti-drift checks (3/1/5/0/1/5).
+- Additional ranked candidates (not locked this session):
+  1. Add release-check JSON output fixture coverage (3/2/4/0/1/4).
+  2. Add API contract docs for `/api/fetch` `failures[]` payload (3/1/4/0/1/4).
+  3. Add CI-safe cache-dir isolation defaults for fetch integration tests (3/2/4/0/2/3).
+  4. Extract next `web/app.js` presets/select binding seam (4/4/5/0/2/3).
+
+## Locked Cycle Scope (2026-02-17 | Global Cycle 5 Session 1)
+- [x] P1: Extract Step 1 fetch-failure rendering/serialization seam from `web/app.js` into a focused module and wire "copy failures JSON".
+- [ ] P1: Add deterministic session snapshot round-trip fixture coverage.
+- [ ] P1: Run quality/security checks and update tracker docs with verification evidence.
+
 ## Session Goal Checkpoint (2026-02-17 | Global Cycle 4 Session 1)
 - Goal: Reduce maintenance/release drift by extracting the `web/app.js` export seam and shipping machine-readable release/docs/security automation hooks.
 - Success criteria:
