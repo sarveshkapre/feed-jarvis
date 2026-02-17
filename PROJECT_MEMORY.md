@@ -25,6 +25,23 @@
   - Trusted: local repository code/tests/commands.
   - Untrusted: external market/reference pages.
 
+## Session Notes (2026-02-17 | Self-Hosted CI Migration)
+- Goal: Migrate GitHub Actions to self-hosted runners and validate CI end-to-end without GitHub-hosted runner usage.
+- Execution outcome:
+  - Updated `.github/workflows/ci.yml` and `.github/workflows/codeql.yml` to `runs-on: self-hosted`.
+  - Added runner preflight script: `scripts/ci-self-hosted-preflight.sh`.
+  - Added setup/runbook documentation: `docs/SELF_HOSTED_RUNNER.md`.
+  - Updated CI Playwright install step for self-hosted environments (`npx playwright install chromium`).
+  - Fixed E2E regression introduced during migration (hidden shortcut legend overlay intercepting clicks) by adding `.shortcut-legend-overlay[hidden] { display: none; }`.
+- Verification evidence:
+  - `bash scripts/ci-self-hosted-preflight.sh` -> pass.
+  - `npm ci` -> pass.
+  - `npx playwright install chromium` -> pass.
+  - `make check` -> pass.
+  - `npm run smoke:web` -> pass.
+  - `npm run e2e:web` -> initial fail (overlay interception), then pass after CSS fix.
+  - `bash scripts/ci-self-hosted-preflight.sh && make check && npm run smoke:web && npm run e2e:web` -> pass.
+
 ## Session Notes (2026-02-13 | Cycle 1 Session 4)
 - Goal: Improve large-run fetch reliability by shipping bounded configurable fetch concurrency across CLI + Studio and validating it with integration tests.
 - Success criteria:
