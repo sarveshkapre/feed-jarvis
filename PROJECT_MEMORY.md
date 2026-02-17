@@ -121,6 +121,16 @@
   - `npm run typecheck` -> pass.
   - `npm run build` -> pass.
   - `npx vitest run test/sampleItems.test.ts` -> pass.
+- Commit 9 goal: Improve Step 1 feed URL quality via normalization and tracking-parameter stripping.
+- Implementation:
+  - Added `normalizeFeedUrl` helper in `web/step1Ingestion.js` and applied it in `normalizeUrls`.
+  - URL normalization now lowercases host, trims trailing path slashes, and removes common tracking params (`utm_*`, `fbclid`, `gclid`, `dclid`, `mc_cid`, `mc_eid`, `igshid`) for feed URLs.
+  - Added targeted tests in `test/step1Ingestion.test.ts` and declaration updates.
+- Verification evidence:
+  - `npm run lint` -> pass.
+  - `npm run typecheck` -> pass.
+  - `npm run build` -> pass.
+  - `npx vitest run test/step1Ingestion.test.ts` -> pass.
 
 ## Session Notes (2026-02-17 | Global Cycle 23 Session 1)
 - Goal clarification checkpoint:

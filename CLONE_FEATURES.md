@@ -17,7 +17,7 @@
 - [x] P2: Harden npm packaging metadata so `npm pack --dry-run` intentionally includes `dist/cli.js`.
 
 ## Candidate Features To Do
-- [ ] P2: Add Studio-side URL normalization helper for pasted feeds (strip whitespace/tracking junk safely). (Impact 3, Effort 2, Fit 4, Diff 0, Risk 2, Conf 3)
+- [x] P2: Add Studio-side URL normalization helper for pasted feeds (strip whitespace/tracking junk safely). (Impact 3, Effort 2, Fit 4, Diff 0, Risk 2, Conf 3)
 - [ ] P2: Add optional output schema versioning metadata in JSON/JSONL exports for stable downstream imports. (Impact 3, Effort 2, Fit 3, Diff 1, Risk 1, Conf 3)
 - [x] P2: Add `--diagnostics-json` machine-readable dry-run output for CI/pipeline ingestion. (Impact 3, Effort 2, Fit 4, Diff 1, Risk 1, Conf 3)
 - [x] P3: Add Studio quick action to insert a valid sample `items.json` payload into Step 1 JSON mode. (Impact 2, Effort 1, Fit 3, Diff 0, Risk 1, Conf 4)
@@ -39,6 +39,7 @@
 - [ ] P3: Add release command support for `--skip-check` and `--allow-dirty` flags with explicit warnings. (Impact 2, Effort 2, Fit 3, Diff 0, Risk 2, Conf 3)
 
 ## Implemented
+- [x] 2026-02-17 P2: Added Step 1 feed URL normalization helper (host/path cleanup + common tracking-param stripping) with coverage updates. Evidence: `web/step1Ingestion.js`, `web/step1Ingestion.d.ts`, `test/step1Ingestion.test.ts`; verification: `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/step1Ingestion.test.ts`.
 - [x] 2026-02-17 P3: Added Step 1 JSON-mode sample payload insertion (`Insert sample items.json`) for faster first-run setup/testing. Evidence: `web/sampleItems.js`, `web/sampleItems.d.ts`, `web/app.js`, `web/index.html`, `test/sampleItems.test.ts`; verification: `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/sampleItems.test.ts`.
 - [x] 2026-02-17 P3: Added in-app keyboard shortcut legend dialog with `?` toggle, close controls, and shortcut matcher coverage updates. Evidence: `web/index.html`, `web/styles.css`, `web/app.js`, `web/keyboardShortcuts.js`, `test/keyboardShortcuts.test.ts`; verification: `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/keyboardShortcuts.test.ts`.
 - [x] 2026-02-17 P3: Added optional per-persona maxChars overrides for `/api/agent-feed` and Studio Step 4 inputs, including payload persistence and server coverage. Evidence: `web/app.js`, `web/index.html`, `web/studioPrefs.js`, `src/server.ts`, `test/server.test.ts`, `test/studioPrefs.test.ts`; verification: `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/server.test.ts -t "applies per-persona maxChars overrides in agent feed mode"`, `npx vitest run test/studioPrefs.test.ts`.

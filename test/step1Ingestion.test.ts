@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 import {
   formatInvalidItemsSummary,
+  normalizeFeedUrl,
   normalizeUrls,
   parseItemsJsonPayload,
   safeHttpUrl,
@@ -16,8 +17,19 @@ describe("step1Ingestion", () => {
     ).toEqual([
       "https://a.example/feed.xml",
       "https://b.example/rss",
-      "https://c.example",
+      "https://c.example/",
     ]);
+  });
+
+  test("normalizes feed urls by stripping common tracking params", () => {
+    expect(
+      normalizeFeedUrl(
+        "https://EXAMPLE.com/feed.xml/?utm_source=x&utm_medium=social&fbclid=abc&id=7",
+      ),
+    ).toBe("https://example.com/feed.xml?id=7");
+    expect(normalizeFeedUrl("https://example.com/rss?mc_cid=1&topic=ai")).toBe(
+      "https://example.com/rss?topic=ai",
+    );
   });
 
   test("accepts only http/https URLs", () => {

@@ -1,8 +1,40 @@
+const TRACKING_QUERY_PARAMS = new Set([
+  "fbclid",
+  "gclid",
+  "dclid",
+  "mc_cid",
+  "mc_eid",
+  "igshid",
+]);
+
 export function normalizeUrls(raw) {
   return String(raw ?? "")
     .split(/\n|,/)
-    .map((entry) => entry.trim())
+    .map((entry) => normalizeFeedUrl(entry))
     .filter((entry) => entry.length > 0);
+}
+
+export function normalizeFeedUrl(raw) {
+  const trimmed = String(raw ?? "").trim();
+  if (!trimmed) return "";
+
+  const parsed = safeHttpUrl(trimmed);
+  if (!parsed) return trimmed;
+
+  parsed.hostname = parsed.hostname.toLowerCase();
+  if (parsed.pathname !== "/") {
+    parsed.pathname = parsed.pathname.replace(/\/+$/, "");
+  }
+
+  const keys = Array.from(parsed.searchParams.keys());
+  for (const key of keys) {
+    const lowered = key.trim().toLowerCase();
+    if (lowered.startsWith("utm_") || TRACKING_QUERY_PARAMS.has(lowered)) {
+      parsed.searchParams.delete(key);
+    }
+  }
+
+  return parsed.toString();
 }
 
 export function toItemsJson(items) {

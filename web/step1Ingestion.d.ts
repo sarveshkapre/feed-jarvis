@@ -6,6 +6,7 @@ export type InvalidJsonItem = {
 };
 
 export function normalizeUrls(raw: unknown): string[];
+export function normalizeFeedUrl(raw: unknown): string;
 export function toItemsJson(items: unknown): string;
 export function safeHttpUrl(raw: unknown): URL | null;
 export function parseItemsJsonPayload(parsed: unknown): {

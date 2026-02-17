@@ -114,6 +114,7 @@ npm run dev -- fetch --opml feeds.opml --allow-host example.com --allow-host new
 - Studio JSON input: validates URLs as `http/https` and reports skipped invalid entries.
 - Studio JSON input helper: one-click sample `items.json` payload insertion for first-run setup/testing.
 - Studio fetch controls: tune `max items`, `dedupe`, and fetch concurrency (`1-20`) for large URL batches.
+- Studio feed URL normalization: lowercases hosts, trims trailing path slashes, and strips common tracking params (`utm_*`, `fbclid`, `gclid`, etc.).
 - Studio keyboard shortcuts: `Ctrl/Cmd + Enter` fetch/load, `Ctrl/Cmd + Shift + Enter` generate, `Ctrl/Cmd + Shift + E` export JSONL drafts, and Step 4 build/copy/download shortcuts.
 - Studio shortcut legend: press `?` (outside text fields) to open an in-app shortcut reference dialog.
 - Studio fetch diagnostics: status includes cache/network split, dedupe/trim counts, retry diagnostics, and latency (`duration`/`slowest`) details.
