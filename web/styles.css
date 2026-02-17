@@ -720,6 +720,10 @@ button[disabled] {
   z-index: 20;
 }
 
+.shortcut-legend-overlay[hidden] {
+  display: none;
+}
+
 .shortcut-legend-dialog {
   width: min(560px, 100%);
   border-radius: 16px;

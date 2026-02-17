@@ -19,6 +19,11 @@ Linux note:
 Docker note:
 - Docker is not required by current workflows.
 
+CodeQL note:
+- The `codeql` workflow also runs on `self-hosted`.
+- Ensure outbound network access to GitHub and CodeQL bundle downloads.
+- No additional repository secrets are required for JavaScript/TypeScript CodeQL analysis.
+
 ## Register the runner (repository-level)
 
 1. Open the repository on GitHub.
