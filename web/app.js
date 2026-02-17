@@ -23,6 +23,10 @@ import {
 import { applyItemFilters, normalizeItemFilters } from "./filters.js";
 import { parseFilterTokens, removeFilterToken } from "./filterTokens.js";
 import { matchStudioShortcut } from "./keyboardShortcuts.js";
+import {
+  findNamedEntryByName,
+  syncNamedSelectControl,
+} from "./namedSelectBindings.js";
 import { filterPersonas } from "./personaSearch.js";
 import { getPostLengthStatus, trimPostToMaxChars } from "./postEditing.js";
 import { removeRulePreset, upsertRulePreset } from "./rulePresets.js";
@@ -658,43 +662,20 @@ function updateFilterStatus() {
 }
 
 function refreshFilterPresetSelect() {
-  if (!elements.filterPresetSelect) return;
-
-  const selected = elements.filterPresetSelect.value;
-  elements.filterPresetSelect.innerHTML = "";
-
-  const placeholder = document.createElement("option");
-  placeholder.value = "";
-  placeholder.textContent = "Choose a saved preset…";
-  elements.filterPresetSelect.appendChild(placeholder);
-
-  for (const preset of state.filterPresets) {
-    const option = document.createElement("option");
-    option.value = preset.name;
-    option.textContent = preset.name;
-    elements.filterPresetSelect.appendChild(option);
-  }
-
-  if (
-    selected &&
-    state.filterPresets.some((preset) => preset.name === selected)
-  ) {
-    elements.filterPresetSelect.value = selected;
-  }
-
-  const hasSelection = Boolean(elements.filterPresetSelect.value);
-  if (elements.loadFilterPresetBtn) {
-    elements.loadFilterPresetBtn.disabled = !hasSelection;
-  }
-  if (elements.deleteFilterPresetBtn) {
-    elements.deleteFilterPresetBtn.disabled = !hasSelection;
-  }
+  syncNamedSelectControl({
+    select: elements.filterPresetSelect,
+    entries: state.filterPresets,
+    placeholderLabel: "Choose a saved preset…",
+    loadButton: elements.loadFilterPresetBtn,
+    deleteButton: elements.deleteFilterPresetBtn,
+  });
 }
 
 function getSelectedFilterPreset() {
-  const name = elements.filterPresetSelect?.value ?? "";
-  if (!name) return null;
-  return state.filterPresets.find((preset) => preset.name === name) ?? null;
+  return findNamedEntryByName(
+    state.filterPresets,
+    elements.filterPresetSelect?.value ?? "",
+  );
 }
 
 function applyFiltersToForm(filters) {
@@ -751,9 +732,14 @@ function saveFilterPreset() {
     filters,
   });
   writeFilterPresets(localStorageRef, state.filterPresets);
-  refreshFilterPresetSelect();
-  if (elements.filterPresetSelect) elements.filterPresetSelect.value = name;
-  refreshFilterPresetSelect();
+  syncNamedSelectControl({
+    select: elements.filterPresetSelect,
+    entries: state.filterPresets,
+    placeholderLabel: "Choose a saved preset…",
+    selectedName: name,
+    loadButton: elements.loadFilterPresetBtn,
+    deleteButton: elements.deleteFilterPresetBtn,
+  });
   setStatus(elements.filterPresetStatus, `Saved "${name}".`);
   persistSessionSnapshot();
 }
@@ -827,37 +813,17 @@ function exportFilterPresetsJson() {
 }
 
 function refreshFeedSetSelect() {
-  if (!elements.feedSetSelect) return;
-
-  const selected = elements.feedSetSelect.value;
-  elements.feedSetSelect.innerHTML = "";
-
-  const placeholder = document.createElement("option");
-  placeholder.value = "";
-  placeholder.textContent = "Choose a saved set…";
-  elements.feedSetSelect.appendChild(placeholder);
-
-  for (const set of state.feedSets) {
-    const option = document.createElement("option");
-    option.value = set.name;
-    option.textContent = set.name;
-    elements.feedSetSelect.appendChild(option);
-  }
-
-  if (selected && state.feedSets.some((set) => set.name === selected)) {
-    elements.feedSetSelect.value = selected;
-  }
-
-  const hasSelection = Boolean(elements.feedSetSelect.value);
-  if (elements.loadFeedSetBtn) elements.loadFeedSetBtn.disabled = !hasSelection;
-  if (elements.deleteFeedSetBtn)
-    elements.deleteFeedSetBtn.disabled = !hasSelection;
+  syncNamedSelectControl({
+    select: elements.feedSetSelect,
+    entries: state.feedSets,
+    placeholderLabel: "Choose a saved set…",
+    loadButton: elements.loadFeedSetBtn,
+    deleteButton: elements.deleteFeedSetBtn,
+  });
 }
 
 function getSelectedFeedSet() {
-  const name = elements.feedSetSelect?.value ?? "";
-  if (!name) return null;
-  return state.feedSets.find((set) => set.name === name) ?? null;
+  return findNamedEntryByName(state.feedSets, elements.feedSetSelect?.value);
 }
 
 function loadSelectedFeedSet() {
@@ -903,9 +869,14 @@ function saveFeedSet() {
 
   state.feedSets = upsertFeedSet(state.feedSets, { name, urls });
   writeFeedSets(localStorageRef, state.feedSets);
-  refreshFeedSetSelect();
-  if (elements.feedSetSelect) elements.feedSetSelect.value = name;
-  refreshFeedSetSelect();
+  syncNamedSelectControl({
+    select: elements.feedSetSelect,
+    entries: state.feedSets,
+    placeholderLabel: "Choose a saved set…",
+    selectedName: name,
+    loadButton: elements.loadFeedSetBtn,
+    deleteButton: elements.deleteFeedSetBtn,
+  });
   setStatus(elements.feedSetStatus, `Saved "${name}".`);
   persistSessionSnapshot();
 }
@@ -1037,41 +1008,20 @@ async function importFeedSetsOpml() {
 }
 
 function refreshRulePresetSelect() {
-  if (!elements.rulePresetSelect) return;
-
-  const selected = elements.rulePresetSelect.value;
-  elements.rulePresetSelect.innerHTML = "";
-
-  const placeholder = document.createElement("option");
-  placeholder.value = "";
-  placeholder.textContent = "Choose a saved preset…";
-  elements.rulePresetSelect.appendChild(placeholder);
-
-  for (const preset of state.rulePresets) {
-    const option = document.createElement("option");
-    option.value = preset.name;
-    option.textContent = preset.name;
-    elements.rulePresetSelect.appendChild(option);
-  }
-
-  if (
-    selected &&
-    state.rulePresets.some((preset) => preset.name === selected)
-  ) {
-    elements.rulePresetSelect.value = selected;
-  }
-
-  const hasSelection = Boolean(elements.rulePresetSelect.value);
-  if (elements.loadRulePresetBtn)
-    elements.loadRulePresetBtn.disabled = !hasSelection;
-  if (elements.deleteRulePresetBtn)
-    elements.deleteRulePresetBtn.disabled = !hasSelection;
+  syncNamedSelectControl({
+    select: elements.rulePresetSelect,
+    entries: state.rulePresets,
+    placeholderLabel: "Choose a saved preset…",
+    loadButton: elements.loadRulePresetBtn,
+    deleteButton: elements.deleteRulePresetBtn,
+  });
 }
 
 function getSelectedRulePreset() {
-  const name = elements.rulePresetSelect?.value ?? "";
-  if (!name) return null;
-  return state.rulePresets.find((preset) => preset.name === name) ?? null;
+  return findNamedEntryByName(
+    state.rulePresets,
+    elements.rulePresetSelect?.value,
+  );
 }
 
 function applyRulesToForm(rules) {
@@ -1153,9 +1103,14 @@ function saveRulePreset() {
 
   state.rulePresets = upsertRulePreset(state.rulePresets, { name, rules });
   writeRulePresets(localStorageRef, state.rulePresets);
-  refreshRulePresetSelect();
-  if (elements.rulePresetSelect) elements.rulePresetSelect.value = name;
-  refreshRulePresetSelect();
+  syncNamedSelectControl({
+    select: elements.rulePresetSelect,
+    entries: state.rulePresets,
+    placeholderLabel: "Choose a saved preset…",
+    selectedName: name,
+    loadButton: elements.loadRulePresetBtn,
+    deleteButton: elements.deleteRulePresetBtn,
+  });
   setStatus(elements.rulePresetStatus, `Saved "${name}".`);
   persistSessionSnapshot();
 }
