@@ -16,6 +16,7 @@ const NPM_PACK_CACHE_DIR = path.join(
 function parseArgs(argv) {
   const options = {
     allowDirty: false,
+    json: false,
     qualityCmd: "npm run check",
   };
 
@@ -28,6 +29,10 @@ function parseArgs(argv) {
     if (arg === "--quality-cmd") {
       options.qualityCmd = argv[i + 1] ?? "";
       i += 1;
+      continue;
+    }
+    if (arg === "--json") {
+      options.json = true;
     }
   }
 
@@ -123,27 +128,105 @@ function verifyArtifact() {
       "npm pack --dry-run did not include dist/cli.js. Check package files/.npmignore settings.",
     );
   }
+
+  return {
+    distCliSizeBytes: stat.size,
+    packedFiles: files.length,
+    includesDistCli: true,
+  };
+}
+
+function runQualityGate(command, { json }) {
+  if (!json) {
+    runCommand(command);
+    return;
+  }
+
+  try {
+    runCommand(command, { capture: true });
+  } catch (error) {
+    const message =
+      error instanceof Error && error.message
+        ? error.message
+        : "Unknown quality command failure.";
+    throw new Error(`Quality gate failed (${command}): ${message}`);
+  }
 }
 
 function main() {
   const options = parseArgs(process.argv.slice(2));
+  const summary = {
+    ok: false,
+    timestamp: new Date().toISOString(),
+    allowDirty: options.allowDirty,
+    qualityCmd: options.qualityCmd,
+    checks: {
+      gitState: "pending",
+      changelog: "pending",
+      quality: "pending",
+      artifact: "pending",
+    },
+    artifact: {
+      distCliSizeBytes: 0,
+      packedFiles: 0,
+      includesDistCli: false,
+    },
+    error: null,
+  };
 
-  console.log("release-check: validating git state...");
-  checkCleanWorkingTree(options);
-  console.log("release-check: validating changelog...");
-  readUnreleasedSection();
-  console.log(`release-check: running quality gate (${options.qualityCmd})...`);
-  runCommand(options.qualityCmd);
-  console.log("release-check: validating release artifact...");
-  verifyArtifact();
-  console.log("release-check: pass");
+  try {
+    if (!options.json) {
+      console.log("release-check: validating git state...");
+    }
+    checkCleanWorkingTree(options);
+    summary.checks.gitState = "pass";
+
+    if (!options.json) {
+      console.log("release-check: validating changelog...");
+    }
+    readUnreleasedSection();
+    summary.checks.changelog = "pass";
+
+    if (!options.json) {
+      console.log(
+        `release-check: running quality gate (${options.qualityCmd})...`,
+      );
+    }
+    runQualityGate(options.qualityCmd, { json: options.json });
+    summary.checks.quality = "pass";
+
+    if (!options.json) {
+      console.log("release-check: validating release artifact...");
+    }
+    summary.artifact = verifyArtifact();
+    summary.checks.artifact = "pass";
+    summary.ok = true;
+
+    if (options.json) {
+      process.stdout.write(`${JSON.stringify(summary, null, 2)}\n`);
+      return;
+    }
+
+    console.log("release-check: pass");
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Unknown release-check failure.";
+    summary.error = message;
+    if (summary.checks.gitState === "pending") summary.checks.gitState = "fail";
+    else if (summary.checks.changelog === "pending")
+      summary.checks.changelog = "fail";
+    else if (summary.checks.quality === "pending")
+      summary.checks.quality = "fail";
+    else if (summary.checks.artifact === "pending")
+      summary.checks.artifact = "fail";
+
+    if (options.json) {
+      process.stdout.write(`${JSON.stringify(summary, null, 2)}\n`);
+    } else {
+      console.error(`release-check: fail: ${message}`);
+    }
+    process.exitCode = 1;
+  }
 }
 
-try {
-  main();
-} catch (error) {
-  const message =
-    error instanceof Error ? error.message : "Unknown release-check failure.";
-  console.error(`release-check: fail: ${message}`);
-  process.exitCode = 1;
-}
+main();

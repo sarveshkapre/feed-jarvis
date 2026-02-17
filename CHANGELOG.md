@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## Unreleased
+- Release: add `release:check --json` machine-readable summary output for CI/runtime automation hooks.
 - Release: add `npm run release:check` automation for changelog guards, quality-gate execution, and release artifact verification (`dist/cli.js` + `npm pack --dry-run` sanity check).
 - Studio UI: add keyboard shortcuts for Step 3/Step 4 high-frequency actions (`generate`, `copy/export drafts`, `build/copy/download feed`) with editable-field guards.
 - Testing: add shortcut helper coverage for keybinding matches and editable-target blocking.

@@ -13,12 +13,16 @@ npm run release:check
 - changelog guardrails (`## Unreleased` exists and has bullet entries)
 - quality gate command (default: `npm run check`)
 - release artifact presence (`dist/cli.js`) and package dry-run execution (`npm pack --dry-run`, fails when `dist/cli.js` is excluded by packaging rules)
+- optional machine-readable summary output via `--json` for CI/runtime hooks
 
 Examples:
 
 ```bash
 # local/sandbox-friendly run without full integration test suite
 npm run release:check -- --allow-dirty --quality-cmd "npm run lint && npm run typecheck && npm run build"
+
+# machine-readable summary (stdout JSON + non-zero exit on failure)
+npm run release:check -- --allow-dirty --quality-cmd "npm run lint && npm run typecheck && npm run build" --json
 ```
 
 3. Tag and push:

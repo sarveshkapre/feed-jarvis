@@ -121,6 +121,8 @@ npm run release:check
 
 `release:check` validates git/changelog state, quality commands, artifact expectations, and `npm pack --dry-run` inclusion of `dist/cli.js`.
 
+For CI/runtime automation consumers, append `--json` to emit a machine-readable summary object.
+
 For detailed release notes see `docs/RELEASE.md`.
 
 ## Studio Storage Schema
