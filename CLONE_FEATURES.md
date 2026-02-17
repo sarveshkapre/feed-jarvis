@@ -34,11 +34,12 @@
 - [ ] P3: Add per-feed error detail accordion in Step 1 fetch status for faster debugging. (Impact 3, Effort 3, Fit 4, Diff 0, Risk 2, Conf 3)
 - [x] P3: Add filter preset import/export JSON flow for cross-machine Studio setup reuse. (Impact 2, Effort 2, Fit 3, Diff 1, Risk 1, Conf 3)
 - [x] P3: Add filter-token chips UI (`keyword`/`site:`) with one-click remove for faster triage edits. (Impact 2, Effort 3, Fit 3, Diff 1, Risk 1, Conf 3)
-- [ ] P3: Add keyboard shortcut legend dialog (`?`) so power-user actions stay discoverable without doc lookup. (Impact 2, Effort 2, Fit 4, Diff 1, Risk 1, Conf 4)
+- [x] P3: Add keyboard shortcut legend dialog (`?`) so power-user actions stay discoverable without doc lookup. (Impact 2, Effort 2, Fit 4, Diff 1, Risk 1, Conf 4)
 - [ ] P3: Add confirm-before-download option for bulk draft export when post count exceeds threshold. (Impact 2, Effort 2, Fit 3, Diff 0, Risk 1, Conf 3)
 - [ ] P3: Add release command support for `--skip-check` and `--allow-dirty` flags with explicit warnings. (Impact 2, Effort 2, Fit 3, Diff 0, Risk 2, Conf 3)
 
 ## Implemented
+- [x] 2026-02-17 P3: Added in-app keyboard shortcut legend dialog with `?` toggle, close controls, and shortcut matcher coverage updates. Evidence: `web/index.html`, `web/styles.css`, `web/app.js`, `web/keyboardShortcuts.js`, `test/keyboardShortcuts.test.ts`; verification: `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/keyboardShortcuts.test.ts`.
 - [x] 2026-02-17 P3: Added optional per-persona maxChars overrides for `/api/agent-feed` and Studio Step 4 inputs, including payload persistence and server coverage. Evidence: `web/app.js`, `web/index.html`, `web/studioPrefs.js`, `src/server.ts`, `test/server.test.ts`, `test/studioPrefs.test.ts`; verification: `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/server.test.ts -t "applies per-persona maxChars overrides in agent feed mode"`, `npx vitest run test/studioPrefs.test.ts`.
 - [x] 2026-02-17 P3: Added Step 1 filter-token chips (`include`/`exclude`) with one-click remove actions for faster triage editing. Evidence: `web/filterTokens.js`, `web/filterTokens.d.ts`, `web/app.js`, `web/index.html`, `web/styles.css`, `test/filterTokens.test.ts`; verification: `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/filterTokens.test.ts`.
 - [x] 2026-02-17 P3: Added Step 1 filter-preset import/export JSON flow with deterministic merge behavior for cross-machine Studio setup reuse. Evidence: `web/filterPresets.js`, `web/filterPresets.d.ts`, `web/app.js`, `web/index.html`, `test/filterPresets.test.ts`; verification: `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/filterPresets.test.ts`.

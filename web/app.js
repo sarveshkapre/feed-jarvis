@@ -165,6 +165,9 @@ const elements = {
   agentPersonaSearchStatus: document.getElementById("agentPersonaSearchStatus"),
   agentFeedList: document.getElementById("agentFeedList"),
   agentFeedEmpty: document.getElementById("agentFeedEmpty"),
+  openShortcutLegendBtn: document.getElementById("openShortcutLegendBtn"),
+  closeShortcutLegendBtn: document.getElementById("closeShortcutLegendBtn"),
+  shortcutLegendOverlay: document.getElementById("shortcutLegendOverlay"),
 };
 
 const channelDefaults = {
@@ -270,6 +273,11 @@ function setButtonLoading(button, isLoading, text) {
       button.dataset.originalText || button.textContent;
     button.textContent = isLoading ? text : button.dataset.originalText;
   }
+}
+
+function setShortcutLegendOpen(isOpen) {
+  if (!elements.shortcutLegendOverlay) return;
+  elements.shortcutLegendOverlay.hidden = !isOpen;
 }
 
 function getErrorMessage(err, fallback) {
@@ -2022,6 +2030,12 @@ function runShortcutAction(action) {
       return;
     }
     elements.downloadAgentFeedBtn.click();
+    return;
+  }
+
+  if (action === "toggle-shortcut-legend") {
+    const open = elements.shortcutLegendOverlay?.hidden === false;
+    setShortcutLegendOpen(!open);
   }
 }
 
@@ -2276,6 +2290,20 @@ function wireEvents() {
     persistSessionSnapshot();
   });
 
+  elements.openShortcutLegendBtn?.addEventListener("click", () => {
+    setShortcutLegendOpen(true);
+  });
+
+  elements.closeShortcutLegendBtn?.addEventListener("click", () => {
+    setShortcutLegendOpen(false);
+  });
+
+  elements.shortcutLegendOverlay?.addEventListener("click", (event) => {
+    if (event.target === elements.shortcutLegendOverlay) {
+      setShortcutLegendOpen(false);
+    }
+  });
+
   elements.importPersonasBtn.addEventListener("click", () => {
     setStatus(elements.personasStatus, "");
     elements.personasFile.click();
@@ -2455,6 +2483,10 @@ function wireEvents() {
   });
 
   document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !elements.shortcutLegendOverlay?.hidden) {
+      setShortcutLegendOpen(false);
+      return;
+    }
     const action = matchStudioShortcut(event);
     if (!action) return;
     event.preventDefault();

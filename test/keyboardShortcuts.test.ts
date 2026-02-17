@@ -43,6 +43,11 @@ describe("keyboardShortcuts", () => {
     expect(
       matchStudioShortcut(buildShortcutEvent({ key: "j", shiftKey: true })),
     ).toBe("download-agent-feed");
+    expect(
+      matchStudioShortcut(
+        buildShortcutEvent({ key: "?", ctrlKey: false, shiftKey: true }),
+      ),
+    ).toBe("toggle-shortcut-legend");
   });
 
   test("ignores unsupported modifier states", () => {
@@ -89,6 +94,16 @@ describe("keyboardShortcuts", () => {
         buildShortcutEvent({ key: "Enter", target: textareaTarget }),
       ),
     ).toBe("load-items");
+    expect(
+      matchStudioShortcut(
+        buildShortcutEvent({
+          key: "?",
+          ctrlKey: false,
+          shiftKey: true,
+          target: textareaTarget,
+        }),
+      ),
+    ).toBeNull();
   });
 
   test("detects editable targets safely", () => {

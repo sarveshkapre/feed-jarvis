@@ -73,10 +73,15 @@ export function matchStudioShortcut(event) {
   if (!event || typeof event !== "object") return null;
   if (event.defaultPrevented || event.repeat) return null;
 
-  if (!(event.metaKey || event.ctrlKey) || event.altKey) return null;
-
   const key = normalizeKey(event.key);
   if (!key) return null;
+
+  if (key === "?" && !event.altKey && !event.metaKey && !event.ctrlKey) {
+    if (isEditableShortcutTarget(event.target)) return null;
+    return "toggle-shortcut-legend";
+  }
+
+  if (!(event.metaKey || event.ctrlKey) || event.altKey) return null;
 
   const shiftKey = Boolean(event.shiftKey);
   for (const binding of STUDIO_SHORTCUTS) {

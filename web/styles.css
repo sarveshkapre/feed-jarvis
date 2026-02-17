@@ -104,8 +104,18 @@ main {
   border: 1px solid transparent;
 }
 
+.nav button {
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid transparent;
+  color: inherit;
+  font: inherit;
+}
+
 .nav a.active,
-.nav a:hover {
+.nav a:hover,
+.nav button:hover {
   border-color: var(--border);
   background: rgba(255, 255, 255, 0.95);
 }
@@ -663,6 +673,45 @@ button[disabled] {
   border-radius: 8px;
   padding: 2px 8px;
   background: rgba(255, 255, 255, 0.8);
+}
+
+.shortcut-legend-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 32, 41, 0.55);
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  z-index: 20;
+}
+
+.shortcut-legend-dialog {
+  width: min(560px, 100%);
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: #fff;
+  padding: 18px;
+  display: grid;
+  gap: 12px;
+}
+
+.shortcut-legend-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.shortcut-legend-header h2 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.shortcut-legend-dialog ul {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 6px;
 }
 
 .footer {

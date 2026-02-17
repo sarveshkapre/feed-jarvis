@@ -99,6 +99,17 @@
   - `npm run build` -> pass.
   - `npx vitest run test/server.test.ts -t "applies per-persona maxChars overrides in agent feed mode"` -> pass.
   - `npx vitest run test/studioPrefs.test.ts` -> pass.
+- Commit 7 goal: Add in-app shortcut discoverability via keyboard legend dialog.
+- Implementation:
+  - Added `?` shortcut support in `web/keyboardShortcuts.js` (blocked in editable fields).
+  - Added shortcut legend modal overlay with click + escape close behavior.
+  - Added header button and footer hint for shortcut legend access.
+  - Extended keyboard shortcut tests for `?` behavior.
+- Verification evidence:
+  - `npm run lint` -> pass.
+  - `npm run typecheck` -> pass.
+  - `npm run build` -> pass.
+  - `npx vitest run test/keyboardShortcuts.test.ts` -> pass.
 
 ## Session Notes (2026-02-17 | Global Cycle 23 Session 1)
 - Goal clarification checkpoint:

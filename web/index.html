@@ -21,6 +21,9 @@
       <nav class="nav">
         <a class="active" href="/">Studio</a>
         <a href="/about">About</a>
+        <button id="openShortcutLegendBtn" type="button" aria-label="Open keyboard shortcuts">
+          Shortcuts ?
+        </button>
         <a
           href="https://github.com/sarveshkapre/feed-jarvis"
           target="_blank"
@@ -437,10 +440,35 @@
           Shortcuts:
           <span class="kbd">Ctrl/Cmd + Enter</span> fetch/load,
           <span class="kbd">Ctrl/Cmd + Shift + Enter</span> generate,
-          <span class="kbd">Ctrl/Cmd + Shift + B</span> build feed
+          <span class="kbd">Ctrl/Cmd + Shift + B</span> build feed,
+          <span class="kbd">?</span> open legend
         </div>
       </section>
     </main>
+
+    <div class="shortcut-legend-overlay" id="shortcutLegendOverlay" hidden>
+      <div
+        class="shortcut-legend-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="shortcutLegendTitle"
+      >
+        <div class="shortcut-legend-header">
+          <h2 id="shortcutLegendTitle">Keyboard Shortcuts</h2>
+          <button class="ghost" id="closeShortcutLegendBtn" type="button">Close</button>
+        </div>
+        <ul>
+          <li><span class="kbd">Ctrl/Cmd + Enter</span> Fetch/load items</li>
+          <li><span class="kbd">Ctrl/Cmd + Shift + Enter</span> Generate drafts</li>
+          <li><span class="kbd">Ctrl/Cmd + Shift + C</span> Copy all drafts</li>
+          <li><span class="kbd">Ctrl/Cmd + Shift + E</span> Download drafts JSONL</li>
+          <li><span class="kbd">Ctrl/Cmd + Shift + B</span> Build agent feed</li>
+          <li><span class="kbd">Ctrl/Cmd + Shift + K</span> Copy agent feed</li>
+          <li><span class="kbd">Ctrl/Cmd + Shift + J</span> Download agent feed JSON</li>
+          <li><span class="kbd">?</span> Open/close this shortcut legend</li>
+        </ul>
+      </div>
+    </div>
 
     <script type="module" src="/app.js"></script>
   </body>
