@@ -31,6 +31,19 @@
   - Trusted: local repository code/tests/commands.
   - Untrusted: external market/reference pages.
 
+## Session Notes (2026-02-17 | Commit Sprint)
+- Commit 1 goal: Add machine-readable CLI dry-run diagnostics (`--diagnostics-json`) for CI/pipeline ingestion.
+- Implementation:
+  - Added `--diagnostics-json` flag to `generate` help/options with explicit validation that it requires `--dry-run`.
+  - Added JSON payload output path for dry-run diagnostics to stdout.
+  - Added CLI tests for JSON diagnostics output and misuse guardrails.
+  - Updated README, changelog, and feature tracker entries.
+- Verification evidence:
+  - `npm run lint` -> pass.
+  - `npm run typecheck` -> pass.
+  - `npm run build` -> pass.
+  - `npx vitest run test/cli.test.ts -t "reports diagnostics with --dry-run and does not write posts|prints machine-readable diagnostics with --diagnostics-json|requires --dry-run when --diagnostics-json is set"` -> pass.
+
 ## Session Notes (2026-02-17 | Global Cycle 23 Session 1)
 - Goal clarification checkpoint:
   - Goal (one sentence): Reduce maintenance and release drift by shipping a safe modularization slice for Step 1 helpers and hardening npm packaging intent.

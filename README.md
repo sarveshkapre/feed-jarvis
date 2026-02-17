@@ -58,9 +58,11 @@ Run a preflight diagnostics pass before generating/exporting drafts:
 
 ```bash
 npm run dev -- generate --input events.json --persona Analyst --dry-run --max-chars 280
+npm run dev -- generate --input events.json --persona Analyst --dry-run --diagnostics-json
 ```
 
 `--dry-run` validates input and prints diagnostics for valid/invalid items, duplicate URLs, and estimated truncation counts without writing post output.
+Use `--diagnostics-json` with `--dry-run` when you need machine-readable diagnostics in CI/pipelines.
 
 Generate posts with OpenAI (GPT) instead of template rules:
 

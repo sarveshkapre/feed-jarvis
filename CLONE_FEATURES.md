@@ -19,7 +19,7 @@
 ## Candidate Features To Do
 - [ ] P2: Add Studio-side URL normalization helper for pasted feeds (strip whitespace/tracking junk safely). (Impact 3, Effort 2, Fit 4, Diff 0, Risk 2, Conf 3)
 - [ ] P2: Add optional output schema versioning metadata in JSON/JSONL exports for stable downstream imports. (Impact 3, Effort 2, Fit 3, Diff 1, Risk 1, Conf 3)
-- [ ] P2: Add `--diagnostics-json` machine-readable dry-run output for CI/pipeline ingestion. (Impact 3, Effort 2, Fit 4, Diff 1, Risk 1, Conf 3)
+- [x] P2: Add `--diagnostics-json` machine-readable dry-run output for CI/pipeline ingestion. (Impact 3, Effort 2, Fit 4, Diff 1, Risk 1, Conf 3)
 - [ ] P3: Add Studio quick action to insert a valid sample `items.json` payload into Step 1 JSON mode. (Impact 2, Effort 1, Fit 3, Diff 0, Risk 1, Conf 4)
 - [ ] P3: Add CLI troubleshooting doc page in `docs/` (invalid input, dry-run, stdin/pipes, private-host fetch limits). (Impact 2, Effort 2, Fit 4, Diff 0, Risk 1, Conf 5)
 - [ ] P3: Refactor `web/app.js` into focused modules (state, API client, exporters, UI bindings) to reduce maintenance risk. (Impact 4, Effort 4, Fit 5, Diff 0, Risk 2, Conf 3)
@@ -39,6 +39,7 @@
 - [ ] P3: Add release command support for `--skip-check` and `--allow-dirty` flags with explicit warnings. (Impact 2, Effort 2, Fit 3, Diff 0, Risk 2, Conf 3)
 
 ## Implemented
+- [x] 2026-02-17 P2: Added CLI `--diagnostics-json` output for `generate --dry-run` so CI/pipelines can ingest machine-readable diagnostics from stdout. Evidence: `src/cli.ts`, `test/cli.test.ts`, `README.md`, `CHANGELOG.md`; verification: `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/cli.test.ts -t "reports diagnostics with --dry-run and does not write posts|prints machine-readable diagnostics with --diagnostics-json|requires --dry-run when --diagnostics-json is set"`.
 - [x] 2026-02-17 P2: Hardened package publish policy by adding `package.json` `files` whitelist and updating `release:check` to parse `npm pack --dry-run --json` and fail when `dist/cli.js` is excluded. Evidence: `package.json`, `scripts/release-check.mjs`, `docs/RELEASE.md`, `README.md`; verification: `npm run release:check -- --allow-dirty --quality-cmd "npm run lint && npm run typecheck && npm run build"`.
 - [x] 2026-02-17 P1: Extracted Step 1 ingestion helper logic into `web/step1Ingestion.js` and rewired `web/app.js` to use shared exports (`normalizeUrls`, `safeHttpUrl`, JSON payload parse/summary, `toItemsJson`). Evidence: `web/step1Ingestion.js`, `web/step1Ingestion.d.ts`, `web/app.js`, `test/step1Ingestion.test.ts`; verification: `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/step1Ingestion.test.ts`.
 - [x] 2026-02-17 P1: Added Studio keyboard shortcuts for Step 3/Step 4 actions (`generate`, `copy/export drafts`, `build/copy/download feed`) with editable-target guards and new shortcut helper module/tests. Evidence: `web/keyboardShortcuts.js`, `web/app.js`, `web/index.html`, `web/styles.css`, `test/keyboardShortcuts.test.ts`; verification: `npx vitest run test/keyboardShortcuts.test.ts`, `npm run lint`, `npm run typecheck`, `npm run build`.

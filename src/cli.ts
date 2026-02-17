@@ -77,6 +77,7 @@ Generate options:
   --persona <name>        Persona name (required)
   --personas <path>       Optional personas source: JSON, markdown file, or markdown directory
   --dry-run               Validate input and print diagnostics without writing post output
+  --diagnostics-json      With --dry-run, print diagnostics as JSON to stdout
   --max-chars <number>    Max characters per post (default: 280)
   --channel <x|linkedin|newsletter> Target channel style (default: x)
   --template <straight|takeaway|cta> Draft framing template (default: straight)
@@ -102,6 +103,7 @@ Examples:
   feed-jarvis fetch --urls-file feeds.txt --allow-host example.com > events.json
   feed-jarvis fetch --opml feeds.opml --allow-host example.com --allow-host news.example.com > events.json
   feed-jarvis generate --input events.json --persona Analyst --dry-run --max-chars 280
+  feed-jarvis generate --input events.json --persona Analyst --dry-run --diagnostics-json
   feed-jarvis generate --input events.json --persona Analyst --personas personas.json --out posts.txt
   cat events.json | feed-jarvis generate --input - --persona Builder --format json
 
@@ -306,6 +308,7 @@ async function main() {
   const inputPath = getRequiredFlag(args.flags, "--input");
   const personaName = getRequiredFlag(args.flags, "--persona");
   const dryRun = args.flags.has("--dry-run");
+  const diagnosticsJson = args.flags.has("--diagnostics-json");
   const maxChars = getNumberFlag(args.flags, "--max-chars", 280, { min: 1 });
   const channel = resolveChannel(getStringFlag(args.flags, "--channel", "x"));
   const template = resolveTemplate(
@@ -333,6 +336,9 @@ async function main() {
     dieUsage(
       `Invalid --format: ${format} (expected 'text', 'json', 'jsonl', or 'csv')`,
     );
+  }
+  if (diagnosticsJson && !dryRun) {
+    dieUsage("`--diagnostics-json` requires `--dry-run`.");
   }
 
   const raw =
@@ -371,23 +377,28 @@ async function main() {
       const baseline = baselinePosts[index] ?? "";
       return post.length < baseline.length;
     }).length;
+    const diagnosticsContext: DryRunDiagnosticsContext = {
+      inputItems: parsedItems.total,
+      validItems: items.length,
+      invalidItems: parsedItems.invalid,
+      duplicateStats,
+      estimatedPosts: constrainedPosts.length,
+      estimatedTruncatedPosts: truncated,
+      maxChars,
+      channel,
+      template,
+      format,
+      outPath,
+      llmRequested,
+    };
 
-    console.error(
-      formatDryRunDiagnostics({
-        inputItems: parsedItems.total,
-        validItems: items.length,
-        invalidItems: parsedItems.invalid,
-        duplicateStats,
-        estimatedPosts: constrainedPosts.length,
-        estimatedTruncatedPosts: truncated,
-        maxChars,
-        channel,
-        template,
-        format,
-        outPath,
-        llmRequested,
-      }),
-    );
+    if (diagnosticsJson) {
+      process.stdout.write(
+        `${JSON.stringify(buildDryRunDiagnosticsPayload(diagnosticsContext), null, 2)}\n`,
+      );
+      return;
+    }
+    console.error(formatDryRunDiagnostics(diagnosticsContext));
     return;
   }
 
@@ -753,6 +764,25 @@ type DryRunDiagnosticsContext = {
   llmRequested: boolean;
 };
 
+type DryRunDiagnosticsPayload = {
+  modeRequested: "template" | "llm";
+  inputItems: number;
+  validItems: number;
+  invalidItems: number;
+  invalidSample: Array<{ itemNumber: number; reason: string }>;
+  duplicateUrls: number;
+  uniqueUrls: number;
+  duplicateSample: string[];
+  estimatedPosts: number;
+  estimatedTruncatedPosts: number;
+  maxChars: number;
+  channel: PostChannel;
+  template: PostTemplate;
+  outputFormat: string;
+  outputTarget: string;
+  outputWrites: "disabled";
+};
+
 function formatGenerateStats(
   posts: string[],
   maxChars: number,
@@ -851,6 +881,33 @@ function formatDryRunDiagnostics(context: DryRunDiagnosticsContext): string {
   ]
     .filter(Boolean)
     .join("\n");
+}
+
+function buildDryRunDiagnosticsPayload(
+  context: DryRunDiagnosticsContext,
+): DryRunDiagnosticsPayload {
+  return {
+    modeRequested: context.llmRequested ? "llm" : "template",
+    inputItems: context.inputItems,
+    validItems: context.validItems,
+    invalidItems: context.invalidItems.length,
+    invalidSample: context.invalidItems.slice(0, 5).map((entry) => ({
+      itemNumber: entry.index + 1,
+      reason: entry.reason,
+    })),
+    duplicateUrls: context.duplicateStats.duplicateCount,
+    uniqueUrls: context.duplicateStats.uniqueCount,
+    duplicateSample: context.duplicateStats.samples.slice(0, 5),
+    estimatedPosts: context.estimatedPosts,
+    estimatedTruncatedPosts: context.estimatedTruncatedPosts,
+    maxChars: context.maxChars,
+    channel: context.channel,
+    template: context.template,
+    outputFormat: context.format,
+    outputTarget:
+      !context.outPath || context.outPath === "-" ? "stdout" : context.outPath,
+    outputWrites: "disabled",
+  };
 }
 
 type LlmGenerateCliOptions = {

@@ -8,6 +8,7 @@
 - Studio/API: add request IDs to API error payloads plus `x-request-id` response headers; Studio now appends request IDs to API error text.
 - Testing: add server assertions for request-id payload/header behavior and fetch diagnostics summary fields.
 - CLI: add `generate --dry-run` preflight diagnostics mode (valid/invalid item counts, duplicate URL counts, estimated truncation counts) with no output writes.
+- CLI: add `--diagnostics-json` for machine-readable `--dry-run` diagnostics output (stdout JSON for CI/pipeline ingestion).
 - Testing: add CLI regression coverage for `EPIPE` output piping behavior across `text/json/jsonl/csv` formats.
 - Testing: add session persistence edge-case coverage for invalid snapshots, stale keys, and partial snapshot payloads.
 - Studio UI: add local-only Step 1 filter presets (save/load/delete) for include/exclude/min-title triage settings.

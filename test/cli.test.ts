@@ -115,6 +115,83 @@ describe("cli", () => {
     );
   });
 
+  it("prints machine-readable diagnostics with --diagnostics-json", () => {
+    const args = [
+      "generate",
+      "--input",
+      "-",
+      "--persona",
+      "Analyst",
+      "--max-chars",
+      "40",
+      "--dry-run",
+      "--diagnostics-json",
+      "--format",
+      "jsonl",
+    ];
+    const input = JSON.stringify([
+      {
+        title:
+          "A long release note headline that should be truncated for diagnostics",
+        url: "https://example.com/a",
+      },
+      {
+        title: "Duplicate URL",
+        url: "https://example.com/a",
+      },
+      {
+        title: "Missing URL should be invalid",
+        url: "",
+      },
+    ]);
+
+    const res = spawnSync(CLI_CMD, cliArgs(args), {
+      input,
+      encoding: "utf8",
+    });
+
+    expect(res.status).toBe(0);
+    expect(String(res.stderr)).toBe("");
+    const parsed = JSON.parse(String(res.stdout));
+    expect(parsed).toMatchObject({
+      modeRequested: "template",
+      inputItems: 3,
+      validItems: 2,
+      invalidItems: 1,
+      duplicateUrls: 1,
+      uniqueUrls: 1,
+      outputFormat: "jsonl",
+      outputTarget: "stdout",
+      outputWrites: "disabled",
+    });
+    expect(Array.isArray(parsed.invalidSample)).toBe(true);
+    expect(Array.isArray(parsed.duplicateSample)).toBe(true);
+  });
+
+  it("requires --dry-run when --diagnostics-json is set", () => {
+    const args = [
+      "generate",
+      "--input",
+      "-",
+      "--persona",
+      "Analyst",
+      "--diagnostics-json",
+    ];
+    const input = JSON.stringify([
+      { title: "Release notes", url: "https://example.com/r1" },
+    ]);
+
+    const res = spawnSync(CLI_CMD, cliArgs(args), {
+      input,
+      encoding: "utf8",
+    });
+
+    expect(res.status).toBe(2);
+    expect(String(res.stderr)).toContain(
+      "`--diagnostics-json` requires `--dry-run`.",
+    );
+  });
+
   it("handles EPIPE cleanly across output formats", () => {
     const tmpDir = mkdtempSync(path.join(os.tmpdir(), "feed-jarvis-epipe-"));
     const inputPath = path.join(tmpDir, "items.json");
