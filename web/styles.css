@@ -444,6 +444,16 @@ button[disabled] {
   color: var(--muted);
 }
 
+.shortcut-help {
+  margin: -4px 0 0;
+  font-size: 0.82rem;
+  color: var(--muted);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
 .preview {
   margin-top: 16px;
   border-radius: var(--radius-sm);

@@ -1,6 +1,8 @@
 # CHANGELOG
 
 ## Unreleased
+- Studio UI: add keyboard shortcuts for Step 3/Step 4 high-frequency actions (`generate`, `copy/export drafts`, `build/copy/download feed`) with editable-field guards.
+- Testing: add shortcut helper coverage for keybinding matches and editable-target blocking.
 - Studio/API: add `/api/fetch` diagnostics fields (`retryAttempts`, `retrySuccesses`, `durationMs`, `slowestFeedMs`) and surface them in Studio fetch status messaging.
 - Studio/API: add request IDs to API error payloads plus `x-request-id` response headers; Studio now appends request IDs to API error text.
 - Testing: add server assertions for request-id payload/header behavior and fetch diagnostics summary fields.

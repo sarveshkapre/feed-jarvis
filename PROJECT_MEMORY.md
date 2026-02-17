@@ -31,6 +31,59 @@
   - Trusted: local repository code/tests/commands.
   - Untrusted: external market/reference pages.
 
+## Session Notes (2026-02-17 | Global Cycle 22 Session 1)
+- Goal: Ship the top pending parity slice by adding Studio keyboard shortcuts for high-frequency generation/export actions and release checklist automation.
+- Success criteria:
+  - Step 3/Step 4 keyboard actions are available and guarded against accidental triggers while typing.
+  - Shortcut behavior is covered by focused tests.
+  - `npm run release:check` validates changelog + quality gate + artifact presence.
+  - Verification commands and tracker updates are captured.
+- Non-goals:
+  - Broad `web/app.js` modularization.
+  - New API endpoints or scheduler integrations.
+  - Persona management workflow redesign.
+- Brainstorming checkpoint (ranked; impact/effort/fit/diff/risk/confidence):
+  1. Studio keyboard shortcuts for generate/export + agent-feed actions with focus guards (5/2/5/1/1/4) -> selected.
+  2. Release checklist automation (`npm run release:check`) with changelog/quality/artifact checks (4/2/5/0/1/4) -> selected.
+  3. Split `web/app.js` shortcut wiring into a dedicated module (3/3/5/0/1/4) -> selected as part of #1.
+  4. Persona-card search/filter for 50+ persona packs (4/3/4/1/1/4) -> pending.
+  5. Filter-token chips UI with one-click remove (3/3/4/1/1/3) -> pending.
+  6. Release flow support for semantic version bump/tag helper (3/3/4/0/2/3) -> pending.
+  7. Step 1 per-feed error detail accordion (3/3/4/0/2/3) -> pending.
+  8. Deep docs split to keep README to quickstart + links (3/2/4/0/1/5) -> pending.
+  9. Studio JSON mode sample payload insert action (2/1/3/0/1/4) -> pending.
+  10. Export schema version metadata for JSONL/CSV consumers (3/2/4/1/1/3) -> pending.
+- Product phase checkpoint:
+  - Prompt: "Are we in a good product phase yet?" -> No.
+  - Best-in-market signal (untrusted web, bounded scan 2026-02-17): Feedly/Inoreader/Buffer/RSS.app emphasize fast repeat workflows and operator efficiency, including shortcut-heavy usage and reliable automation guardrails.
+  - Gap map:
+    - Missing: keyboard shortcuts for Step 3/4 operator loops and scripted release-readiness checks.
+    - Weak: maintainability in large `web/app.js` and release reproducibility.
+    - Parity: OPML/URL-file ingestion, retries/concurrency, filter/rule presets, deterministic exports, request-id diagnostics.
+    - Differentiator: local-first multi-persona workflow with strict host safety defaults.
+- What features are still pending?
+  - From `PRODUCT_ROADMAP.md`: `web/app.js` modularization, keyboard shortcuts, release checklist automation, docs split.
+  - From `CLONE_FEATURES.md`: backlog depth remains above 20 combined pending items across tracker + roadmap.
+- Locked task list for this session:
+  - Implement shortcut helper + keyboard bindings for Step 3/4 actions with safe focus guards and UI hints.
+  - Add shortcut helper tests.
+  - Implement release checklist automation command and docs wiring.
+- Quick code review + security sweep:
+  - `rg TODO|FIXME|HACK|XXX src web test docs README.md` returned no actionable markers.
+  - `rg innerHTML|eval|child_process|exec|spawn|dangerouslySetInnerHTML src web` found no high-risk patterns requiring immediate remediation.
+- Market strategy entry (untrusted web):
+  - Sources:
+    - https://docs.feedly.com/article/67-how-to-customize-keyboard-shortcuts-in-feedly
+    - https://feedly.helpscoutdocs.com/article/345-mute-filters
+    - https://help.rss.app/en/articles/10271103-how-to-filter-rss-feeds
+    - https://support.buffer.com/article/613-automating-rss-feeds-using-feedly-and-zapier
+    - https://www.inoreader.com/blog/2026/01/save-time-with-automations.html
+  - Decision: prioritize operator-speed parity (shortcuts) plus release guardrails before broader UI modularization.
+  - Follow-up experiment: instrument shortcut usage/error feedback in Studio status messaging once modularization work starts.
+- Trust labels:
+  - Trusted: local repository code/tests/commands.
+  - Untrusted: external market/reference pages.
+
 ## Session Notes (2026-02-13 | Global Cycle 5 Session 1)
 - Goal: Ship the highest-impact remaining M3 reliability/supportability work by adding fetch diagnostics telemetry and API request IDs.
 - Success criteria:

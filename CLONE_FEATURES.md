@@ -6,6 +6,11 @@
 - Test and build failures
 - Gaps found during codebase exploration
 
+## Locked Cycle Scope (2026-02-17 | Global Cycle 22 Session 1)
+- [ ] P1: Add Studio keyboard shortcuts for Step 3/Step 4 high-frequency actions (generate, export/copy, and agent-feed actions) with safe focus guards.
+- [ ] P1: Add focused shortcut helper tests for keybinding matching and editable-target blocking.
+- [ ] P2: Add release checklist automation command with changelog guard, quality-gate check, and artifact verification.
+
 ## Candidate Features To Do
 - [ ] P2: Add Studio-side URL normalization helper for pasted feeds (strip whitespace/tracking junk safely). (Impact 3, Effort 2, Fit 4, Diff 0, Risk 2, Conf 3)
 - [ ] P2: Add optional output schema versioning metadata in JSON/JSONL exports for stable downstream imports. (Impact 3, Effort 2, Fit 3, Diff 1, Risk 1, Conf 3)
@@ -26,6 +31,9 @@
 - [ ] P3: Add per-feed error detail accordion in Step 1 fetch status for faster debugging. (Impact 3, Effort 3, Fit 4, Diff 0, Risk 2, Conf 3)
 - [ ] P3: Add filter preset import/export JSON flow for cross-machine Studio setup reuse. (Impact 2, Effort 2, Fit 3, Diff 1, Risk 1, Conf 3)
 - [ ] P3: Add filter-token chips UI (`keyword`/`site:`) with one-click remove for faster triage edits. (Impact 2, Effort 3, Fit 3, Diff 1, Risk 1, Conf 3)
+- [ ] P3: Add keyboard shortcut legend dialog (`?`) so power-user actions stay discoverable without doc lookup. (Impact 2, Effort 2, Fit 4, Diff 1, Risk 1, Conf 4)
+- [ ] P3: Add confirm-before-download option for bulk draft export when post count exceeds threshold. (Impact 2, Effort 2, Fit 3, Diff 0, Risk 1, Conf 3)
+- [ ] P3: Add release command support for `--skip-check` and `--allow-dirty` flags with explicit warnings. (Impact 2, Effort 2, Fit 3, Diff 0, Risk 2, Conf 3)
 
 ## Implemented
 - [x] 2026-02-13 P1: Added `/api/fetch` retry/latency diagnostics in response summary (`retryAttempts`, `retrySuccesses`, `durationMs`, `slowestFeedMs`) for large-run troubleshooting. Evidence: `src/lib/feedFetch.ts`, `src/server.ts`, `web/studioPrefs.js`, `test/server.test.ts`, `test/studioPrefs.test.ts`; verification: `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/studioPrefs.test.ts`.

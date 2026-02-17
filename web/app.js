@@ -15,6 +15,7 @@ import {
   upsertFilterPreset,
 } from "./filterPresets.js";
 import { applyItemFilters, normalizeItemFilters } from "./filters.js";
+import { matchStudioShortcut } from "./keyboardShortcuts.js";
 import { getPostLengthStatus, trimPostToMaxChars } from "./postEditing.js";
 import {
   parseRulePresets,
@@ -1797,6 +1798,76 @@ function formatInvalidItemsSummary(invalid) {
   return remaining > 0 ? `${preview}; +${remaining} more.` : `${preview}.`;
 }
 
+function runShortcutAction(action) {
+  if (!action) return;
+
+  if (action === "load-items") {
+    const activeSource = getActiveSource();
+    if (activeSource === "feed") {
+      fetchItems();
+      return;
+    }
+    if (activeSource === "json") {
+      loadItemsFromJson();
+    }
+    return;
+  }
+
+  if (action === "generate-posts") {
+    generatePosts();
+    return;
+  }
+
+  if (action === "copy-drafts") {
+    if (elements.copyAllBtn.disabled) {
+      setStatus(elements.postsStatus, "Generate drafts first.", "error");
+      return;
+    }
+    elements.copyAllBtn.click();
+    return;
+  }
+
+  if (action === "download-drafts-jsonl") {
+    if (elements.downloadJsonBtn.disabled) {
+      setStatus(elements.postsStatus, "Generate drafts to export.", "error");
+      return;
+    }
+    elements.downloadJsonBtn.click();
+    return;
+  }
+
+  if (action === "build-agent-feed") {
+    if (elements.buildAgentFeedBtn.disabled) return;
+    buildAgentFeed();
+    return;
+  }
+
+  if (action === "copy-agent-feed") {
+    if (elements.copyAgentFeedBtn.disabled) {
+      setStatus(
+        elements.agentFeedStatus,
+        "Build the agent feed first.",
+        "error",
+      );
+      return;
+    }
+    elements.copyAgentFeedBtn.click();
+    return;
+  }
+
+  if (action === "download-agent-feed") {
+    if (elements.downloadAgentFeedBtn.disabled) {
+      setStatus(
+        elements.agentFeedStatus,
+        "Build the agent feed first.",
+        "error",
+      );
+      return;
+    }
+    elements.downloadAgentFeedBtn.click();
+  }
+}
+
 async function generatePosts() {
   setStatus(elements.postsStatus, "");
   if (state.items.length === 0) {
@@ -2178,15 +2249,10 @@ function wireEvents() {
   });
 
   document.addEventListener("keydown", (event) => {
-    if (!(event.ctrlKey || event.metaKey) || event.key !== "Enter") return;
-    const activeSource = getActiveSource();
-    if (activeSource === "feed") {
-      fetchItems();
-      return;
-    }
-    if (activeSource === "json") {
-      loadItemsFromJson();
-    }
+    const action = matchStudioShortcut(event);
+    if (!action) return;
+    event.preventDefault();
+    runShortcutAction(action);
   });
 
   elements.channelButtons.forEach((button) => {

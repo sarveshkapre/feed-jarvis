@@ -17,12 +17,42 @@
 ## Milestones
 - M1 Foundation (completed): local-first Studio + CLI baseline, tests and CI checks.
 - M2 Core Features (completed): persona/rules/filter/export features, OPML fetch in CLI, agent feed, GPT mode.
-- M3 Reliability + Interop (current): fetch robustness, ingestion compatibility, validation guardrails.
-- M4 UX Polish + Throughput: faster review/edit loops, richer edit guidance, keyboard efficiency.
+- M3 Reliability + Interop (completed): fetch robustness, ingestion compatibility, validation guardrails.
+- M4 UX Polish + Throughput (current): faster review/edit loops, richer edit guidance, keyboard efficiency.
 - M5 Release Readiness: end-to-end coverage, release automation, docs hardening.
 
 ## Current Milestone
-- M3 Reliability + Interop
+- M4 UX Polish + Throughput
+
+## Session Goal Checkpoint (2026-02-17 | Global Cycle 22 Session 1)
+- Goal: Close the highest-value remaining parity gaps by shipping Studio keyboard shortcuts for high-frequency generate/export loops and release checklist automation.
+- Success criteria:
+  - Studio supports keyboard actions for generate and draft/feed export paths without firing while typing in inputs/textareas.
+  - Shortcut behavior is covered by focused helper tests.
+  - A release-check script verifies changelog state, quality gates, and release artifact presence.
+  - Verification evidence and tracker updates are captured.
+- Non-goals:
+  - Broad `web/app.js` modularization.
+  - New API routes or scheduler integrations.
+  - Persona-management UX redesign.
+
+## Product Phase Checkpoint (2026-02-17 | Global Cycle 22 Session 1)
+- Prompt: "Are we in a good product phase yet?" -> `No`.
+- Best-in-market references (untrusted web, bounded scan):
+  - Feedly keyboard shortcut baseline (`https://docs.feedly.com/article/67-how-to-customize-keyboard-shortcuts-in-feedly`).
+  - Feedly mute/filter workflow baseline (`https://feedly.helpscoutdocs.com/article/345-mute-filters`).
+  - RSS.app feed filtering baseline (`https://help.rss.app/en/articles/10271103-how-to-filter-rss-feeds`).
+  - Buffer RSS automation baseline (`https://support.buffer.com/article/613-automating-rss-feeds-using-feedly-and-zapier`).
+  - Inoreader automation throughput posture (`https://www.inoreader.com/blog/2026/01/save-time-with-automations.html`).
+- Core expected capabilities in this segment:
+  - Keyboard-driven triage/generation actions for repeated feed-review loops.
+  - Strong release and reliability guardrails before publish/tag.
+  - Stable local-first ingest/filter/generate/export workflows with traceable failures.
+- Parity gap map:
+  - Missing: Step 3/Step 4 keyboard shortcuts and scripted release checklist enforcement.
+  - Weak: release readiness automation and maintainability of large UI orchestration file.
+  - Parity: ingestion interop (URL-file/OPML), retries/concurrency, filter/rule presets, deterministic exports, browser E2E.
+  - Differentiator: private local-first multi-persona workflow with strict host safety defaults.
 
 ## Session Goal Checkpoint (2026-02-13 | Global Cycle 5 Session 1)
 - Goal: Close the highest-impact remaining M3 reliability/supportability gaps by shipping fetch retry/latency diagnostics and API request IDs.
@@ -264,8 +294,13 @@
 - Parity gap map:
   - Missing: browser-level CI validation for Studio fetch/generate/export journey.
   - Weak: export-contract verification under real browser interactions.
-  - Parity: OPML feed-set interoperability, URL-file ingestion, transient fetch retries, local-first draft controls.
-  - Differentiator: privacy-preserving local-first drafting + strict feed-host safety defaults.
+- Parity: OPML feed-set interoperability, URL-file ingestion, transient fetch retries, local-first draft controls.
+- Differentiator: privacy-preserving local-first drafting + strict feed-host safety defaults.
+
+## Locked Cycle Scope (2026-02-17 | Global Cycle 22 Session 1)
+- [ ] P1: Add Studio keyboard shortcuts for Step 3/Step 4 high-frequency actions (generate, export/copy, agent-feed actions) with safe input-focus guards.
+- [ ] P1: Add focused shortcut helper test coverage for keybinding matching + guard behavior.
+- [ ] P2: Add release checklist automation script with changelog guard + quality-gate command + artifact verification and docs wiring.
 
 ## Locked Cycle Scope (2026-02-12 | Session 2)
 - [x] P1: Studio OPML import/export for saved feed sets (local-only interoperability).
