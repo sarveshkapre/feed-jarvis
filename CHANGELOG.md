@@ -15,6 +15,7 @@
 - Studio UI: add Step 1 include/exclude filter-token chips with one-click remove actions.
 - Agent feed: add optional per-persona maxChars overrides for mixed-length multi-persona generation.
 - Studio UI: add keyboard shortcut legend dialog with `?` toggle and escape-to-close support.
+- Studio UI: add one-click sample `items.json` insertion action in Step 1 JSON mode.
 - Testing: add CLI regression coverage for `EPIPE` output piping behavior across `text/json/jsonl/csv` formats.
 - Testing: add session persistence edge-case coverage for invalid snapshots, stale keys, and partial snapshot payloads.
 - Studio UI: add local-only Step 1 filter presets (save/load/delete) for include/exclude/min-title triage settings.

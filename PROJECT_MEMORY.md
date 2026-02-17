@@ -110,6 +110,17 @@
   - `npm run typecheck` -> pass.
   - `npm run build` -> pass.
   - `npx vitest run test/keyboardShortcuts.test.ts` -> pass.
+- Commit 8 goal: Add one-click sample `items.json` insertion in Step 1 JSON mode.
+- Implementation:
+  - Added `web/sampleItems.js` helper and declaration file with deterministic sample payload builders.
+  - Added Step 1 `Insert sample items.json` button and replace-confirm behavior for existing input.
+  - Added sample payload status + snapshot persistence wiring.
+  - Added helper coverage in `test/sampleItems.test.ts`.
+- Verification evidence:
+  - `npm run lint` -> pass.
+  - `npm run typecheck` -> pass.
+  - `npm run build` -> pass.
+  - `npx vitest run test/sampleItems.test.ts` -> pass.
 
 ## Session Notes (2026-02-17 | Global Cycle 23 Session 1)
 - Goal clarification checkpoint:

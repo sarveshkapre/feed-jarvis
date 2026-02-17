@@ -28,6 +28,7 @@ import {
   serializeRulePresets,
   upsertRulePreset,
 } from "./rulePresets.js";
+import { buildSampleItemsJson } from "./sampleItems.js";
 import {
   formatInvalidItemsSummary,
   normalizeUrls,
@@ -91,6 +92,7 @@ const elements = {
   dedupe: document.getElementById("dedupe"),
   fetchBtn: document.getElementById("fetchBtn"),
   loadJsonBtn: document.getElementById("loadJsonBtn"),
+  insertSampleItemsBtn: document.getElementById("insertSampleItemsBtn"),
   jsonItems: document.getElementById("jsonItems"),
   itemsStatus: document.getElementById("itemsStatus"),
   jsonStatus: document.getElementById("jsonStatus"),
@@ -1963,6 +1965,20 @@ function loadItemsFromJson() {
   }
 }
 
+function insertSampleItemsPayload() {
+  const existing = elements.jsonItems.value.trim();
+  if (existing) {
+    const ok = window.confirm(
+      "Replace the current JSON input with a sample items payload?",
+    );
+    if (!ok) return;
+  }
+
+  elements.jsonItems.value = buildSampleItemsJson();
+  setStatus(elements.jsonStatus, "Inserted sample items JSON.");
+  persistSessionSnapshot();
+}
+
 function runShortcutAction(action) {
   if (!action) return;
 
@@ -2396,6 +2412,10 @@ function wireEvents() {
 
   elements.fetchBtn.addEventListener("click", fetchItems);
   elements.loadJsonBtn.addEventListener("click", loadItemsFromJson);
+  elements.insertSampleItemsBtn?.addEventListener(
+    "click",
+    insertSampleItemsPayload,
+  );
   elements.generateBtn.addEventListener("click", generatePosts);
   elements.buildAgentFeedBtn.addEventListener("click", buildAgentFeed);
 
