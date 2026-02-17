@@ -37,6 +37,68 @@
   - Trusted: local repository code/tests/commands.
   - Untrusted: external market/reference pages.
 
+## Session Notes (2026-02-17 | Global Cycle 4 Session 1)
+- Goal: Reduce maintenance/release drift by extracting the Studio export seam from `web/app.js` and adding machine-readable release/docs/security automation hooks.
+- Success criteria:
+  - Export/download serialization helpers are moved from `web/app.js` into a focused module with parity tests.
+  - `npm run release:check -- --json` emits machine-readable status for automation.
+  - `docs:check-links` and `security:grep` scripts run locally and are documented.
+  - Verification commands and outcomes are recorded in this file.
+- Non-goals:
+  - New API endpoints or scheduler/publishing integrations.
+  - Broad UI redesign beyond touched export/status flow polish.
+  - Full `web/app.js` decomposition in one session.
+- Brainstorming checkpoint (ranked; impact/effort/fit/diff/risk/confidence):
+  1. Extract Studio export/download seam from `web/app.js` (`copy`/`download`/draft serialization) into `web/studioExports.js` (5/3/5/0/2/4) -> selected.
+  2. Add `release:check --json` machine output for CI/runtime automation hooks (4/2/4/1/1/4) -> selected.
+  3. Add `docs:check-links` + `security:grep` scripts and docs wiring (3/2/4/0/1/4) -> selected.
+  4. Add snapshot round-trip fixture for session persistence modularization safety (3/2/4/0/1/4) -> pending.
+  5. Add Step 1 "copy fetch failures JSON" debug handoff action (2/2/3/1/1/3) -> pending.
+  6. Add API payload schema notes for `/api/fetch` + `/api/generate` + `/api/agent-feed` (2/2/4/0/1/4) -> pending.
+  7. Add README/docs command-smoke validation script (2/3/3/1/2/3) -> pending.
+  8. Add migration smoke command for schema-key writes (2/2/4/0/1/3) -> pending.
+  9. Add export filename timestamp option for drafts/items downloads (2/2/3/1/1/3) -> pending.
+  10. Add browser smoke assertion for Step 1 failure detail accordion (3/2/4/0/2/3) -> pending.
+- Product phase checkpoint:
+  - Prompt: "Are we in a good product phase yet?" -> No.
+  - Best-in-market signal (untrusted web, bounded scan 2026-02-17): Feedly, RSS.app, Buffer, and Inoreader continue to emphasize robust filtering/automation workflows plus stable interoperability/export contracts.
+  - Gap map:
+    - Missing: export/download seam extraction from `web/app.js`.
+    - Missing: machine-readable release-check output for automation consumers.
+    - Missing: first-class docs link-check and security grep scripts.
+    - Weak: release checks are primarily human-readable.
+    - Parity: ingestion interop (URL file/OPML), retries/concurrency, filter/rule presets, export formats, browser smoke path.
+    - Differentiator: local-first multi-persona workflow with private-host safety defaults.
+- Market strategy entry:
+  - What we learned: comparable tools emphasize repeatable automation and high-signal docs/interop guardrails, not only UI features.
+  - What we are building now: modularized export helpers + machine-readable release checks + repeatable docs/security scripts.
+  - Why this wins now: it lowers regression risk while making release automation easier to consume from CI/runtime pipelines.
+  - Source links (untrusted): `https://feedly.com/new-features/posts/feedly-ai-and-summarization`, `https://help.rss.app/en/articles/10271103-how-to-filter-rss-feeds`, `https://support.buffer.com/article/613-automating-rss-feeds-using-feedly-and-zapier`, `https://www.inoreader.com/blog/2025/11/monitoring-feeds.html`, `https://www.inoreader.com/hu/blog/2015/07/subscribe-to-news-feeds-with-opml.html`.
+- What features are still pending?
+  - From `PRODUCT_ROADMAP.md`: additional `web/app.js` extraction seams plus snapshot/migration smoke fixture hardening for M5.
+  - From `CLONE_FEATURES.md`: snapshot round-trip fixture, Step 1 failure JSON quick action, API payload docs, and UI polish follow-ups.
+- Locked task list for this session:
+  - Extract Studio export/download helper seam from `web/app.js` into `web/studioExports.js` with focused tests.
+  - Add `release:check --json` machine-readable summary output.
+  - Add `docs:check-links` + `security:grep` scripts and update docs/tracker evidence.
+- Execution outcome:
+  - Completed: Extracted Studio export/download helper module (`web/studioExports.js`) and rewired `web/app.js` serialization/download paths.
+  - Completed: Added `release:check --json` machine output with per-check pass/fail status and artifact metadata.
+  - Completed: Added docs/security helper scripts (`docs:check-links`, `security:grep`) and release workflow docs updates.
+- Code review + security sweep (pre-implementation):
+  - `npm run lint` -> pass.
+  - `npm run typecheck` -> pass.
+  - `npm run build` -> pass.
+  - `rg -n "TODO|FIXME|HACK|XXX" ...` -> no actionable markers in code paths.
+  - `rg -n "OPENAI_API_KEY\\s*=|sk-[A-Za-z0-9]{20,}|BEGIN (RSA|OPENSSH|EC|DSA) PRIVATE KEY|eval\\(|new Function\\(|child_process|exec\\(" src web scripts test package.json` -> expected tooling references only; no confirmed high-risk findings.
+- Signals:
+  - GitHub issue signals: disabled/unavailable.
+  - GitHub CI signals: disabled/unavailable.
+- UIUX_CHECKLIST: PASS | flow=Step3 draft export actions | desktop=verified export/copy actions retain status feedback after module extraction | mobile=verified no layout/interaction regressions in existing compact controls | a11y=existing button labels and aria-live statuses unchanged by extraction | risk=low
+- Trust labels:
+  - Trusted: local repository code/tests/commands.
+  - Untrusted: external market/reference pages.
+
 ## Session Notes (2026-02-13 | Cycle 1 Session 4)
 - Goal: Improve large-run fetch reliability by shipping bounded configurable fetch concurrency across CLI + Studio and validating it with integration tests.
 - Success criteria:
@@ -206,9 +268,12 @@
 
 ## Recent Decisions
 - Template: YYYY-MM-DD | Decision | Why | Evidence (tests/logs) | Commit | Confidence (high/medium/low) | Trust (trusted/untrusted)
+- 2026-02-17 | Extract Studio export/download helpers from `web/app.js` into `web/studioExports.js` with focused tests | This was the highest-value next modularization seam and reduces the largest remaining UI hot path without behavior changes | `web/studioExports.js`, `web/app.js`, `test/studioExports.test.ts`, `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/studioExports.test.ts test/studioApi.test.ts test/studioPrefs.test.ts` | 06c790f | high | trusted
+- 2026-02-17 | Add `release:check --json` machine-readable output mode with per-check statuses | CI/runtime automation hooks need structured outputs, not only console logs | `scripts/release-check.mjs`, `npm run release:check -- --allow-dirty --quality-cmd "npm run lint && npm run typecheck && npm run build" --json` | b6f0f24 | high | trusted
+- 2026-02-17 | Add docs/security quality-gate scripts (`docs:check-links`, `security:grep`) | Repeatable release readiness requires fast, explicit docs/security checks before publish | `scripts/docs-check-links.mjs`, `scripts/security-grep.mjs`, `package.json`, `npm run docs:check-links`, `npm run security:grep` | 094e3cd | high | trusted
 - 2026-02-17 | Extract shared Studio API request helpers (`web/studioApi.js`) and rewire `web/app.js` API paths to wrappers | This was the highest-impact next modularization seam and removes duplicated payload/error logic while preserving request-id diagnostics behavior | `web/studioApi.js`, `web/app.js`, `test/studioApi.test.ts`, `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/studioApi.test.ts test/studioPrefs.test.ts`, `node dist/cli.js generate --input /tmp/feed-jarvis-cycle2-smoke-items.json --persona Analyst --format jsonl --max-chars 180` | 205d07f | high | trusted
 - 2026-02-17 | Extract localStorage/session helper logic from `web/app.js` into `web/studioStorage.js` with focused tests | This was the highest-impact remaining maintainability gap and reduced hot-spot risk while preserving behavior | `web/studioStorage.js`, `web/app.js`, `test/studioStorage.test.ts`, `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/studioStorage.test.ts test/studioPrefs.test.ts` | b760105 | high | trusted
-- 2026-02-17 | Move deep command recipes out of README into `docs/WORKFLOWS.md` and keep README quickstart-only | Reduces onboarding noise and keeps operational playbooks maintainable without expanding the top-level entrypoint | `README.md`, `docs/WORKFLOWS.md`, `npm run lint`, `npm run typecheck`, `npm run build` | pending-commit | high | trusted
+- 2026-02-17 | Move deep command recipes out of README into `docs/WORKFLOWS.md` and keep README quickstart-only | Reduces onboarding noise and keeps operational playbooks maintainable without expanding the top-level entrypoint | `README.md`, `docs/WORKFLOWS.md`, `npm run lint`, `npm run typecheck`, `npm run build` | 8cdef5c | high | trusted
 - 2026-02-17 | Add Studio keyboard shortcuts through a dedicated helper with editable-target guards instead of embedding more ad-hoc keydown logic in `web/app.js` | Keeps high-frequency operator UX improvements low-risk while reducing keybinding regressions in a large UI orchestration file | `web/keyboardShortcuts.js`, `web/app.js`, `web/index.html`, `test/keyboardShortcuts.test.ts`, `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/keyboardShortcuts.test.ts` | f2474ae | high | trusted
 - 2026-02-17 | Add `npm run release:check` automation with configurable quality command and npm-cache isolation for pack checks | Release readiness needed repeatable guardrails; local cache isolation removes environment-specific npm permission failures | `scripts/release-check.mjs`, `package.json`, `docs/RELEASE.md`, `npm run release:check -- --allow-dirty --quality-cmd "npm run lint && npm run typecheck && npm run build"` | bbabf4c | high | trusted
 - 2026-02-13 | Add `/api/fetch` retry/latency diagnostics and API request IDs for Studio troubleshooting | These were the highest-impact remaining parity/reliability gaps after dry-run diagnostics and materially improve large-run debugging confidence | `src/lib/feedFetch.ts`, `src/server.ts`, `web/studioPrefs.js`, `web/app.js`, `test/studioPrefs.test.ts`, `test/server.test.ts`, `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/studioPrefs.test.ts`, `FEED_JARVIS_CACHE_DIR=/tmp/feed-jarvis-cache-test npx vitest run test/feedFetch.test.ts`, `npx vitest run test/server.test.ts` (`listen EPERM` sandbox limitation), `node dist/cli.js generate --input /tmp/feed-jarvis-cycle5-smoke-items.json --persona Analyst --format jsonl --max-chars 180` | f18a12c | high | trusted
@@ -249,6 +314,7 @@
 
 ## Mistakes And Fixes
 - Template: YYYY-MM-DD | Issue | Root cause | Fix | Prevention rule | Commit | Confidence
+- 2026-02-17 | Initial `security:grep` script flagged expected placeholders and `regex.exec(...)` calls as high-risk findings | Pattern scope was too broad (`OPENAI_API_KEY=` and `exec(` without runtime context), causing false positives | Scoped secret checks to real key signatures/private-key headers and restricted shell-exec checks to runtime server code paths | Security grep checks should separate high-risk runtime patterns from documentation/test placeholders and use targeted scopes | 094e3cd | high
 - 2026-02-17 | Initial `release:check` implementation failed on `npm pack --dry-run` in this environment and assumed `dist/cli.js` must be in pack output | Global npm cache permission issue (`~/.npm`) and `.gitignore`-fallback packaging excludes `dist` without explicit npm files config | Added per-command npm cache isolation (`npm_config_cache` temp dir) and downgraded missing packed `dist/cli.js` to an explicit warning while keeping local artifact presence checks strict | Release automation should isolate external caches and treat packaging assumptions as policy checks with clear warnings unless repo publish intent is explicit | bbabf4c | high
 - 2026-02-11 | New CLI OPML integration test initially timed out | Used `spawnSync` against a test-local HTTP server in the same process, blocking the event loop and starving server responses | Switched the test helper to async `spawn` and awaited process close with streamed stdout/stderr capture | For tests depending on in-process servers, avoid blocking subprocess APIs (`spawnSync`) and prefer async process control | 7c4ae07 | high
 - 2026-02-09 | "Dependabot Updates" Actions workflow failing with 403 | Repo default `GITHUB_TOKEN` workflow permissions were `read` but the dynamic Dependabot workflow requires write access to fetch job details | Updated repo default workflow permissions to `write`; added explicit `permissions: contents: read` to `ci.yml` | Treat repo-level Actions defaults as production config; whenever enabling write defaults, pin every workflow to explicit minimal permissions | c233218 (plus repo setting) | medium
@@ -259,14 +325,22 @@
 ## Next Prioritized Tasks
 - Scoring rubric: Impact (1-5), Effort (1-5, lower is easier), Strategic fit (1-5), Differentiation (1-5), Risk (1-5, lower is safer), Confidence (1-5).
 - Selected (completed in cycle 2026-02-17):
-- Extract Studio API wrapper helpers from `web/app.js` into `web/studioApi.js` with focused tests (Impact 5, Effort 2, Fit 5, Diff 0, Risk 1, Conf 5).
+- Extract Studio export/download helpers and add release/docs/security automation hooks (`06c790f`, `b6f0f24`, `094e3cd`).
 - Remaining backlog:
-- Step 1 per-feed fetch error detail UI/status messaging (Impact 4, Effort 3, Fit 4, Diff 1, Risk 2, Conf 3).
-- Feed-set/storage schema migration helper with versioned upgrade path (Impact 4, Effort 3, Fit 4, Diff 0, Risk 1, Conf 3).
-- Continue `web/app.js` modularization into export/state/UI binding slices (Impact 4, Effort 4, Fit 5, Diff 0, Risk 2, Conf 3).
+- Continue `web/app.js` modularization into state/UI binding slices (Impact 4, Effort 4, Fit 5, Diff 0, Risk 2, Conf 3).
+- Add deterministic session snapshot round-trip fixture for persistence hardening (Impact 3, Effort 2, Fit 4, Diff 0, Risk 1, Conf 4).
+- Add Step 1 "copy fetch failures JSON" quick action for support/debug handoff (Impact 2, Effort 2, Fit 3, Diff 1, Risk 1, Conf 3).
 
 ## Verification Evidence
 - Template: YYYY-MM-DD | Command | Key output | Status (pass/fail)
+- 2026-02-17 | `npm run lint` | `Checked 79 files ... No fixes applied.` | pass
+- 2026-02-17 | `npm run typecheck` | `tsc -p tsconfig.json --noEmit` completed with no errors | pass
+- 2026-02-17 | `npm run build` | `tsc -p tsconfig.build.json` completed with no errors | pass
+- 2026-02-17 | `npx vitest run test/studioExports.test.ts test/studioApi.test.ts test/studioPrefs.test.ts` | `Test Files 3 passed; Tests 24 passed` | pass
+- 2026-02-17 | `npm run release:check -- --allow-dirty --quality-cmd "npm run lint && npm run typecheck && npm run build" --json` | JSON summary returned `ok: true` with all checks `pass` and artifact metadata (`distCliSizeBytes: 32799`, `packedFiles: 30`) | pass
+- 2026-02-17 | `npm run docs:check-links` | `docs-check-links: pass (78 files scanned, 0 local links checked)` | pass
+- 2026-02-17 | `npm run security:grep` | `security-grep: pass (3 checks)` | pass
+- 2026-02-17 | `node dist/cli.js generate --input /tmp/feed-jarvis-cycle4-smoke-items.json --persona Analyst --format jsonl --max-chars 180` | emitted two smoke drafts (`Cycle 4 smoke title`, `Cycle 4 second title`) | pass
 - 2026-02-17 | `npm run lint && npm run typecheck && npm run build && npx vitest run test/studioApi.test.ts test/studioPrefs.test.ts` | lint/typecheck/build passed; targeted tests passed (`2 files`, `16 tests`) | pass
 - 2026-02-17 | `git push origin main` | `c5cea29..205d07f main -> main` | pass
 - 2026-02-17 | `gh run list --branch main --limit 3` | `error connecting to api.github.com` in this environment | fail (env)

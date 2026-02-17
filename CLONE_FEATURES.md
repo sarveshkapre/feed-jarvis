@@ -6,6 +6,11 @@
 - Test and build failures
 - Gaps found during codebase exploration
 
+## Locked Cycle Scope (2026-02-17 | Global Cycle 4 Session 1)
+- [x] P1: Extract Studio export/download helper seam from `web/app.js` into a dedicated `web/studioExports.js` module with parity tests.
+- [x] P1: Add `release:check --json` machine-readable summary output for CI/runtime automation hooks.
+- [x] P1: Add `docs:check-links` and `security:grep` scripts and document the local quality-gate workflow.
+
 ## Locked Cycle Scope (2026-02-17 | Global Cycle 3 Session 1)
 - [x] P1: Add Step 1 per-feed fetch failure drill-down status/details UI backed by structured API diagnostics.
 - [x] P1: Add versioned storage migration helper and wire it into Studio startup before persisted-state reads.
@@ -38,6 +43,7 @@
 - [x] P3: Add Studio quick action to insert a valid sample `items.json` payload into Step 1 JSON mode. (Impact 2, Effort 1, Fit 3, Diff 0, Risk 1, Conf 4)
 - [ ] P3: Add CLI troubleshooting doc page in `docs/` (invalid input, dry-run, stdin/pipes, private-host fetch limits). (Impact 2, Effort 2, Fit 4, Diff 0, Risk 1, Conf 5)
 - [ ] P3: Refactor `web/app.js` into focused modules (state, API client, exporters, UI bindings) to reduce maintenance risk. (Impact 4, Effort 4, Fit 5, Diff 0, Risk 2, Conf 3)
+- [x] P2: Extract Studio export/download serialization helpers into `web/studioExports.js` to shrink `web/app.js` hot paths. (Impact 4, Effort 3, Fit 5, Diff 0, Risk 1, Conf 4)
 - [x] P2: Extract Studio API payload/error/request helpers into `web/studioApi.js` as the next `web/app.js` modularization slice. (Impact 4, Effort 2, Fit 5, Diff 0, Risk 1, Conf 5)
 - [x] P3: Document deep command recipes under `docs/` and keep README constrained to quickstart + links (1-2 screens). (Impact 2, Effort 2, Fit 4, Diff 0, Risk 1, Conf 5)
 - [x] P3: Add persona-card search/filter in Studio for large persona packs (50+). (Impact 3, Effort 2, Fit 3, Diff 1, Risk 1, Conf 4)
@@ -62,17 +68,21 @@
 - [ ] P3: Add UI empty-state copy polish for Step 1/Step 4 when filters remove all items. (Impact 2, Effort 1, Fit 3, Diff 1, Risk 1, Conf 4)
 - [ ] P3: Add API payload schema notes in docs for `/api/fetch`, `/api/generate`, and `/api/agent-feed`. (Impact 2, Effort 2, Fit 4, Diff 0, Risk 1, Conf 4)
 - [ ] P3: Add smoke test for README quickstart path (`dev:web` + `/api/personas` + `/api/generate`) to guard onboarding drift. (Impact 3, Effort 2, Fit 4, Diff 0, Risk 1, Conf 4)
-- [ ] P3: Add lightweight `npm run security:grep` script for repeatable static checks of risky patterns/secrets. (Impact 2, Effort 2, Fit 4, Diff 0, Risk 1, Conf 3)
+- [x] P3: Add lightweight `npm run security:grep` script for repeatable static checks of risky patterns/secrets. (Impact 2, Effort 2, Fit 4, Diff 0, Risk 1, Conf 3)
 - [ ] P3: Add export filename timestamp option for drafts/items downloads in Studio. (Impact 2, Effort 2, Fit 3, Diff 1, Risk 1, Conf 3)
 - [ ] P3: Add test cache-dir isolation defaults for feed-fetch integration tests to avoid host cache permission failures. (Impact 2, Effort 2, Fit 4, Diff 0, Risk 1, Conf 4)
-- [ ] P3: Add docs link-check script to prevent README/docs drift and broken local doc references. (Impact 2, Effort 2, Fit 4, Diff 0, Risk 1, Conf 3)
-- [ ] P3: Add release-check machine-readable summary output (`--json`) for CI automation hooks. (Impact 2, Effort 2, Fit 3, Diff 1, Risk 1, Conf 3)
+- [x] P3: Add docs link-check script to prevent README/docs drift and broken local doc references. (Impact 2, Effort 2, Fit 4, Diff 0, Risk 1, Conf 3)
+- [x] P3: Add release-check machine-readable summary output (`--json`) for CI automation hooks. (Impact 2, Effort 2, Fit 3, Diff 1, Risk 1, Conf 3)
 - [ ] P3: Add Step 1 "copy fetch failures JSON" quick action for support/debug handoff. (Impact 2, Effort 2, Fit 3, Diff 1, Risk 1, Conf 3)
 - [ ] P3: Add migration smoke command (`npm run storage:migrate:check`) to validate schema key/version writes in CI-safe mode. (Impact 2, Effort 2, Fit 4, Diff 0, Risk 1, Conf 3)
 - [ ] P3: Add API contract docs for `/api/fetch` `failures[]` payload shape and partial-success semantics. (Impact 2, Effort 1, Fit 4, Diff 0, Risk 1, Conf 4)
 - [ ] P3: Add focused browser smoke assertion ensuring Step 1 fetch failure details accordion renders for mixed success/failure fixtures. (Impact 3, Effort 2, Fit 4, Diff 0, Risk 2, Conf 3)
+- [ ] P3: Add release-check output fixture test to keep `--json` machine output stable for automation clients. (Impact 2, Effort 2, Fit 3, Diff 0, Risk 1, Conf 3)
 
 ## Implemented
+- [x] 2026-02-17 P1: Extracted Studio export/download serialization helpers from `web/app.js` into `web/studioExports.js` and added focused coverage. Evidence: `web/studioExports.js`, `web/studioExports.d.ts`, `web/app.js`, `test/studioExports.test.ts`; verification: `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/studioExports.test.ts test/studioApi.test.ts test/studioPrefs.test.ts`.
+- [x] 2026-02-17 P1: Added `release:check --json` machine-readable summary output with per-check status + artifact details while preserving existing text mode. Evidence: `scripts/release-check.mjs`, `docs/RELEASE.md`, `docs/WORKFLOWS.md`, `CHANGELOG.md`; verification: `npm run release:check -- --allow-dirty --quality-cmd "npm run lint && npm run typecheck && npm run build"`, `npm run release:check -- --allow-dirty --quality-cmd "npm run lint && npm run typecheck && npm run build" --json`.
+- [x] 2026-02-17 P1: Added docs/security hygiene scripts (`docs:check-links`, `security:grep`) with package wiring and documentation. Evidence: `scripts/docs-check-links.mjs`, `scripts/security-grep.mjs`, `package.json`, `README.md`, `docs/RELEASE.md`, `docs/WORKFLOWS.md`; verification: `npm run docs:check-links`, `npm run security:grep`, `npm run lint`.
 - [x] 2026-02-17 P1: Added Step 1 per-feed fetch failure diagnostics across server/client/UI (`/api/fetch` `failures` payload + Step 1 drill-down details panel) while preserving summary metrics. Evidence: `src/server.ts`, `web/app.js`, `web/index.html`, `web/styles.css`, `web/fetchDiagnostics.js`, `test/fetchDiagnostics.test.ts`, `test/studioApi.test.ts`, `test/studioPrefs.test.ts`, `test/server.test.ts`; verification: `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/studioApi.test.ts test/studioPrefs.test.ts test/fetchDiagnostics.test.ts`.
 - [x] 2026-02-17 P1: Added versioned Studio storage migration helper with startup wiring and legacy-key upgrade path (`feed-jarvis-studio`, `feed-jarvis-personas`, `feed-jarvis-studio:channel-maxchars` -> `:v1`). Evidence: `web/studioStorage.js`, `web/studioStorage.d.ts`, `web/app.js`, `test/studioStorage.test.ts`; verification: `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/studioStorage.test.ts`.
 - [x] 2026-02-17 P1: Documented Studio storage schema key map and migration behavior in workflows docs. Evidence: `docs/WORKFLOWS.md`; verification: `npm run lint`.
@@ -142,6 +152,9 @@
 - [x] 2026-02-08 P2: Synced docs with shipped behavior changes. Evidence: `README.md`, `CHANGELOG.md`, `UPDATE.md`.
 
 ## Insights
+- Export/download logic is a low-risk `web/app.js` extraction seam because serialization is pure and can be validated with focused unit tests.
+- Release automation is easier to integrate with CI/runtime tooling when check outcomes are machine-readable (`--json`) instead of console text only.
+- Lightweight docs/security scripts are useful release gates only when high-noise patterns are scoped carefully (for example, avoiding placeholder-env and regex method-call false positives).
 - Structured `/api/fetch` failure payloads (`failures[]`) let Step 1 show partial-success diagnostics without regressing existing summary cards.
 - Storage migrations are safest when schema versioning is explicit and startup migrations run before any read path touches user state.
 - Storage/session helper extraction from `web/app.js` is low-risk when APIs accept `StorageLike` and parser callbacks; this keeps browser wiring simple while enabling isolated tests.

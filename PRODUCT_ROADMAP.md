@@ -5,7 +5,7 @@
 
 ## Good Product Phase Status
 - Status: `No` (checkpoint run on 2026-02-17).
-- Why not yet: core local-first workflows are strong and Step 1 diagnostics + storage migration parity closed this session, but maintainability/automation gaps remain (`web/app.js` extraction depth + release/docs automation polish).
+- Why not yet: core local-first workflows are strong and release/docs automation depth improved this session, but broader `web/app.js` decomposition and additional release/smoke hardening still remain before M5 is complete.
 
 ## Definition Of Done
 - Core Studio + CLI workflows are complete for repeated daily use.
@@ -23,6 +23,69 @@
 
 ## Current Milestone
 - M4 UX Polish + Throughput
+
+## Session Goal Checkpoint (2026-02-17 | Global Cycle 4 Session 1)
+- Goal: Reduce maintenance/release drift by extracting the `web/app.js` export seam and shipping machine-readable release/docs/security automation hooks.
+- Success criteria:
+  - `web/app.js` export/download helper logic is extracted into a focused `web/` module with parity tests.
+  - `npm run release:check` supports a `--json` output mode for automation consumers while preserving existing console checks.
+  - Docs/security helper scripts (`docs:check-links`, `security:grep`) run locally and are documented in release/workflow guidance.
+  - Verification/security evidence and tracker updates are captured.
+- Non-goals:
+  - New server API endpoints or scheduler/publisher integrations.
+  - Broad UI redesign outside touched export/status flows.
+  - Full `web/app.js` decomposition in one cycle.
+
+## Product Phase Checkpoint (2026-02-17 | Global Cycle 4 Session 1)
+- Prompt: "Are we in a good product phase yet?" -> `No`.
+- Best-in-market references (untrusted web, bounded scan 2026-02-17):
+  - Feedly product direction baseline (`https://feedly.com/new-features/posts/feedly-ai-and-summarization`).
+  - RSS.app filtering baseline (`https://help.rss.app/en/articles/10271103-how-to-filter-rss-feeds`).
+  - Buffer RSS automation reliability baseline (`https://support.buffer.com/article/613-automating-rss-feeds-using-feedly-and-zapier`).
+  - Inoreader monitoring/automation baseline (`https://www.inoreader.com/blog/2025/11/monitoring-feeds.html`).
+  - Inoreader OPML interoperability baseline (`https://www.inoreader.com/hu/blog/2015/07/subscribe-to-news-feeds-with-opml.html`).
+- Core expected capabilities in this segment:
+  - Maintainable UI orchestration with export/status logic isolated from large controller files.
+  - Automation-friendly machine-readable release checks for CI/runtime hooks.
+  - Lightweight repeatable docs/security quality gates that run before release.
+- Parity gap map:
+  - Missing: extracted export/download seam from `web/app.js`.
+  - Missing: machine-readable release-check summary output.
+  - Missing: first-class docs link-check and security grep scripts.
+  - Weak: current release/docs guardrails are human-readable only.
+  - Parity: ingestion interop, retries/concurrency, filters/rules presets, export formats, browser-assisted smoke flow.
+  - Differentiator: local-first multi-persona workflow with strict host safety defaults.
+
+## Pending Feature Checkpoint (2026-02-17 | Global Cycle 4 Session 1)
+- Prompt: "What features are still pending?"
+- `PRODUCT_ROADMAP.md` pending highlights:
+  - Next `web/app.js` extraction seam (state/export UI bindings).
+  - Snapshot round-trip fixture and migration smoke checks for modularization safety.
+  - Additional release/smoke automation depth for M5 readiness.
+- `CLONE_FEATURES.md` pending highlights:
+  - session snapshot fixture hardening, Step 1 failure JSON quick action, API payload docs, and ongoing modularization slices.
+
+## Prioritized Session Tasks (2026-02-17 | Global Cycle 4 Session 1)
+- Selected first (score: impact/effort/strategic-fit/differentiation/risk/confidence):
+  1. Extract Studio export/download helpers from `web/app.js` into `web/studioExports.js` with focused tests (5/3/5/0/2/4).
+  2. Add `release:check --json` summary output for CI/runtime hooks (4/2/4/1/1/4).
+  3. Add `docs:check-links` + `security:grep` scripts and wire docs references (3/2/4/0/1/4).
+- Additional ranked candidates (not locked this session):
+  1. Snapshot round-trip fixture for studio session persistence (3/2/4/0/1/4).
+  2. Step 1 "copy fetch failures JSON" quick action (2/2/3/1/1/3).
+  3. API payload schema notes for `/api/fetch`, `/api/generate`, `/api/agent-feed` (2/2/4/0/1/4).
+
+## Locked Cycle Scope (2026-02-17 | Global Cycle 4 Session 1)
+- [x] P1: Extract the Studio export/download seam from `web/app.js` into a focused module with parity behavior + tests.
+- [x] P1: Add `release:check --json` machine-readable summary output without regressing existing checks.
+- [x] P1: Add `docs:check-links` and `security:grep` scripts with docs/tracker updates and verification evidence.
+
+## Product Phase Checkpoint (2026-02-17 | Global Cycle 4 Session 1 Post-Ship)
+- Prompt: "Are we in a good product phase yet?" -> `No`.
+- Outcome after this session:
+  - Closed this cycle's locked parity gaps: export/download seam extraction (`web/studioExports.js`), release-check JSON output, and docs/security quality-gate scripts.
+  - Added release workflow docs for `docs:check-links`, `security:grep`, and `release:check --json`.
+  - Remaining highest-value gap: continue `web/app.js` modularization on state/UI bindings and add persistence snapshot/migration smoke fixtures for M5 confidence.
 
 ## Session Goal Checkpoint (2026-02-17 | Global Cycle 3 Session 1)
 - Goal: Ship Step 1 fetch troubleshooting depth and localStorage schema migration groundwork without regressing local-first Studio behavior.

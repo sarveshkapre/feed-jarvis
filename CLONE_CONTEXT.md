@@ -3,16 +3,16 @@
 Use this file as the first read in every new session for this repository.
 
 ## Goal
-- Current goal: Continue M4/M5 maintainability hardening by extracting the next `web/app.js` seam (state/export UI bindings) after closing Step 1 diagnostics + storage migration parity.
-- Why this matters now: troubleshooting and schema migration gaps were closed this cycle, so the next leverage point is reducing `web/app.js` maintenance hotspots.
+- Current goal: Continue M4/M5 maintainability hardening by extracting the next `web/app.js` state/UI binding seam after shipping export/release/docs automation improvements.
+- Why this matters now: Global Cycle 4 closed export and release-automation gaps, so the highest leverage remaining risk is `web/app.js` state/UI coupling.
 
 ## Expected Outcome
 - What should be true after this session:
-  - Next extraction seam from `web/app.js` lands with focused tests and no behavior regressions.
-  - Release/readme/docs trackers remain synchronized with current behavior.
-  - Verification evidence continues to rely on runnable local gates in sandbox-safe paths.
+  - Next `web/app.js` seam extraction lands (state/UI bindings) with focused tests and no behavior regressions.
+  - Persistence/release verification depth increases via snapshot fixture or migration smoke checks.
+  - Release/readme/docs trackers stay synchronized with behavior.
 - Definition of done for this cycle:
-  - Selected reliability/modularization tasks are completed or explicitly blocked with evidence.
+  - Selected modularization + release automation tasks are completed or explicitly blocked with evidence.
   - Verification evidence is logged in `PROJECT_MEMORY.md`.
   - Trackers are updated and backlog depth remains healthy.
 
@@ -27,15 +27,15 @@ Use this file as the first read in every new session for this repository.
   - Added versioned Studio storage migration helper (`feed-jarvis-studio:schema-version` current `2`) and startup migration wiring with focused tests.
   - Added Studio localStorage key-map + migration behavior docs in `docs/WORKFLOWS.md`.
 - In progress:
-  - No active implementation in progress; Global Cycle 3 locked scope completed.
+  - No active implementation in progress; Global Cycle 4 locked scope completed and pushed.
 - Blockers or risks:
   - `web/app.js` remains a high-maintenance hotspot until API/export/UI helper slices are extracted.
   - Sandboxed environment blocks listen-based integration tests (`listen EPERM`) and default home-cache writes (`EPERM`), so verification relies on lint/typecheck/build + targeted unit suites + CLI smoke paths.
 
 ## Immediate Next Actions
-- [ ] 1. Extract the next `web/app.js` seam (state/export UI bindings) into focused `web/` modules with parity tests.
-- [ ] 2. Add release-check `--json` summary output for CI/runtime automation hooks.
-- [ ] 3. Add docs link-check/security helper scripts from pending backlog candidates.
+- [ ] 1. Extract the next `web/app.js` seam (state/UI binding orchestration) into focused modules with parity tests.
+- [ ] 2. Add deterministic session snapshot round-trip fixture coverage for modularization safety.
+- [ ] 3. Add Step 1 "copy fetch failures JSON" quick action for support/debug handoff.
 - [ ] 4. Run lint/typecheck/build + targeted tests + CLI smoke flow and log evidence in `PROJECT_MEMORY.md`.
 - [ ] 5. Refresh roadmap/feature/context trackers and keep backlog depth >=20 pending candidates.
 
@@ -56,6 +56,6 @@ Use this file as the first read in every new session for this repository.
 - Agent contract: AGENTS.md
 
 ## Session Handoff
-- Last updated: 2026-02-17T07:47:22Z
-- Updated by: codex autonomous maintainer (global cycle 3)
-- Notes for next session: Global Cycle 3 shipped per-feed Step 1 diagnostics and storage migration groundwork (`a229846`, `d8adf8a`); next highest-value work is continued `web/app.js` extraction and release/docs automation depth.
+- Last updated: 2026-02-17T08:27:00Z
+- Updated by: codex autonomous maintainer (global cycle 4)
+- Notes for next session: Global Cycle 4 shipped export seam extraction + `release:check --json` + docs/security scripts (`06c790f`, `b6f0f24`, `094e3cd`). Next highest-value work is continuing `web/app.js` state/UI extraction and adding snapshot/migration smoke hardening.
