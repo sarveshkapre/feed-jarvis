@@ -43,6 +43,17 @@
   - `npm run typecheck` -> pass.
   - `npm run build` -> pass.
   - `npx vitest run test/cli.test.ts -t "reports diagnostics with --dry-run and does not write posts|prints machine-readable diagnostics with --diagnostics-json|requires --dry-run when --diagnostics-json is set"` -> pass.
+- Commit 2 goal: Add Step 2 persona-card search/filter and faster persona selection for large persona packs.
+- Implementation:
+  - Added `web/personaSearch.js` helper with metadata-aware search across `name/prefix/role/style/voice/topics`.
+  - Added Step 2 "Find persona cards" input, result status messaging, and click-to-select persona cards.
+  - Persisted/validated `personaSearch` in session snapshots.
+  - Added focused unit coverage in `test/personaSearch.test.ts`.
+- Verification evidence:
+  - `npm run lint` -> pass.
+  - `npm run typecheck` -> pass.
+  - `npm run build` -> pass.
+  - `npx vitest run test/personaSearch.test.ts test/studioPrefs.test.ts` -> pass.
 
 ## Session Notes (2026-02-17 | Global Cycle 23 Session 1)
 - Goal clarification checkpoint:

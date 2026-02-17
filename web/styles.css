@@ -534,10 +534,23 @@ button[disabled] {
 }
 
 .persona-card {
+  width: 100%;
+  text-align: left;
   padding: 14px;
   border-radius: 14px;
   border: 1px solid rgba(20, 32, 41, 0.08);
   background: rgba(248, 250, 252, 0.8);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.persona-card:hover {
+  border-color: rgba(15, 118, 110, 0.35);
+}
+
+.persona-card.active {
+  border-color: rgba(15, 118, 110, 0.6);
+  background: rgba(15, 118, 110, 0.08);
 }
 
 .persona-card strong {

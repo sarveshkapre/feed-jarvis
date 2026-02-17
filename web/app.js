@@ -16,6 +16,7 @@ import {
 } from "./filterPresets.js";
 import { applyItemFilters, normalizeItemFilters } from "./filters.js";
 import { matchStudioShortcut } from "./keyboardShortcuts.js";
+import { filterPersonas } from "./personaSearch.js";
 import { getPostLengthStatus, trimPostToMaxChars } from "./postEditing.js";
 import {
   parseRulePresets,
@@ -64,6 +65,7 @@ const state = {
   generationMode: "template",
   llmModel: DEFAULT_LLM_MODEL,
   restoredPersonaName: "",
+  personaSearch: "",
   filters: normalizeItemFilters(),
   channelMaxCharsByChannel: {},
 };
@@ -113,6 +115,8 @@ const elements = {
   customPersonaFields: document.getElementById("customPersonaFields"),
   customPersonaName: document.getElementById("customPersonaName"),
   customPersonaPrefix: document.getElementById("customPersonaPrefix"),
+  personaSearch: document.getElementById("personaSearch"),
+  personaSearchStatus: document.getElementById("personaSearchStatus"),
   personaCards: document.getElementById("personaCards"),
   channelButtons: Array.from(
     document.querySelectorAll("#channelToggle button"),
@@ -430,6 +434,7 @@ function persistSessionSnapshot() {
     useCustomPersona: elements.customPersonaToggle.checked,
     customPersonaName: elements.customPersonaName.value,
     customPersonaPrefix: elements.customPersonaPrefix.value,
+    personaSearch: elements.personaSearch?.value ?? "",
     channel: state.channel,
     template: elements.templateSelect.value,
     generationMode: elements.generationModeSelect.value,
@@ -585,6 +590,12 @@ function restoreSessionSnapshot() {
   }
   if (typeof snapshot.customPersonaPrefix === "string") {
     elements.customPersonaPrefix.value = snapshot.customPersonaPrefix;
+  }
+  if (typeof snapshot.personaSearch === "string") {
+    state.personaSearch = snapshot.personaSearch;
+    if (elements.personaSearch) {
+      elements.personaSearch.value = snapshot.personaSearch;
+    }
   }
 
   elements.customPersonaFields.hidden = !elements.customPersonaToggle.checked;
@@ -1185,16 +1196,65 @@ function updateItemsPreview() {
 
 function updatePersonaCards() {
   elements.personaCards.innerHTML = "";
-  const featured = state.personas.slice(0, 4);
+  const query = (elements.personaSearch?.value ?? "").trim();
+  const matches = filterPersonas(state.personas, query);
+  const featured = matches.slice(0, 8);
+
+  if (elements.personaSearchStatus) {
+    if (query && matches.length === 0) {
+      setStatus(
+        elements.personaSearchStatus,
+        `No personas match "${query}".`,
+        "error",
+      );
+    } else if (query) {
+      const shown = Math.min(featured.length, matches.length);
+      setStatus(
+        elements.personaSearchStatus,
+        `Showing ${shown} of ${matches.length} matching persona(s).`,
+      );
+    } else if (state.personas.length > featured.length) {
+      setStatus(
+        elements.personaSearchStatus,
+        `Showing ${featured.length} of ${state.personas.length} persona(s). Search to narrow.`,
+      );
+    } else {
+      setStatus(elements.personaSearchStatus, "");
+    }
+  }
+
+  if (featured.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "persona-card";
+    empty.textContent = "No matching personas.";
+    elements.personaCards.appendChild(empty);
+    return;
+  }
+
   for (const persona of featured) {
-    const card = document.createElement("div");
+    const card = document.createElement("button");
     card.className = "persona-card";
+    card.type = "button";
+    card.classList.toggle(
+      "active",
+      elements.personaSelect.value === persona.name,
+    );
+    card.setAttribute("aria-label", `Use persona ${persona.name}`);
 
     const name = document.createElement("strong");
     name.textContent = persona.name;
 
     const prefix = document.createElement("span");
     prefix.textContent = persona.prefix;
+
+    card.addEventListener("click", () => {
+      elements.customPersonaToggle.checked = false;
+      elements.customPersonaFields.hidden = true;
+      elements.personaSelect.disabled = false;
+      elements.personaSelect.value = persona.name;
+      updatePersonaCards();
+      persistSessionSnapshot();
+    });
 
     card.appendChild(name);
     card.appendChild(prefix);
@@ -2015,6 +2075,13 @@ function wireEvents() {
   elements.customPersonaToggle.addEventListener("change", () => {
     elements.customPersonaFields.hidden = !elements.customPersonaToggle.checked;
     elements.personaSelect.disabled = elements.customPersonaToggle.checked;
+    updatePersonaCards();
+    persistSessionSnapshot();
+  });
+
+  elements.personaSearch?.addEventListener("input", () => {
+    state.personaSearch = elements.personaSearch?.value ?? "";
+    updatePersonaCards();
     persistSessionSnapshot();
   });
 

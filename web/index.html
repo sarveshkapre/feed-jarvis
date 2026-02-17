@@ -212,6 +212,17 @@
               <label for="customPersonaPrefix">Custom prefix</label>
               <input id="customPersonaPrefix" type="text" placeholder="Creator:" />
             </div>
+            <label for="personaSearch">
+              Find persona cards
+              <span>Search by name, prefix, role, style, voice, or topics.</span>
+            </label>
+            <input
+              id="personaSearch"
+              type="text"
+              placeholder="Try: macro, ai, policy, builder"
+              autocomplete="off"
+            />
+            <div class="status" id="personaSearchStatus" role="status" aria-live="polite"></div>
             <div class="persona-grid" id="personaCards"></div>
           </div>
         </article>

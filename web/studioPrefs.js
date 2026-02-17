@@ -16,6 +16,7 @@ const SESSION_STRING_FIELDS = [
   "personaName",
   "customPersonaName",
   "customPersonaPrefix",
+  "personaSearch",
   "maxChars",
   "agentPersonaLimit",
   "agentPersonaNames",
