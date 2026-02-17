@@ -3,14 +3,14 @@
 Use this file as the first read in every new session for this repository.
 
 ## Goal
-- Current goal: Continue M4/M5 maintainability hardening by extracting the next `web/app.js` state/UI binding seam after shipping export/release/docs automation improvements.
-- Why this matters now: Global Cycle 4 closed export and release-automation gaps, so the highest leverage remaining risk is `web/app.js` state/UI coupling.
+- Current goal: Continue M4/M5 maintainability hardening by extracting the next `web/app.js` state/UI binding seam after shipping Step 1 failure-handoff and snapshot-fixture cleanup work.
+- Why this matters now: Global Cycle 5 reduced Step 1 troubleshooting and snapshot regression risk, so the next leverage point is additional `web/app.js` preset/select binding decomposition.
 
 ## Expected Outcome
 - What should be true after this session:
-  - Next `web/app.js` seam extraction lands (state/UI bindings) with focused tests and no behavior regressions.
-  - Persistence/release verification depth increases via snapshot fixture or migration smoke checks.
-  - Release/readme/docs trackers stay synchronized with behavior.
+  - Next `web/app.js` seam extraction lands (preset/select/event-state bindings) with focused parity tests.
+  - Verification depth increases for docs/security + persistence/release smoke paths without broad architecture churn.
+  - Tracker docs stay synchronized with shipped behavior and pending parity gaps.
 - Definition of done for this cycle:
   - Selected modularization + release automation tasks are completed or explicitly blocked with evidence.
   - Verification evidence is logged in `PROJECT_MEMORY.md`.
@@ -18,26 +18,22 @@ Use this file as the first read in every new session for this repository.
 
 ## Current State
 - Completed recently:
-  - Extracted Step 1 ingestion helpers from `web/app.js` into `web/step1Ingestion.js` and added focused tests (`test/step1Ingestion.test.ts`).
-  - Hardened package publish metadata with `package.json` `files` whitelist and enforced `dist/cli.js` validation in `release:check` via `npm pack --dry-run --json`.
-  - Extracted Step 1 persistence/session storage helpers into `web/studioStorage.js` and added focused coverage (`test/studioStorage.test.ts`).
-  - Split deep command recipes from `README.md` into `docs/WORKFLOWS.md` and kept README quickstart-focused.
-  - Extracted shared Studio API request helpers into `web/studioApi.js` and rewired `loadPersonas`/`fetchItems`/`generatePosts`/`buildAgentFeed` in `web/app.js` with focused tests (`test/studioApi.test.ts`).
-  - Added Step 1 per-feed fetch diagnostics (`/api/fetch` `failures[]` + UI details drill-down + status summary updates) with focused tests.
-  - Added versioned Studio storage migration helper (`feed-jarvis-studio:schema-version` current `2`) and startup migration wiring with focused tests.
-  - Added Studio localStorage key-map + migration behavior docs in `docs/WORKFLOWS.md`.
+  - Extracted Step 1 fetch-failure presentation/serialization helpers into `web/fetchFailureDetails.js` and rewired `web/app.js` to use the helper model.
+  - Added Step 1 "Copy failures JSON" quick action with clipboard-safe status feedback in the fetch details block.
+  - Added deterministic session snapshot round-trip fixture coverage in `test/studioStorage.test.ts`.
+  - Re-ran docs/security/lint/typecheck/build + focused Step 1/storage test suites and captured evidence in trackers.
 - In progress:
-  - No active implementation in progress; Global Cycle 4 locked scope completed and pushed.
+  - No active implementation in progress; Global Cycle 5 locked scope completed and pushed.
 - Blockers or risks:
   - `web/app.js` remains a high-maintenance hotspot until API/export/UI helper slices are extracted.
   - Sandboxed environment blocks listen-based integration tests (`listen EPERM`) and default home-cache writes (`EPERM`), so verification relies on lint/typecheck/build + targeted unit suites + CLI smoke paths.
 
 ## Immediate Next Actions
-- [ ] 1. Extract the next `web/app.js` seam (state/UI binding orchestration) into focused modules with parity tests.
-- [ ] 2. Add deterministic session snapshot round-trip fixture coverage for modularization safety.
-- [ ] 3. Add Step 1 "copy fetch failures JSON" quick action for support/debug handoff.
-- [ ] 4. Run lint/typecheck/build + targeted tests + CLI smoke flow and log evidence in `PROJECT_MEMORY.md`.
-- [ ] 5. Refresh roadmap/feature/context trackers and keep backlog depth >=20 pending candidates.
+- [ ] 1. Extract next `web/app.js` preset/select/event binding seam into focused helpers with parity tests.
+- [ ] 2. Add `/api/fetch` failure payload contract notes + focused smoke assertion coverage.
+- [ ] 3. Investigate CI-safe cache/listen isolation defaults for broader integration-test reliability.
+- [ ] 4. Run docs/security/lint/typecheck/build + targeted tests and log exact evidence in `PROJECT_MEMORY.md`.
+- [ ] 5. Refresh roadmap/feature/context trackers and replenish backlog depth >=20 candidates.
 
 ## Constraints
 - Guardrails:
@@ -56,6 +52,6 @@ Use this file as the first read in every new session for this repository.
 - Agent contract: AGENTS.md
 
 ## Session Handoff
-- Last updated: 2026-02-17T08:27:00Z
-- Updated by: codex autonomous maintainer (global cycle 4)
-- Notes for next session: Global Cycle 4 shipped export seam extraction + `release:check --json` + docs/security scripts (`06c790f`, `b6f0f24`, `094e3cd`). Next highest-value work is continuing `web/app.js` state/UI extraction and adding snapshot/migration smoke hardening.
+- Last updated: 2026-02-17T08:35:00Z
+- Updated by: codex autonomous maintainer (global cycle 5)
+- Notes for next session: Global Cycle 5 shipped Step 1 failure-handoff cleanup (`daecfbd`) and deterministic snapshot fixture hardening (`175b095`). Next highest-value work is continuing `web/app.js` state/UI seam extraction and adding API contract + smoke-depth hardening.

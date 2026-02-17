@@ -6,6 +6,11 @@
 - Test and build failures
 - Gaps found during codebase exploration
 
+## Locked Cycle Scope (2026-02-17 | Global Cycle 5 Session 1)
+- [x] P1: Extract Step 1 fetch-failure rendering/serialization seam from `web/app.js` into a dedicated helper module and wire "copy failures JSON".
+- [x] P1: Add deterministic session snapshot round-trip fixture coverage.
+- [x] P1: Run quality/security checks and update tracker docs with verification evidence.
+
 ## Locked Cycle Scope (2026-02-17 | Global Cycle 4 Session 1)
 - [x] P1: Extract Studio export/download helper seam from `web/app.js` into a dedicated `web/studioExports.js` module with parity tests.
 - [x] P1: Add `release:check --json` machine-readable summary output for CI/runtime automation hooks.
