@@ -125,6 +125,7 @@ npm run dev -- fetch --opml feeds.opml --allow-host example.com --allow-host new
 - Studio persona browser: search persona cards by name/prefix/role/style/voice/topics and click a card to select it.
 - Studio agent feed: build a Twitter-like multi-persona timeline from filtered items (`/api/agent-feed`).
 - Studio agent feed browser: filter rendered timeline entries by persona name for large feed views.
+- Studio agent feed controls: optional per-persona maxChars overrides (for tighter or looser voices in one run).
 - Agent feed layouts: `Rotating events` for broad coverage or `Consensus on top event` for many takes on one event.
 - Personas: consistent voice with editable prefixes (Studio supports local-only JSON import/export; CLI/Studio server support markdown persona files).
 - Outputs: Studio exports `.txt`, `.jsonl`, and `.csv` drafts (JSONL/CSV include source metadata); CLI supports text/JSON/JSONL/CSV.

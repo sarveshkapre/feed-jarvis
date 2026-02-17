@@ -155,6 +155,7 @@ const elements = {
   downloadCsvBtn: document.getElementById("downloadCsvBtn"),
   agentPersonaLimit: document.getElementById("agentPersonaLimit"),
   agentPersonaNames: document.getElementById("agentPersonaNames"),
+  agentPersonaMaxChars: document.getElementById("agentPersonaMaxChars"),
   agentPersonaSearch: document.getElementById("agentPersonaSearch"),
   agentLayoutSelect: document.getElementById("agentLayoutSelect"),
   buildAgentFeedBtn: document.getElementById("buildAgentFeedBtn"),
@@ -501,6 +502,7 @@ function persistSessionSnapshot() {
     maxChars: elements.maxChars.value,
     agentPersonaLimit: elements.agentPersonaLimit.value,
     agentPersonaNames: elements.agentPersonaNames.value,
+    agentPersonaMaxChars: elements.agentPersonaMaxChars?.value ?? "",
     agentPersonaSearch: elements.agentPersonaSearch?.value ?? "",
     agentLayout: elements.agentLayoutSelect.value,
     rulePresetName: elements.rulePresetSelect?.value ?? "",
@@ -630,6 +632,12 @@ function restoreSessionSnapshot() {
   }
   if (typeof snapshot.agentPersonaNames === "string") {
     elements.agentPersonaNames.value = snapshot.agentPersonaNames;
+  }
+  if (
+    typeof snapshot.agentPersonaMaxChars === "string" &&
+    elements.agentPersonaMaxChars
+  ) {
+    elements.agentPersonaMaxChars.value = snapshot.agentPersonaMaxChars;
   }
   if (
     typeof snapshot.agentPersonaSearch === "string" &&
@@ -2127,6 +2135,28 @@ function parsePersonaNames(raw) {
     .filter((value) => value.length > 0);
 }
 
+function parsePersonaMaxCharsInput(raw) {
+  if (typeof raw !== "string" || !raw.trim()) return {};
+
+  const overrides = {};
+  const rows = raw
+    .split(/\r?\n|,/)
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0);
+
+  for (const row of rows) {
+    const splitAt = row.lastIndexOf(":");
+    if (splitAt <= 0) continue;
+    const name = row.slice(0, splitAt).trim();
+    const maxCharsRaw = row.slice(splitAt + 1).trim();
+    const maxChars = Number(maxCharsRaw);
+    if (!name || !Number.isFinite(maxChars) || maxChars <= 0) continue;
+    overrides[name] = Math.floor(maxChars);
+  }
+
+  return overrides;
+}
+
 async function buildAgentFeed() {
   setStatus(elements.agentFeedStatus, "");
   if (state.items.length === 0) {
@@ -2150,6 +2180,9 @@ async function buildAgentFeed() {
     Math.min(100, Number(elements.agentPersonaLimit.value) || 12),
   );
   const personaNames = parsePersonaNames(elements.agentPersonaNames.value);
+  const personaMaxChars = parsePersonaMaxCharsInput(
+    elements.agentPersonaMaxChars?.value ?? "",
+  );
   const layout =
     elements.agentLayoutSelect.value === "consensus" ? "consensus" : "rotating";
   const rules = currentRules();
@@ -2162,6 +2195,7 @@ async function buildAgentFeed() {
     items: state.filteredItems,
     personaLimit,
     personaNames,
+    personaMaxChars,
     layout,
     maxChars,
     channel: state.channel,
@@ -2479,6 +2513,7 @@ function wireEvents() {
     elements.maxChars,
     elements.agentPersonaLimit,
     elements.agentPersonaNames,
+    elements.agentPersonaMaxChars,
     elements.agentLayoutSelect,
     elements.rulePresetSelect,
     elements.rulePrepend,

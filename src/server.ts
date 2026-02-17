@@ -404,6 +404,9 @@ async function handleAgentFeed(
   const resolvedItems = applyRulesToItems(items, rules);
   const mode = resolveGenerationMode(Reflect.get(body, "mode"));
   const personaNames = normalizeStringList(Reflect.get(body, "personaNames"));
+  const personaMaxCharsByName = parsePersonaMaxChars(
+    Reflect.get(body, "personaMaxChars"),
+  );
   const layout = resolveAgentFeedLayout(Reflect.get(body, "layout"));
   const personaLimitRaw = Number(Reflect.get(body, "personaLimit"));
   const personaLimit =
@@ -439,10 +442,15 @@ async function handleAgentFeed(
       if (!persona) continue;
       const item = pickAgentFeedItem(resolvedItems, i, layout);
       if (!item) continue;
+      const personaMaxChars = resolvePersonaMaxChars(
+        persona,
+        maxChars,
+        personaMaxCharsByName,
+      );
       const posts = await generatePostsWithLlm([item], persona, {
         apiKey,
         model,
-        maxChars,
+        maxChars: personaMaxChars,
         channel,
         template,
         rules,
@@ -454,6 +462,7 @@ async function handleAgentFeed(
         personaPrefix: persona.prefix,
         itemTitle: item.title,
         itemUrl: item.url,
+        maxChars: personaMaxChars,
         post: posts[0] ?? "",
       });
     }
@@ -469,14 +478,24 @@ async function handleAgentFeed(
 
   const feed = selectedPersonas.map((persona, index) => {
     const item = pickAgentFeedItem(resolvedItems, index, layout);
+    const personaMaxChars = resolvePersonaMaxChars(
+      persona,
+      maxChars,
+      personaMaxCharsByName,
+    );
     const post = item
-      ? generatePost(item, persona, maxChars, { channel, template, rules })
+      ? generatePost(item, persona, personaMaxChars, {
+          channel,
+          template,
+          rules,
+        })
       : "";
     return {
       personaName: persona.name,
       personaPrefix: persona.prefix,
       itemTitle: item?.title ?? "",
       itemUrl: item?.url ?? "",
+      maxChars: personaMaxChars,
       post,
     };
   });
@@ -570,6 +589,33 @@ function normalizeStringList(value: unknown): string[] {
   return value
     .map((entry) => (typeof entry === "string" ? entry.trim() : ""))
     .filter(Boolean);
+}
+
+function parsePersonaMaxChars(value: unknown): Map<string, number> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return new Map();
+  }
+
+  const out = new Map<string, number>();
+  for (const [rawName, rawMax] of Object.entries(value)) {
+    const name = rawName.trim().toLowerCase();
+    const maxChars = Number(rawMax);
+    if (!name || !Number.isFinite(maxChars) || maxChars <= 0) continue;
+    out.set(name, Math.floor(maxChars));
+  }
+  return out;
+}
+
+function resolvePersonaMaxChars(
+  persona: Persona,
+  fallbackMaxChars: number,
+  overrides: Map<string, number>,
+): number {
+  const override = overrides.get(persona.name.toLowerCase());
+  if (!override || !Number.isFinite(override) || override <= 0) {
+    return fallbackMaxChars;
+  }
+  return Math.floor(override);
 }
 
 function resolveAgentFeedLayout(value: unknown): "rotating" | "consensus" {

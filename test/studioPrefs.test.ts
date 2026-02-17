@@ -135,6 +135,7 @@ describe("studioPrefs", () => {
         template: "takeaway",
         generationMode: "llm",
         agentLayout: "consensus",
+        agentPersonaMaxChars: "Macro Hawk:220",
         maxChars: "600",
         useCustomPersona: false,
       }),
@@ -146,6 +147,7 @@ describe("studioPrefs", () => {
       template: "takeaway",
       generationMode: "llm",
       agentLayout: "consensus",
+      agentPersonaMaxChars: "Macro Hawk:220",
       maxChars: "600",
       useCustomPersona: false,
     });

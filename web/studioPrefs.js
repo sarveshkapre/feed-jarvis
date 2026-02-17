@@ -20,6 +20,7 @@ const SESSION_STRING_FIELDS = [
   "maxChars",
   "agentPersonaLimit",
   "agentPersonaNames",
+  "agentPersonaMaxChars",
   "agentPersonaSearch",
   "rulePresetName",
   "rulePrepend",

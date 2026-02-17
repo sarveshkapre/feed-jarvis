@@ -25,7 +25,7 @@
 - [ ] P3: Refactor `web/app.js` into focused modules (state, API client, exporters, UI bindings) to reduce maintenance risk. (Impact 4, Effort 4, Fit 5, Diff 0, Risk 2, Conf 3)
 - [ ] P3: Document deep command recipes under `docs/` and keep README constrained to quickstart + links (1-2 screens). (Impact 2, Effort 2, Fit 4, Diff 0, Risk 1, Conf 5)
 - [x] P3: Add persona-card search/filter in Studio for large persona packs (50+). (Impact 3, Effort 2, Fit 3, Diff 1, Risk 1, Conf 4)
-- [ ] P3: Add optional per-persona maxChars override for agent-feed generation workflows. (Impact 3, Effort 3, Fit 3, Diff 1, Risk 2, Conf 3)
+- [x] P3: Add optional per-persona maxChars override for agent-feed generation workflows. (Impact 3, Effort 3, Fit 3, Diff 1, Risk 2, Conf 3)
 - [ ] P3: Add benchmark script for feed parse + generation throughput on 1k-item payloads. (Impact 2, Effort 3, Fit 3, Diff 1, Risk 1, Conf 3)
 - [ ] P3: Add feed-set migration helper when storage schema changes (with versioned upgrade path). (Impact 2, Effort 2, Fit 3, Diff 0, Risk 1, Conf 3)
 - [ ] P3: Add copy-ready "trimmed chars" analytics summary after post edits for QA review. (Impact 2, Effort 2, Fit 3, Diff 1, Risk 1, Conf 3)
@@ -39,6 +39,7 @@
 - [ ] P3: Add release command support for `--skip-check` and `--allow-dirty` flags with explicit warnings. (Impact 2, Effort 2, Fit 3, Diff 0, Risk 2, Conf 3)
 
 ## Implemented
+- [x] 2026-02-17 P3: Added optional per-persona maxChars overrides for `/api/agent-feed` and Studio Step 4 inputs, including payload persistence and server coverage. Evidence: `web/app.js`, `web/index.html`, `web/studioPrefs.js`, `src/server.ts`, `test/server.test.ts`, `test/studioPrefs.test.ts`; verification: `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/server.test.ts -t "applies per-persona maxChars overrides in agent feed mode"`, `npx vitest run test/studioPrefs.test.ts`.
 - [x] 2026-02-17 P3: Added Step 1 filter-token chips (`include`/`exclude`) with one-click remove actions for faster triage editing. Evidence: `web/filterTokens.js`, `web/filterTokens.d.ts`, `web/app.js`, `web/index.html`, `web/styles.css`, `test/filterTokens.test.ts`; verification: `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/filterTokens.test.ts`.
 - [x] 2026-02-17 P3: Added Step 1 filter-preset import/export JSON flow with deterministic merge behavior for cross-machine Studio setup reuse. Evidence: `web/filterPresets.js`, `web/filterPresets.d.ts`, `web/app.js`, `web/index.html`, `test/filterPresets.test.ts`; verification: `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/filterPresets.test.ts`.
 - [x] 2026-02-17 P3: Added Step 4 agent-feed persona-name filter input and status messaging for large timeline triage, backed by isolated search helper coverage. Evidence: `web/agentFeedSearch.js`, `web/agentFeedSearch.d.ts`, `web/app.js`, `web/index.html`, `web/studioPrefs.js`, `test/agentFeedSearch.test.ts`; verification: `npm run lint`, `npm run typecheck`, `npm run build`, `npx vitest run test/agentFeedSearch.test.ts test/studioPrefs.test.ts`.

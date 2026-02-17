@@ -264,6 +264,46 @@ describe("studio server", () => {
     });
   });
 
+  it("applies per-persona maxChars overrides in agent feed mode", async () => {
+    await withServer({}, async (baseUrl) => {
+      const res = await fetch(`${baseUrl}/api/agent-feed`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          items: [
+            {
+              title:
+                "A very long market structure title for tighter persona limits",
+              url: "https://example.com/rates",
+            },
+          ],
+          personaNames: ["Analyst", "Macro Hawk"],
+          personaMaxChars: {
+            "Macro Hawk": 80,
+          },
+          channel: "x",
+          template: "takeaway",
+          maxChars: 220,
+        }),
+      });
+
+      expect(res.status).toBe(200);
+      const payload = await res.json();
+      expect(payload.mode).toBe("template");
+      expect(payload.feed).toHaveLength(2);
+      expect(payload.feed[0]).toMatchObject({
+        personaName: "Analyst",
+        maxChars: 220,
+      });
+      expect(payload.feed[1]).toMatchObject({
+        personaName: "Macro Hawk",
+        maxChars: 80,
+      });
+      expect(String(payload.feed[0].post).length).toBeLessThanOrEqual(220);
+      expect(String(payload.feed[1].post).length).toBeLessThanOrEqual(80);
+    });
+  });
+
   it("builds a multi-persona agent feed in llm mode", async () => {
     const openaiFetch: typeof fetch = async () => {
       return new Response(

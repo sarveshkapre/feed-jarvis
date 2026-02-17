@@ -87,6 +87,18 @@
   - `npm run typecheck` -> pass.
   - `npm run build` -> pass.
   - `npx vitest run test/filterTokens.test.ts` -> pass.
+- Commit 6 goal: Add per-persona maxChars overrides for Step 4 agent-feed generation.
+- Implementation:
+  - Added Step 4 input for `name:maxChars` mappings and request payload support (`personaMaxChars`).
+  - Added snapshot persistence/parsing support for `agentPersonaMaxChars`.
+  - Updated `/api/agent-feed` template + llm paths to apply persona-specific maxChars overrides.
+  - Added server coverage for override behavior and prefs snapshot coverage update.
+- Verification evidence:
+  - `npm run lint` -> pass.
+  - `npm run typecheck` -> pass.
+  - `npm run build` -> pass.
+  - `npx vitest run test/server.test.ts -t "applies per-persona maxChars overrides in agent feed mode"` -> pass.
+  - `npx vitest run test/studioPrefs.test.ts` -> pass.
 
 ## Session Notes (2026-02-17 | Global Cycle 23 Session 1)
 - Goal clarification checkpoint:
