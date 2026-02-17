@@ -1,8 +1,323 @@
 # Project Memory
 
 ## Historical Summary
-- 2026-02-17T05:46:30Z: compacted memory from 740 lines. Full snapshot archived at /Users/sarvesh/code/feed-jarvis/.clone_memory_archive/PROJECT_MEMORY-20260217T054630Z.md
+- 2026-02-13T05:12:15Z: compacted memory from 507 lines. Full snapshot archived at /Users/sarvesh/code/feed-jarvis/.clone_memory_archive/PROJECT_MEMORY-20260213T051214Z.md
 
+    - Weak: repeat-run triage speed due manual filter re-entry.
+    - Parity: OPML + URL-file ingestion, retry/backoff, bounded concurrency, Step 3/4 E2E.
+    - Differentiator: private local-first persona-driven drafting.
+- What features are still pending?
+  - From `PRODUCT_ROADMAP.md`: dry-run diagnostics, session-persistence edge-case tests, and modularization remain pending after this cycle.
+  - From `CLONE_FEATURES.md`: backlog depth remains above 20 candidates.
+- Locked task list for this session:
+  - Implement saved filter presets in Studio Step 1.
+  - Implement per-item mute-domain quick action and domain token filtering semantics.
+  - Add focused tests for new filter preset helper logic and domain mute filtering.
+- Execution outcome:
+  - Completed: Added `web/filterPresets.js` helper module (`parse`/`upsert`/`remove`/`serialize`) with declaration typing and test coverage.
+  - Completed: Added Step 1 filter preset UI controls (`save`/`load`/`delete`) with local persistence and session snapshot restore in `web/app.js`.
+  - Completed: Added per-item "Mute domain" quick action in preview rows and `site:` domain-token filtering semantics in `web/filters.js`.
+  - Completed: Updated roadmap/backlog/readme memory entries to reflect shipped triage-parity behavior.
+- Post-ship product phase checkpoint:
+  - Prompt: "Are we in a good product phase yet?" -> No.
+  - Missing now: CLI dry-run diagnostics and session persistence hardening remain the highest-value parity/reliability work.
+- Signals:
+  - GitHub issue signals: disabled/unavailable.
+  - GitHub CI signals: disabled/unavailable.
+- Quick code review sweep:
+  - `rg TODO|FIXME` returned no markers in source/test/docs paths.
+  - `web/app.js` remains the highest-maintenance hotspot; changes should stay scoped to Step 1 triage flows.
+- Trust labels:
+  - Trusted: local repository code/tests/commands.
+  - Untrusted: external market/reference pages.
+
+## Session Notes (2026-02-17 | Commit Sprint)
+- Commit 1 goal: Add machine-readable CLI dry-run diagnostics (`--diagnostics-json`) for CI/pipeline ingestion.
+- Implementation:
+  - Added `--diagnostics-json` flag to `generate` help/options with explicit validation that it requires `--dry-run`.
+  - Added JSON payload output path for dry-run diagnostics to stdout.
+  - Added CLI tests for JSON diagnostics output and misuse guardrails.
+  - Updated README, changelog, and feature tracker entries.
+- Verification evidence:
+  - `npm run lint` -> pass.
+  - `npm run typecheck` -> pass.
+  - `npm run build` -> pass.
+  - `npx vitest run test/cli.test.ts -t "reports diagnostics with --dry-run and does not write posts|prints machine-readable diagnostics with --diagnostics-json|requires --dry-run when --diagnostics-json is set"` -> pass.
+- Commit 2 goal: Add Step 2 persona-card search/filter and faster persona selection for large persona packs.
+- Implementation:
+  - Added `web/personaSearch.js` helper with metadata-aware search across `name/prefix/role/style/voice/topics`.
+  - Added Step 2 "Find persona cards" input, result status messaging, and click-to-select persona cards.
+  - Persisted/validated `personaSearch` in session snapshots.
+  - Added focused unit coverage in `test/personaSearch.test.ts`.
+- Verification evidence:
+  - `npm run lint` -> pass.
+  - `npm run typecheck` -> pass.
+  - `npm run build` -> pass.
+  - `npx vitest run test/personaSearch.test.ts test/studioPrefs.test.ts` -> pass.
+- Commit 3 goal: Add Step 4 persona-name filtering for large agent-feed timeline views.
+- Implementation:
+  - Added `web/agentFeedSearch.js` helper and typed declaration for persona-name filtering.
+  - Added Step 4 filter input/status UI and session persistence (`agentPersonaSearch`).
+  - Updated agent-feed preview rendering to apply the persona filter and show filter-state feedback.
+  - Added focused unit coverage in `test/agentFeedSearch.test.ts`.
+- Verification evidence:
+  - `npm run lint` -> pass.
+  - `npm run typecheck` -> pass.
+  - `npm run build` -> pass.
+  - `npx vitest run test/agentFeedSearch.test.ts test/studioPrefs.test.ts` -> pass.
+- Commit 4 goal: Add Step 1 filter-preset import/export JSON for cross-machine setup reuse.
+- Implementation:
+  - Added deterministic `mergeFilterPresets` helper in `web/filterPresets.js`.
+  - Added Step 1 Import/Export JSON controls for filter presets in Studio.
+  - Wired import parsing, merge/upsert behavior, persistence, and user status feedback.
+  - Added regression coverage for merge semantics in `test/filterPresets.test.ts`.
+- Verification evidence:
+  - `npm run lint` -> pass.
+  - `npm run typecheck` -> pass.
+  - `npm run build` -> pass.
+  - `npx vitest run test/filterPresets.test.ts` -> pass.
+- Commit 5 goal: Add filter-token chips with one-click remove actions in Step 1 triage.
+- Implementation:
+  - Added `web/filterTokens.js` helper (`parseFilterTokens`, `removeFilterToken`) with declaration typing.
+  - Added Step 1 token chip row UI and click handlers for include/exclude token removal.
+  - Wired chip refresh into filter recomputation and persistence flow.
+  - Added focused coverage in `test/filterTokens.test.ts`.
+- Verification evidence:
+  - `npm run lint` -> pass.
+  - `npm run typecheck` -> pass.
+  - `npm run build` -> pass.
+  - `npx vitest run test/filterTokens.test.ts` -> pass.
+- Commit 6 goal: Add per-persona maxChars overrides for Step 4 agent-feed generation.
+- Implementation:
+  - Added Step 4 input for `name:maxChars` mappings and request payload support (`personaMaxChars`).
+  - Added snapshot persistence/parsing support for `agentPersonaMaxChars`.
+  - Updated `/api/agent-feed` template + llm paths to apply persona-specific maxChars overrides.
+  - Added server coverage for override behavior and prefs snapshot coverage update.
+- Verification evidence:
+  - `npm run lint` -> pass.
+  - `npm run typecheck` -> pass.
+  - `npm run build` -> pass.
+  - `npx vitest run test/server.test.ts -t "applies per-persona maxChars overrides in agent feed mode"` -> pass.
+  - `npx vitest run test/studioPrefs.test.ts` -> pass.
+- Commit 7 goal: Add in-app shortcut discoverability via keyboard legend dialog.
+- Implementation:
+  - Added `?` shortcut support in `web/keyboardShortcuts.js` (blocked in editable fields).
+  - Added shortcut legend modal overlay with click + escape close behavior.
+  - Added header button and footer hint for shortcut legend access.
+  - Extended keyboard shortcut tests for `?` behavior.
+- Verification evidence:
+  - `npm run lint` -> pass.
+  - `npm run typecheck` -> pass.
+  - `npm run build` -> pass.
+  - `npx vitest run test/keyboardShortcuts.test.ts` -> pass.
+- Commit 8 goal: Add one-click sample `items.json` insertion in Step 1 JSON mode.
+- Implementation:
+  - Added `web/sampleItems.js` helper and declaration file with deterministic sample payload builders.
+  - Added Step 1 `Insert sample items.json` button and replace-confirm behavior for existing input.
+  - Added sample payload status + snapshot persistence wiring.
+  - Added helper coverage in `test/sampleItems.test.ts`.
+- Verification evidence:
+  - `npm run lint` -> pass.
+  - `npm run typecheck` -> pass.
+  - `npm run build` -> pass.
+  - `npx vitest run test/sampleItems.test.ts` -> pass.
+- Commit 9 goal: Improve Step 1 feed URL quality via normalization and tracking-parameter stripping.
+- Implementation:
+  - Added `normalizeFeedUrl` helper in `web/step1Ingestion.js` and applied it in `normalizeUrls`.
+  - URL normalization now lowercases host, trims trailing path slashes, and removes common tracking params (`utm_*`, `fbclid`, `gclid`, `dclid`, `mc_cid`, `mc_eid`, `igshid`) for feed URLs.
+  - Added targeted tests in `test/step1Ingestion.test.ts` and declaration updates.
+- Verification evidence:
+  - `npm run lint` -> pass.
+  - `npm run typecheck` -> pass.
+  - `npm run build` -> pass.
+  - `npx vitest run test/step1Ingestion.test.ts` -> pass.
+- Commit 10 goal: Apply a current world-state scan into persona/feed strategy assets.
+- Implementation:
+  - Added `personas/world_signal_editor.md` for cross-domain high-signal synthesis.
+  - Added `docs/WORLD_STATE_2026-02-17.md` summarizing dated global themes and product implications.
+  - Updated README/docs pointers and changelog.
+- World-state sources scanned (untrusted web, checked 2026-02-17):
+  - AP peace-talks coverage: https://apnews.com/article/russia-ukraine-war-peace-talks-f067dbef910f8f4fbe73116f0972045e
+  - IMF tariffs analysis: https://www.imf.org/en/Blogs/Articles/2026/02/16/how-us-tariffs-and-countermeasures-could-affect-economies-worldwide
+  - IEA gas market report: https://www.iea.org/reports/gas-market-report-q1-2026
+  - UN climate record heat update: https://news.un.org/en/story/2026/01/1169166
+  - AP H5N1 cats update: https://apnews.com/article/bird-flu-cats-h5n1-f9fbfce1555fca17586f84d500cf08cc
+- Verification evidence:
+  - `npm run lint` -> pass.
+  - `npm run typecheck` -> pass.
+  - `npm run build` -> pass.
+  - `npx vitest run test/personas.test.ts` -> pass.
+
+## Session Notes (2026-02-17 | Global Cycle 23 Session 1)
+- Goal clarification checkpoint:
+  - Goal (one sentence): Reduce maintenance and release drift by shipping a safe modularization slice for Step 1 helpers and hardening npm packaging intent.
+  - Success criteria:
+    - Step 1 ingestion/state helper logic is extracted from `web/app.js` into a dedicated module with unchanged behavior.
+    - Focused tests cover extracted helper behavior.
+    - Packaging metadata ensures `dist/cli.js` is intentionally included in `npm pack --dry-run` after build output exists.
+    - Verification evidence is recorded in this file.
+  - Non-goals:
+    - Broad visual redesign.
+    - API/scheduler feature expansion.
+    - Large multi-module rewrite of Studio orchestration.
+  - Concrete tasks:
+    1. Extract low-risk Step 1 helper functions (`normalizeUrls`, JSON payload validation helpers, URL guard, JSON export helper) from `web/app.js`.
+    2. Add targeted tests for extracted helper module.
+    3. Add npm packaging policy (`files` whitelist) and verify pack output includes `dist/cli.js`.
+    4. Update roadmap/feature/context docs and re-verify lint/typecheck/build + touched tests.
+- Brainstorming checkpoint (ranked; impact/effort/fit/diff/risk/confidence):
+  1. Extract Step 1 ingestion helpers into `web` module + tests (5/2/5/0/1/5) -> selected.
+  2. Packaging metadata hardening via `package.json` `files` whitelist (4/1/5/0/1/5) -> selected.
+  3. Move Step 1 localStorage wrappers into dedicated persistence module (4/2/5/0/1/4) -> pending.
+  4. README docs split into dedicated `docs/` recipes page (3/2/4/0/1/4) -> pending.
+  5. Add Step 1 helper type declarations cleanup (`.d.ts` coverage) (3/1/4/0/1/5) -> selected with #1.
+  6. Add targeted smoke command for `npm pack --dry-run` in release docs (2/1/4/0/1/5) -> pending.
+  7. Refactor Step 1 fetch API call code path into standalone client utility (3/3/4/0/2/3) -> pending.
+  8. Remove dormant/duplicated status message helpers if unused (2/2/3/0/2/3) -> pending.
+- Product phase checkpoint:
+  - Prompt: "Are we in a good product phase yet?" -> No.
+  - Best-in-market signal (untrusted web, bounded scan 2026-02-17): Feedly/Inoreader/Buffer/RSS.app patterns still emphasize fast repeat workflows and deterministic reliability guardrails, which depend on maintainable frontend orchestration and predictable release packaging.
+  - Gap map:
+    - Missing: modular boundaries for Step 1 helper logic in `web/app.js`.
+    - Weak: explicit packaging intent for `dist/cli.js` in publish artifacts.
+    - Parity: ingestion interop, retries/concurrency, filter/rule presets, deterministic exports, browser E2E.
+    - Differentiator: local-first multi-persona drafting with strict host safety defaults.
+- What features are still pending?
+  - From `PRODUCT_ROADMAP.md`: `web/app.js` modularization continuation and docs split.
+  - From `CLONE_FEATURES.md`: backlog depth remains above 20 candidates.
+- Locked task list for this session:
+  - Extract Step 1 ingestion/state helper module and wire `web/app.js` to it.
+  - Add focused tests for extracted helpers.
+  - Harden npm packaging metadata and verify pack output includes `dist/cli.js`.
+- Execution outcome:
+  - Completed: Extracted Step 1 ingestion helpers from `web/app.js` into `web/step1Ingestion.js` and added declaration typing (`web/step1Ingestion.d.ts`).
+  - Completed: Rewired `web/app.js` to import shared Step 1 helper utilities (no behavior changes).
+  - Completed: Added focused regression coverage in `test/step1Ingestion.test.ts` for URL normalization, URL scheme guardrails, JSON payload parsing, invalid summary formatting, and JSON export shape.
+  - Completed: Added `package.json` `files` whitelist and upgraded `release:check` packaging validation to parse `npm pack --dry-run --json` and fail when `dist/cli.js` is excluded.
+- Verification evidence:
+  - `npm run lint` -> pass.
+  - `npm run typecheck` -> pass.
+  - `npm run build` -> pass.
+  - `npx vitest run test/step1Ingestion.test.ts` -> pass (6 tests).
+  - `npm run release:check -- --allow-dirty --quality-cmd "npm run lint && npm run typecheck && npm run build"` -> pass.
+- Quick code review + security sweep:
+  - `rg --line-number "TODO|FIXME|HACK|XXX" src web test scripts docs README.md` -> no matches.
+  - `rg --line-number "innerHTML|eval\\(|child_process|\\bexec\\b|spawn\\(|dangerouslySetInnerHTML" src web scripts` -> expected matches only (`innerHTML` list resets in `web/app.js`, `execSync` in `scripts/release-check.mjs`); no new high-risk patterns introduced.
+- Anti-drift check:
+  - Completed work remains aligned to selected cleanup scope (modularization + release-packaging reliability).
+UIUX_CHECKLIST: PASS | flow=studio-step1-ingestion-helpers | desktop=logic-only-refactor-no-layout-change | mobile=logic-only-refactor-no-layout-change | a11y=no-focus-or-control-behavior-change | risk=low
+
+## Session Notes (2026-02-17 | Global Cycle 22 Session 1)
+- Goal: Ship the top pending parity slice by adding Studio keyboard shortcuts for high-frequency generation/export actions and release checklist automation.
+- Success criteria:
+  - Step 3/Step 4 keyboard actions are available and guarded against accidental triggers while typing.
+  - Shortcut behavior is covered by focused tests.
+  - `npm run release:check` validates changelog + quality gate + artifact presence.
+  - Verification commands and tracker updates are captured.
+- Non-goals:
+  - Broad `web/app.js` modularization.
+  - New API endpoints or scheduler integrations.
+  - Persona management workflow redesign.
+- Brainstorming checkpoint (ranked; impact/effort/fit/diff/risk/confidence):
+  1. Studio keyboard shortcuts for generate/export + agent-feed actions with focus guards (5/2/5/1/1/4) -> selected.
+  2. Release checklist automation (`npm run release:check`) with changelog/quality/artifact checks (4/2/5/0/1/4) -> selected.
+  3. Split `web/app.js` shortcut wiring into a dedicated module (3/3/5/0/1/4) -> selected as part of #1.
+  4. Persona-card search/filter for 50+ persona packs (4/3/4/1/1/4) -> pending.
+  5. Filter-token chips UI with one-click remove (3/3/4/1/1/3) -> pending.
+  6. Release flow support for semantic version bump/tag helper (3/3/4/0/2/3) -> pending.
+  7. Step 1 per-feed error detail accordion (3/3/4/0/2/3) -> pending.
+  8. Deep docs split to keep README to quickstart + links (3/2/4/0/1/5) -> pending.
+  9. Studio JSON mode sample payload insert action (2/1/3/0/1/4) -> pending.
+  10. Export schema version metadata for JSONL/CSV consumers (3/2/4/1/1/3) -> pending.
+- Product phase checkpoint:
+  - Prompt: "Are we in a good product phase yet?" -> No.
+  - Best-in-market signal (untrusted web, bounded scan 2026-02-17): Feedly/Inoreader/Buffer/RSS.app emphasize fast repeat workflows and operator efficiency, including shortcut-heavy usage and reliable automation guardrails.
+  - Gap map:
+    - Missing: keyboard shortcuts for Step 3/4 operator loops and scripted release-readiness checks.
+    - Weak: maintainability in large `web/app.js` and release reproducibility.
+    - Parity: OPML/URL-file ingestion, retries/concurrency, filter/rule presets, deterministic exports, request-id diagnostics.
+    - Differentiator: local-first multi-persona workflow with strict host safety defaults.
+- What features are still pending?
+  - From `PRODUCT_ROADMAP.md`: `web/app.js` modularization, docs split, and npm packaging metadata hardening.
+  - From `CLONE_FEATURES.md`: backlog depth remains above 20 combined pending items across tracker + roadmap.
+- Locked task list for this session:
+  - Implement shortcut helper + keyboard bindings for Step 3/4 actions with safe focus guards and UI hints.
+  - Add shortcut helper tests.
+  - Implement release checklist automation command and docs wiring.
+- Execution outcome:
+  - Completed: Added `web/keyboardShortcuts.js` and wired keybindings in `web/app.js` for load/fetch, generate, copy/export drafts, and Step 4 build/copy/download actions.
+  - Completed: Added shortcut UI hints in `web/index.html` and styling in `web/styles.css`.
+  - Completed: Added `test/keyboardShortcuts.test.ts` coverage for keybinding matching and editable-target guards.
+  - Completed: Added `scripts/release-check.mjs` with git/changelog/quality/artifact checks and npm-cache isolation for `npm pack --dry-run`.
+  - Completed: Wired release checks into `package.json` (`release:check`), `Makefile`, `docs/RELEASE.md`, and README/changelog docs.
+- Anti-drift check:
+  - Confirmed completed items map directly to locked cycle scope and roadmap parity/release-readiness goals.
+UIUX_CHECKLIST: PASS | flow=studio-step3-step4-shortcuts | desktop=verified-shortcut-hints-and-keybindings | mobile=no-layout-regressions-introduced | a11y=keyboard-first-actions-with-editable-guard | risk=medium
+- Quick code review + security sweep:
+  - `rg TODO|FIXME|HACK|XXX src web test docs README.md` returned no actionable markers.
+  - `rg innerHTML|eval|child_process|exec|spawn|dangerouslySetInnerHTML src web` found no high-risk patterns requiring immediate remediation.
+- Market strategy entry (untrusted web):
+  - Sources:
+    - https://docs.feedly.com/article/67-how-to-customize-keyboard-shortcuts-in-feedly
+    - https://feedly.helpscoutdocs.com/article/345-mute-filters
+    - https://help.rss.app/en/articles/10271103-how-to-filter-rss-feeds
+    - https://support.buffer.com/article/613-automating-rss-feeds-using-feedly-and-zapier
+    - https://www.inoreader.com/blog/2026/01/save-time-with-automations.html
+  - Decision: prioritize operator-speed parity (shortcuts) plus release guardrails before broader UI modularization.
+  - Follow-up experiment: instrument shortcut usage/error feedback in Studio status messaging once modularization work starts.
+- Trust labels:
+  - Trusted: local repository code/tests/commands.
+  - Untrusted: external market/reference pages.
+
+## Session Notes (2026-02-13 | Global Cycle 5 Session 1)
+- Goal: Ship the highest-impact remaining M3 reliability/supportability work by adding fetch diagnostics telemetry and API request IDs.
+- Success criteria:
+  - `/api/fetch` summary returns `retryAttempts`, `retrySuccesses`, `durationMs`, and `slowestFeedMs`.
+  - API error payloads include `requestId` and matching `x-request-id` headers.
+  - Studio fetch/error UX surfaces the new diagnostics/request-id context without regressing existing status messaging.
+  - Verification commands and tracker updates are recorded.
+- Non-goals:
+  - `web/app.js` modularization.
+  - Scheduler/publishing integrations.
+  - New API routes beyond diagnostics/supportability changes.
+- Brainstorming checkpoint (ranked; impact/effort/fit/diff/risk/confidence):
+  1. `/api/fetch` retry/latency summary diagnostics (`retryAttempts`, `retrySuccesses`, `durationMs`, `slowestFeedMs`) (5/2/5/0/1/4) -> selected.
+  2. API request-id in error payloads + response headers (5/2/5/0/1/5) -> selected.
+  3. Studio fetch status formatting update for new diagnostics (4/2/5/0/1/4) -> selected.
+  4. Server test coverage for diagnostics and request-id behavior (5/2/5/0/1/4) -> selected.
+  5. Studio keyboard shortcuts for generate/export flow (4/3/4/1/1/4) -> pending.
+  6. `web/app.js` modularization starter split (state/api/utils) (4/4/5/0/2/3) -> pending.
+  7. Release checklist automation script (3/3/4/0/1/3) -> pending.
+  8. Deep docs split from README into `docs/` recipes (3/2/4/0/1/5) -> pending.
+  9. Step 1 per-feed error detail accordion (3/3/4/0/2/3) -> pending.
+  10. Filter preset import/export JSON (3/2/3/1/1/3) -> pending.
+- Product phase checkpoint:
+  - Prompt: "Are we in a good product phase yet?" -> No.
+  - Best-in-market signal (untrusted web, bounded scan 2026-02-13): Feedly/RSS.app/Buffer/Sprout/Inoreader reinforce that trustworthy feed workflows expose high-signal diagnostics and traceable failure context for repeated automated runs.
+  - Gap map:
+    - Missing: fetch retry/latency diagnostics visibility and request-id traceability in Studio-facing API errors.
+    - Weak: high-throughput operator speed (keyboard flow/modular maintainability).
+    - Parity: ingestion interop (URL-file/OPML), bounded retries/concurrency, filter presets/domain mute, deterministic exports.
+    - Differentiator: local-first private workflow with multi-persona generation/timeline support.
+- What features are still pending?
+  - From `PRODUCT_ROADMAP.md`: request-id support, fetch retry diagnostics, fetch latency diagnostics, `web/app.js` modularization, keyboard shortcuts, release checklist automation, docs split.
+  - From `CLONE_FEATURES.md`: backlog depth remains above 20 candidates.
+- Locked task list for this session:
+  - Add `/api/fetch` retry and latency diagnostics.
+  - Add API request-id error payload/header support and surface request-id in Studio API errors.
+  - Add tests and summary formatting updates for the new diagnostics.
+- Execution outcome:
+  - Completed: `src/lib/feedFetch.ts` now returns retry-attempt metadata (`retryAttempts`, `retrySucceeded`) from network fetch paths.
+  - Completed: `src/server.ts` now reports fetch diagnostics (`retryAttempts`, `retrySuccesses`, `durationMs`, `slowestFeedMs`) and emits request IDs in API error payloads + `x-request-id` headers.
+  - Completed: `web/studioPrefs.js` + `web/app.js` now format diagnostics in Step 1 status and append request IDs in surfaced API error text.
+  - Completed: Added tests for diagnostics formatting (`test/studioPrefs.test.ts`) and request-id/fetch-diagnostics server behavior (`test/server.test.ts`).
+- Anti-drift check:
+  - Confirmed all implemented items map directly to M3 reliability/supportability goals; deferred modularization/keyboard work to next cycle.
+- Quick code review sweep:
+  - `rg TODO|FIXME|HACK|XXX src web test docs` returned no actionable source markers.
+  - Largest hotspot remains `web/app.js` (2.2k+ LOC), reinforcing modularization as next cycle priority.
+- Signals:
+  - GitHub issue signals: disabled/unavailable.
   - GitHub CI signals: disabled/unavailable.
 - Trust labels:
   - Trusted: local repository code/tests/commands.
