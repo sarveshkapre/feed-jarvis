@@ -44,6 +44,7 @@ import {
 } from "./studioPrefs.js";
 import {
   clearPersonasOverrides,
+  migrateStudioStorage,
   readChannelMaxCharsByChannel,
   readFeedSets,
   readFilterPresets,
@@ -2487,6 +2488,12 @@ function wireEvents() {
     });
   });
 }
+
+migrateStudioStorage(localStorageRef, {
+  sessionKey: STUDIO_SESSION_KEY,
+  personasKey: STUDIO_PERSONAS_KEY,
+  channelMaxCharsKey: STUDIO_CHANNEL_MAXCHARS_KEY,
+});
 
 state.channelMaxCharsByChannel = readChannelMaxCharsByChannel(
   localStorageRef,

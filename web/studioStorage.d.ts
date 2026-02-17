@@ -6,6 +6,25 @@ import type { StudioSessionSnapshot } from "./studioPrefs.js";
 export type StorageLike = Pick<Storage, "getItem" | "setItem" | "removeItem">;
 export type ChannelMaxCharsMap = Record<string, number>;
 export type PersonaEntry = { name: string; prefix: string };
+export type StudioStorageMigrationResult = {
+  fromVersion: number;
+  toVersion: number;
+  migratedKeys: string[];
+};
+
+export declare const STUDIO_STORAGE_SCHEMA_VERSION: number;
+export declare const STUDIO_STORAGE_SCHEMA_VERSION_KEY: string;
+
+export declare function migrateStudioStorage(
+  storage: StorageLike,
+  options?: {
+    sessionKey?: string;
+    personasKey?: string;
+    channelMaxCharsKey?: string;
+    schemaVersionKey?: string;
+    targetVersion?: number;
+  },
+): StudioStorageMigrationResult;
 
 export declare function readChannelMaxCharsByChannel(
   storage: StorageLike,
