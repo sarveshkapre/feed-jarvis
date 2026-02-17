@@ -66,24 +66,28 @@
     - Parity: ingestion interop, retries/concurrency, filter/rule presets, deterministic exports, browser E2E.
     - Differentiator: local-first multi-persona drafting with strict host safety defaults.
 - What features are still pending?
-  - From `PRODUCT_ROADMAP.md`: `web/app.js` modularization continuation, docs split, and packaging hardening.
+  - From `PRODUCT_ROADMAP.md`: `web/app.js` modularization continuation and docs split.
   - From `CLONE_FEATURES.md`: backlog depth remains above 20 candidates.
 - Locked task list for this session:
   - Extract Step 1 ingestion/state helper module and wire `web/app.js` to it.
   - Add focused tests for extracted helpers.
   - Harden npm packaging metadata and verify pack output includes `dist/cli.js`.
-- Execution outcome (in progress):
+- Execution outcome:
   - Completed: Extracted Step 1 ingestion helpers from `web/app.js` into `web/step1Ingestion.js` and added declaration typing (`web/step1Ingestion.d.ts`).
   - Completed: Rewired `web/app.js` to import shared Step 1 helper utilities (no behavior changes).
   - Completed: Added focused regression coverage in `test/step1Ingestion.test.ts` for URL normalization, URL scheme guardrails, JSON payload parsing, invalid summary formatting, and JSON export shape.
-  - Pending: npm packaging metadata hardening and release-pack validation.
+  - Completed: Added `package.json` `files` whitelist and upgraded `release:check` packaging validation to parse `npm pack --dry-run --json` and fail when `dist/cli.js` is excluded.
 - Verification evidence:
   - `npm run lint` -> pass.
   - `npm run typecheck` -> pass.
   - `npm run build` -> pass.
   - `npx vitest run test/step1Ingestion.test.ts` -> pass (6 tests).
+  - `npm run release:check -- --allow-dirty --quality-cmd "npm run lint && npm run typecheck && npm run build"` -> pass.
+- Quick code review + security sweep:
+  - `rg --line-number "TODO|FIXME|HACK|XXX" src web test scripts docs README.md` -> no matches.
+  - `rg --line-number "innerHTML|eval\\(|child_process|\\bexec\\b|spawn\\(|dangerouslySetInnerHTML" src web scripts` -> expected matches only (`innerHTML` list resets in `web/app.js`, `execSync` in `scripts/release-check.mjs`); no new high-risk patterns introduced.
 - Anti-drift check:
-  - Completed work remains aligned to selected cleanup scope (modularization + reliability checks), with packaging hardening remaining as the next slice.
+  - Completed work remains aligned to selected cleanup scope (modularization + release-packaging reliability).
 
 ## Session Notes (2026-02-17 | Global Cycle 22 Session 1)
 - Goal: Ship the top pending parity slice by adding Studio keyboard shortcuts for high-frequency generation/export actions and release checklist automation.

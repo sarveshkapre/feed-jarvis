@@ -12,7 +12,7 @@ npm run release:check
 - clean git working tree (unless `--allow-dirty` is passed)
 - changelog guardrails (`## Unreleased` exists and has bullet entries)
 - quality gate command (default: `npm run check`)
-- release artifact presence (`dist/cli.js`) and package dry-run execution (`npm pack --dry-run`, warns when `dist/cli.js` is excluded by packaging rules)
+- release artifact presence (`dist/cli.js`) and package dry-run execution (`npm pack --dry-run`, fails when `dist/cli.js` is excluded by packaging rules)
 
 Examples:
 

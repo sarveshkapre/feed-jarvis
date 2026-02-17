@@ -341,7 +341,7 @@
 ## Locked Cycle Scope (2026-02-17 | Global Cycle 23 Session 1)
 - [x] P1: Extract Step 1 ingestion/state helpers from `web/app.js` into a focused module without behavior changes.
 - [x] P1: Add focused helper test coverage for extracted Step 1 utilities.
-- [ ] P2: Harden npm packaging metadata so `npm pack --dry-run` intentionally includes `dist/cli.js` after build.
+- [x] P2: Harden npm packaging metadata so `npm pack --dry-run` intentionally includes `dist/cli.js` after build.
 
 ## Locked Cycle Scope (2026-02-12 | Session 2)
 - [x] P1: Studio OPML import/export for saved feed sets (local-only interoperability).
@@ -383,12 +383,12 @@
 ## Pending Features (What Is Still Pending?)
 - P3: Continue phased `web/app.js` modularization (remaining state/api/exporters/ui bindings beyond Step 1 ingestion helpers).
 - P3: Docs split: keep README compact and move deep recipes to `docs/`.
-- P3: Packaging metadata hardening for npm publish readiness (`.npmignore` / files whitelist so built `dist/cli.js` is included intentionally).
 
 ## Delivered Features (Recent)
+- 2026-02-17: Hardened npm package publish intent by adding a `package.json` `files` whitelist and enforcing `dist/cli.js` inclusion through `release:check` (`npm pack --dry-run --json` validation).
 - 2026-02-17: Extracted Step 1 ingestion helpers from `web/app.js` into `web/step1Ingestion.js` (`normalizeUrls`, URL validation, JSON payload parsing, invalid-item summary, `items.json` serialization) with focused tests.
 - 2026-02-17: Added Studio keyboard shortcuts for high-frequency Step 3/Step 4 actions (`Ctrl/Cmd+Shift+Enter/C/E/B/K/J`) with editable-field guards and UI hints.
-- 2026-02-17: Added `npm run release:check` automation (git clean guard, changelog guard, quality-command execution, artifact checks, and `npm pack --dry-run` warning signal).
+- 2026-02-17: Added `npm run release:check` automation (git clean guard, changelog guard, quality-command execution, artifact checks, and `npm pack --dry-run --json` enforcement for `dist/cli.js` packaging).
 - 2026-02-13: Added `/api/fetch` diagnostics summary fields (`retryAttempts`, `retrySuccesses`, `durationMs`, `slowestFeedMs`) for large-run troubleshooting.
 - 2026-02-13: Added API request-id support in error payloads and `x-request-id` response headers; Studio now appends request IDs to surfaced API error messages.
 - 2026-02-13: Added coverage for fetch diagnostics formatting and server request-id + diagnostics behavior (`test/studioPrefs.test.ts`, `test/server.test.ts`).
@@ -421,4 +421,3 @@
 ## Next Cycle Goals
 - Start phased `web/app.js` modularization to reduce maintenance risk while preserving behavior.
 - Finish docs split so README stays compact while deep recipes move to `docs/`.
-- Harden npm packaging metadata for publish-readiness (`dist/cli.js` inclusion policy).

@@ -91,15 +91,36 @@ function verifyArtifact() {
     throw new Error("dist/cli.js exists but is empty.");
   }
 
-  const packOutput = runCommand("npm pack --dry-run", {
+  const packOutput = runCommand("npm pack --dry-run --json", {
     capture: true,
     extraEnv: {
       npm_config_cache: NPM_PACK_CACHE_DIR,
     },
   });
-  if (!packOutput.includes("dist/cli.js")) {
-    console.warn(
-      "release-check: warning: npm pack output does not include dist/cli.js (check .npmignore/.gitignore packaging rules).",
+
+  let packReport = null;
+  try {
+    packReport = JSON.parse(packOutput);
+  } catch {
+    throw new Error("Unable to parse npm pack --dry-run --json output.");
+  }
+
+  const files = Array.isArray(packReport)
+    ? Array.isArray(packReport[0]?.files)
+      ? packReport[0].files
+      : []
+    : [];
+
+  const hasDistCli = files.some(
+    (entry) =>
+      entry &&
+      typeof entry === "object" &&
+      Reflect.get(entry, "path") === "dist/cli.js",
+  );
+
+  if (!hasDistCli) {
+    throw new Error(
+      "npm pack --dry-run did not include dist/cli.js. Check package files/.npmignore settings.",
     );
   }
 }
