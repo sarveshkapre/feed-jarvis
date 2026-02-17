@@ -3,13 +3,13 @@
 Use this file as the first read in every new session for this repository.
 
 ## Goal
-- Current goal: Continue M4/M5 cleanup by finishing phased `web/app.js` modularization and docs-depth cleanup after landing packaging enforcement.
-- Why this matters now: Step 1 helper extraction and release packaging policy are now in place, so the biggest remaining maintenance drag is `web/app.js` size and README/docs depth split.
+- Current goal: Ship the next M4/M5 cleanup slice by extracting persistence helpers from `web/app.js` and moving deep README workflows into dedicated docs pages.
+- Why this matters now: Step 1 ingestion helper extraction is done, and the highest remaining parity/maintainability gaps are storage/session helper sprawl in `web/app.js` and an oversized README.
 
 ## Expected Outcome
 - What should be true after this session:
-  - Additional `web/app.js` sections are extracted into focused modules with behavior parity.
-  - README stays quickstart-focused and deep recipes move to dedicated docs pages.
+  - Step 1 persistence/session read-write helpers move from `web/app.js` into a focused `web` module with behavior parity.
+  - README is quickstart-only and deep CLI/release workflows move to `docs/`.
   - Verification and tracker docs remain current with each shipped cleanup slice.
 - Definition of done for this cycle:
   - Selected modularization/docs tasks are completed or explicitly blocked with evidence.
@@ -22,16 +22,16 @@ Use this file as the first read in every new session for this repository.
   - Hardened package publish metadata with `package.json` `files` whitelist and enforced `dist/cli.js` validation in `release:check` via `npm pack --dry-run --json`.
   - Updated roadmap/feature/memory/release docs and re-verified quality gates.
 - In progress:
-  - No active implementation in progress; session closed after two shipped cleanup slices.
+  - Active: Global Cycle 1 locked scope execution has completed persistence-helper extraction and is moving to README/docs split.
 - Blockers or risks:
   - `web/app.js` remains a high-maintenance hotspot until modularization lands.
   - README still carries deep workflow content that should move under `docs/` to keep onboarding concise.
 
 ## Immediate Next Actions
-- [ ] 1. Extract next `web/app.js` slice: Step 1 persistence/read-write helpers into a dedicated `web` module with parity tests.
+- [x] 1. Extract next `web/app.js` slice: Step 1 persistence/read-write helpers into a dedicated `web` module with parity tests.
 - [ ] 2. Split deep CLI/release workflow recipes from `README.md` into a new `docs/` page and keep README quickstart-level.
-- [ ] 3. Run `npm run lint`, `npm run typecheck`, `npm run build`, and targeted tests for the extracted module(s).
-- [ ] 4. Run lightweight security grep checks and record evidence in `PROJECT_MEMORY.md`.
+- [x] 3. Run `npm run lint`, `npm run typecheck`, `npm run build`, and targeted tests for the extracted module(s).
+- [x] 4. Run lightweight security grep checks and record evidence in `PROJECT_MEMORY.md`.
 - [ ] 5. Update `PRODUCT_ROADMAP.md`, `CLONE_FEATURES.md`, `PROJECT_MEMORY.md`, and this context file after each shipped slice.
 
 ## Constraints
@@ -51,6 +51,6 @@ Use this file as the first read in every new session for this repository.
 - Agent contract: AGENTS.md
 
 ## Session Handoff
-- Last updated: 2026-02-17T03:10:05Z
-- Updated by: codex autonomous maintainer (global cycle 23)
-- Notes for next session: packaging policy hardening and Step 1 helper extraction are complete; continue phased `web/app.js` modularization and docs split.
+- Last updated: 2026-02-17T09:24:00Z
+- Updated by: codex autonomous maintainer (global cycle 1)
+- Notes for next session: locked scope is persistence-helper modularization + README/docs split; execute both slices with verification and immediate push after each commit.

@@ -1,15 +1,11 @@
 import { filterAgentFeedByPersonaName } from "./agentFeedSearch.js";
 import {
-  FEED_SETS_STORAGE_KEY,
-  parseFeedSets,
   parseFeedSetsOpml,
   removeFeedSet,
-  serializeFeedSets,
   serializeFeedSetsAsOpml,
   upsertFeedSet,
 } from "./feedSets.js";
 import {
-  FILTER_PRESETS_STORAGE_KEY,
   mergeFilterPresets,
   parseFilterPresets,
   removeFilterPreset,
@@ -21,13 +17,7 @@ import { parseFilterTokens, removeFilterToken } from "./filterTokens.js";
 import { matchStudioShortcut } from "./keyboardShortcuts.js";
 import { filterPersonas } from "./personaSearch.js";
 import { getPostLengthStatus, trimPostToMaxChars } from "./postEditing.js";
-import {
-  parseRulePresets,
-  RULE_PRESETS_STORAGE_KEY,
-  removeRulePreset,
-  serializeRulePresets,
-  upsertRulePreset,
-} from "./rulePresets.js";
+import { removeRulePreset, upsertRulePreset } from "./rulePresets.js";
 import { buildSampleItemsJson } from "./sampleItems.js";
 import {
   formatInvalidItemsSummary,
@@ -39,11 +29,23 @@ import {
 import {
   formatFetchSummary,
   getMaxCharsForChannel,
-  parseChannelMaxChars,
-  parseStudioSessionSnapshot,
-  serializeChannelMaxChars,
   setMaxCharsForChannel,
 } from "./studioPrefs.js";
+import {
+  clearPersonasOverrides,
+  readChannelMaxCharsByChannel,
+  readFeedSets,
+  readFilterPresets,
+  readPersonasOverrides,
+  readRulePresets,
+  readSessionSnapshot,
+  writeChannelMaxCharsByChannel,
+  writeFeedSets,
+  writeFilterPresets,
+  writePersonasOverrides,
+  writeRulePresets,
+  writeSessionSnapshot,
+} from "./studioStorage.js";
 
 const STUDIO_SESSION_KEY = "feed-jarvis-studio:v1";
 const STUDIO_PERSONAS_KEY = "feed-jarvis-personas:v1";
@@ -177,83 +179,7 @@ const channelDefaults = {
   linkedin: 700,
   newsletter: 900,
 };
-
-function readChannelMaxCharsByChannel() {
-  try {
-    const raw = window.localStorage.getItem(STUDIO_CHANNEL_MAXCHARS_KEY);
-    return parseChannelMaxChars(raw);
-  } catch {
-    return {};
-  }
-}
-
-function writeChannelMaxCharsByChannel(map) {
-  try {
-    window.localStorage.setItem(
-      STUDIO_CHANNEL_MAXCHARS_KEY,
-      serializeChannelMaxChars(map),
-    );
-  } catch {
-    // Ignore quota/privacy mode errors.
-  }
-}
-
-function readFeedSets() {
-  try {
-    const raw = window.localStorage.getItem(FEED_SETS_STORAGE_KEY);
-    return parseFeedSets(raw);
-  } catch {
-    return [];
-  }
-}
-
-function writeFeedSets(sets) {
-  try {
-    window.localStorage.setItem(FEED_SETS_STORAGE_KEY, serializeFeedSets(sets));
-  } catch {
-    // Ignore quota/privacy mode errors.
-  }
-}
-
-function readFilterPresets() {
-  try {
-    const raw = window.localStorage.getItem(FILTER_PRESETS_STORAGE_KEY);
-    return parseFilterPresets(raw);
-  } catch {
-    return [];
-  }
-}
-
-function writeFilterPresets(presets) {
-  try {
-    window.localStorage.setItem(
-      FILTER_PRESETS_STORAGE_KEY,
-      serializeFilterPresets(presets),
-    );
-  } catch {
-    // Ignore quota/privacy mode errors.
-  }
-}
-
-function readRulePresets() {
-  try {
-    const raw = window.localStorage.getItem(RULE_PRESETS_STORAGE_KEY);
-    return parseRulePresets(raw);
-  } catch {
-    return [];
-  }
-}
-
-function writeRulePresets(presets) {
-  try {
-    window.localStorage.setItem(
-      RULE_PRESETS_STORAGE_KEY,
-      serializeRulePresets(presets),
-    );
-  } catch {
-    // Ignore quota/privacy mode errors.
-  }
-}
+const localStorageRef = window.localStorage;
 
 function setStatus(element, message, tone = "info") {
   if (!element) return;
@@ -478,15 +404,6 @@ function setChannel(channel, { syncMaxChars = true, persist = true } = {}) {
   }
 }
 
-function readSessionSnapshot() {
-  try {
-    const raw = window.localStorage.getItem(STUDIO_SESSION_KEY);
-    return parseStudioSessionSnapshot(raw);
-  } catch {
-    return null;
-  }
-}
-
 function persistSessionSnapshot() {
   const snapshot = {
     source: getActiveSource(),
@@ -525,15 +442,11 @@ function persistSessionSnapshot() {
     utmCampaign: elements.utmCampaign.value,
   };
 
-  try {
-    window.localStorage.setItem(STUDIO_SESSION_KEY, JSON.stringify(snapshot));
-  } catch {
-    // Ignore quota/privacy mode errors.
-  }
+  writeSessionSnapshot(localStorageRef, STUDIO_SESSION_KEY, snapshot);
 }
 
 function restoreSessionSnapshot() {
-  const snapshot = readSessionSnapshot();
+  const snapshot = readSessionSnapshot(localStorageRef, STUDIO_SESSION_KEY);
   if (!snapshot) {
     setSource("feed", { persist: false });
     setChannel("x", { persist: false });
@@ -635,7 +548,11 @@ function restoreSessionSnapshot() {
       state.channel,
       snapshot.maxChars,
     );
-    writeChannelMaxCharsByChannel(state.channelMaxCharsByChannel);
+    writeChannelMaxCharsByChannel(
+      localStorageRef,
+      STUDIO_CHANNEL_MAXCHARS_KEY,
+      state.channelMaxCharsByChannel,
+    );
   }
   if (typeof snapshot.agentPersonaLimit === "string") {
     elements.agentPersonaLimit.value = snapshot.agentPersonaLimit;
@@ -803,7 +720,7 @@ function saveFilterPreset() {
     name,
     filters,
   });
-  writeFilterPresets(state.filterPresets);
+  writeFilterPresets(localStorageRef, state.filterPresets);
   refreshFilterPresetSelect();
   if (elements.filterPresetSelect) elements.filterPresetSelect.value = name;
   refreshFilterPresetSelect();
@@ -818,7 +735,7 @@ function deleteFilterPreset() {
   if (!ok) return;
 
   state.filterPresets = removeFilterPreset(state.filterPresets, preset.name);
-  writeFilterPresets(state.filterPresets);
+  writeFilterPresets(localStorageRef, state.filterPresets);
   if (elements.filterPresetSelect) elements.filterPresetSelect.value = "";
   refreshFilterPresetSelect();
   setStatus(elements.filterPresetStatus, `Deleted "${preset.name}".`);
@@ -838,7 +755,7 @@ async function importFilterPresetsJson() {
     }
 
     state.filterPresets = mergeFilterPresets(state.filterPresets, imported);
-    writeFilterPresets(state.filterPresets);
+    writeFilterPresets(localStorageRef, state.filterPresets);
     refreshFilterPresetSelect();
     persistSessionSnapshot();
     setStatus(
@@ -955,7 +872,7 @@ function saveFeedSet() {
   }
 
   state.feedSets = upsertFeedSet(state.feedSets, { name, urls });
-  writeFeedSets(state.feedSets);
+  writeFeedSets(localStorageRef, state.feedSets);
   refreshFeedSetSelect();
   if (elements.feedSetSelect) elements.feedSetSelect.value = name;
   refreshFeedSetSelect();
@@ -969,7 +886,7 @@ function deleteFeedSet() {
   const ok = window.confirm(`Delete feed set "${set.name}"?`);
   if (!ok) return;
   state.feedSets = removeFeedSet(state.feedSets, set.name);
-  writeFeedSets(state.feedSets);
+  writeFeedSets(localStorageRef, state.feedSets);
   if (elements.feedSetSelect) elements.feedSetSelect.value = "";
   refreshFeedSetSelect();
   setStatus(elements.feedSetStatus, `Deleted "${set.name}".`);
@@ -1068,7 +985,7 @@ async function importFeedSetsOpml() {
     }
 
     state.feedSets = sets;
-    writeFeedSets(state.feedSets);
+    writeFeedSets(localStorageRef, state.feedSets);
     refreshFeedSetSelect();
     persistSessionSnapshot();
     setStatus(
@@ -1205,7 +1122,7 @@ function saveRulePreset() {
   }
 
   state.rulePresets = upsertRulePreset(state.rulePresets, { name, rules });
-  writeRulePresets(state.rulePresets);
+  writeRulePresets(localStorageRef, state.rulePresets);
   refreshRulePresetSelect();
   if (elements.rulePresetSelect) elements.rulePresetSelect.value = name;
   refreshRulePresetSelect();
@@ -1220,7 +1137,7 @@ function deleteRulePreset() {
   if (!ok) return;
 
   state.rulePresets = removeRulePreset(state.rulePresets, preset.name);
-  writeRulePresets(state.rulePresets);
+  writeRulePresets(localStorageRef, state.rulePresets);
   if (elements.rulePresetSelect) elements.rulePresetSelect.value = "";
   refreshRulePresetSelect();
   setStatus(elements.rulePresetStatus, `Deleted "${preset.name}".`);
@@ -1779,32 +1696,6 @@ function parsePersonasJson(raw) {
   return personas;
 }
 
-function readPersonasOverrides() {
-  try {
-    const raw = window.localStorage.getItem(STUDIO_PERSONAS_KEY);
-    if (!raw) return [];
-    return parsePersonasJson(raw);
-  } catch {
-    return [];
-  }
-}
-
-function writePersonasOverrides(personas) {
-  try {
-    window.localStorage.setItem(STUDIO_PERSONAS_KEY, JSON.stringify(personas));
-  } catch {
-    // Ignore quota/privacy mode errors.
-  }
-}
-
-function clearPersonasOverrides() {
-  try {
-    window.localStorage.removeItem(STUDIO_PERSONAS_KEY);
-  } catch {
-    // Ignore quota/privacy mode errors.
-  }
-}
-
 function renderPersonas() {
   elements.personaSelect.innerHTML = "";
   state.personas.forEach((persona) => {
@@ -1854,7 +1745,11 @@ async function loadPersonas() {
     const personas =
       data && typeof data === "object" ? Reflect.get(data, "personas") : [];
     const basePersonas = Array.isArray(personas) ? personas : [];
-    const overrides = readPersonasOverrides();
+    const overrides = readPersonasOverrides(
+      localStorageRef,
+      STUDIO_PERSONAS_KEY,
+      parsePersonasJson,
+    );
     applyPersonas(basePersonas, overrides);
   } catch (_err) {
     setStatus(
@@ -2333,7 +2228,7 @@ function wireEvents() {
     try {
       const raw = await file.text();
       const personas = parsePersonasJson(raw);
-      writePersonasOverrides(personas);
+      writePersonasOverrides(localStorageRef, STUDIO_PERSONAS_KEY, personas);
       applyPersonas(state.personasBase, personas);
       setStatus(
         elements.personasStatus,
@@ -2361,7 +2256,7 @@ function wireEvents() {
   });
 
   elements.clearPersonasBtn.addEventListener("click", () => {
-    clearPersonasOverrides();
+    clearPersonasOverrides(localStorageRef, STUDIO_PERSONAS_KEY);
     applyPersonas(state.personasBase, []);
     setStatus(elements.personasStatus, "Cleared imported personas.");
   });
@@ -2538,7 +2433,11 @@ function wireEvents() {
     );
     if (next !== state.channelMaxCharsByChannel) {
       state.channelMaxCharsByChannel = next;
-      writeChannelMaxCharsByChannel(next);
+      writeChannelMaxCharsByChannel(
+        localStorageRef,
+        STUDIO_CHANNEL_MAXCHARS_KEY,
+        next,
+      );
     }
     if (state.posts.length > 0) {
       updatePostsPreview();
@@ -2597,10 +2496,13 @@ function wireEvents() {
   });
 }
 
-state.channelMaxCharsByChannel = readChannelMaxCharsByChannel();
-state.feedSets = readFeedSets();
-state.filterPresets = readFilterPresets();
-state.rulePresets = readRulePresets();
+state.channelMaxCharsByChannel = readChannelMaxCharsByChannel(
+  localStorageRef,
+  STUDIO_CHANNEL_MAXCHARS_KEY,
+);
+state.feedSets = readFeedSets(localStorageRef);
+state.filterPresets = readFilterPresets(localStorageRef);
+state.rulePresets = readRulePresets(localStorageRef);
 refreshFeedSetSelect();
 refreshFilterPresetSelect();
 refreshRulePresetSelect();

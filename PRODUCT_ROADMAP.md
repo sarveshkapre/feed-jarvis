@@ -24,6 +24,41 @@
 ## Current Milestone
 - M4 UX Polish + Throughput
 
+## Session Goal Checkpoint (2026-02-17 | Global Cycle 1 Session 1)
+- Goal: Close the highest-value remaining maintenance/documentation gaps by extracting `web/app.js` persistence helpers and splitting deep workflows out of README.
+- Success criteria:
+  - Persistence/session storage read-write helpers are extracted from `web/app.js` into a dedicated module with parity tests.
+  - README remains quickstart-focused while deep CLI/release workflows move into `docs/`.
+  - Quality/security checks and smoke verification evidence are captured in trackers.
+  - Locked cycle scope items are either completed or explicitly marked blocked with evidence.
+- Non-goals:
+  - Broad Studio visual redesign.
+  - New server API endpoints or scheduler integrations.
+  - Large architecture rewrites beyond the selected helper-extraction slice.
+
+## Product Phase Checkpoint (2026-02-17 | Global Cycle 1 Session 1)
+- Prompt: "Are we in a good product phase yet?" -> `No`.
+- Best-in-market references (untrusted web, bounded scan):
+  - Feedly mute/filter baseline (`https://feedly.helpscoutdocs.com/article/345-mute-filters`).
+  - RSS.app filter workflow baseline (`https://help.rss.app/en/articles/10271103-how-to-filter-rss-feeds`).
+  - Buffer automation reliability baseline (`https://support.buffer.com/article/613-automating-rss-feeds-using-feedly-and-zapier`).
+  - Inoreader automation throughput baseline (`https://www.inoreader.com/blog/2026/01/save-time-with-automations.html`).
+  - Feedly OPML interoperability baseline (`https://docs.feedly.com/article/51-how-to-import-opml-into-feedly`).
+- Core expected capabilities in this segment:
+  - Maintainable UI modules for rapid iteration on feed triage/generation flows.
+  - Concise onboarding docs with deeper operational playbooks split into dedicated pages.
+  - Repeatable local verification and release guardrails with explicit evidence trails.
+- Parity gap map:
+  - Missing: extraction of persistence/session helper seams from `web/app.js`.
+  - Weak: README depth and workflow discoverability due long-form command recipes in one page.
+  - Parity: ingestion interop (URL file + OPML), retries/concurrency, filters/rules presets, export formats, browser E2E.
+  - Differentiator: local-first multi-persona workflow with strict host safety defaults.
+
+## Locked Cycle Scope (2026-02-17 | Global Cycle 1 Session 1)
+- [x] P1: Extract Step 1 persistence/session read-write helpers from `web/app.js` into a dedicated `web` module with parity behavior.
+- [x] P1: Add focused tests for extracted persistence helper logic.
+- [ ] P1: Move deep CLI/release workflow recipes from `README.md` into `docs/` and keep README quickstart-level.
+
 ## Session Goal Checkpoint (2026-02-17 | Global Cycle 23 Session 1)
 - Goal: Reduce maintenance/release drift by shipping a targeted `web/app.js` refactor slice plus npm packaging policy hardening.
 - Success criteria:
@@ -387,10 +422,20 @@
 - [x] P1: Studio pasted JSON URL validation (`http/https` only) with actionable user feedback.
 
 ## Pending Features (What Is Still Pending?)
-- P3: Continue phased `web/app.js` modularization (remaining state/api/exporters/ui bindings beyond Step 1 ingestion helpers).
-- P3: Docs split: keep README compact and move deep recipes to `docs/`.
+- P2: Continue phased `web/app.js` modularization (remaining state/api/exporters/ui bindings beyond Step 1 ingestion + persistence helpers).
+- P2: Docs split: keep README compact and move deep recipes to `docs/`.
+- P3: Add CLI troubleshooting playbook in `docs/` (dry-run, stdin, private-host fetch errors, release checks).
+- P3: Add optional export schema version metadata for JSON/JSONL outputs.
+- P3: Add per-feed fetch error drill-down UI in Step 1.
+- P3: Add large-batch benchmark script for feed parsing + generation throughput.
+- P3: Add feed-set storage migration utility for future schema revisions.
+- P3: Add draft edit analytics summary (trimmed chars/post count deltas) for QA loops.
+- P3: Add import support for newline-delimited feed URL files in Studio UI.
+- P3: Add confirm-before-download behavior when export count exceeds threshold.
+- P3: Add release-check flags (`--skip-check`, `--allow-dirty`) with warning rails.
 
 ## Delivered Features (Recent)
+- 2026-02-17: Extracted Step 1 persistence/session storage helpers from `web/app.js` into `web/studioStorage.js` (channel max chars, feed/filter/rule presets, session snapshots, persona overrides) and rewired app usage to shared helper APIs with new focused tests (`test/studioStorage.test.ts`).
 - 2026-02-17: Hardened npm package publish intent by adding a `package.json` `files` whitelist and enforcing `dist/cli.js` inclusion through `release:check` (`npm pack --dry-run --json` validation).
 - 2026-02-17: Extracted Step 1 ingestion helpers from `web/app.js` into `web/step1Ingestion.js` (`normalizeUrls`, URL validation, JSON payload parsing, invalid-item summary, `items.json` serialization) with focused tests.
 - 2026-02-17: Added Studio keyboard shortcuts for high-frequency Step 3/Step 4 actions (`Ctrl/Cmd+Shift+Enter/C/E/B/K/J`) with editable-field guards and UI hints.
