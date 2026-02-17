@@ -23,3 +23,8 @@ export function removeFilterPreset(
   presets: unknown,
   name: unknown,
 ): FilterPreset[];
+
+export function mergeFilterPresets(
+  existingPresets: unknown,
+  incomingPresets: unknown,
+): FilterPreset[];

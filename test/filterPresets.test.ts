@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest";
 import {
+  mergeFilterPresets,
   parseFilterPresets,
   removeFilterPreset,
   serializeFilterPresets,
@@ -83,5 +84,36 @@ describe("filterPresets", () => {
     const raw = serializeFilterPresets(presets);
     expect(parseFilterPresets(raw)).toHaveLength(1);
     expect(parseFilterPresets(raw)[0]?.name).toBe("My filters");
+  });
+
+  test("merges imported presets into existing state", () => {
+    const existing = parseFilterPresets(
+      JSON.stringify([
+        {
+          name: "Daily",
+          filters: { include: "macro", exclude: "podcast", minTitleLength: 10 },
+        },
+      ]),
+    );
+    const incoming = parseFilterPresets(
+      JSON.stringify([
+        {
+          name: "daily",
+          filters: { include: "rates", exclude: "hiring", minTitleLength: 8 },
+        },
+        {
+          name: "Ship",
+          filters: { include: "launch", exclude: "", minTitleLength: 0 },
+        },
+      ]),
+    );
+
+    const merged = mergeFilterPresets(existing, incoming);
+    expect(merged.map((preset) => preset.name)).toEqual(["daily", "Ship"]);
+    expect(merged[0]?.filters).toMatchObject({
+      include: "rates",
+      exclude: "hiring",
+      minTitleLength: 8,
+    });
   });
 });

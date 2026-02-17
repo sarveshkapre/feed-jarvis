@@ -137,8 +137,16 @@
                 </select>
               </div>
               <div class="button-row">
+                <input
+                  id="filterPresetsFile"
+                  type="file"
+                  accept="application/json,.json"
+                  hidden
+                />
                 <button class="ghost" id="loadFilterPresetBtn" type="button" disabled>Load</button>
                 <button class="ghost" id="saveFilterPresetBtn" type="button">Save</button>
+                <button class="ghost" id="importFilterPresetsBtn" type="button">Import JSON</button>
+                <button class="ghost" id="exportFilterPresetsBtn" type="button">Export JSON</button>
                 <button class="secondary" id="deleteFilterPresetBtn" type="button" disabled>Delete</button>
               </div>
               <div class="status" id="filterPresetStatus" role="status" aria-live="polite"></div>

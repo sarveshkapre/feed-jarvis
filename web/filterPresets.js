@@ -142,6 +142,18 @@ export function removeFilterPreset(presets, name) {
   return sortFilterPresets(dedupeFilterPresets(out));
 }
 
+export function mergeFilterPresets(existingPresets, incomingPresets) {
+  const existing = Array.isArray(existingPresets) ? existingPresets : [];
+  const incoming = Array.isArray(incomingPresets) ? incomingPresets : [];
+  let merged = sortFilterPresets(dedupeFilterPresets(existing));
+
+  for (const preset of incoming) {
+    merged = upsertFilterPreset(merged, preset);
+  }
+
+  return sortFilterPresets(dedupeFilterPresets(merged));
+}
+
 function dedupeFilterPresets(presets) {
   const seen = new Set();
   const out = [];

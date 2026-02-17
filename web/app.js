@@ -10,6 +10,7 @@ import {
 } from "./feedSets.js";
 import {
   FILTER_PRESETS_STORAGE_KEY,
+  mergeFilterPresets,
   parseFilterPresets,
   removeFilterPreset,
   serializeFilterPresets,
@@ -99,6 +100,9 @@ const elements = {
   filterExclude: document.getElementById("filterExclude"),
   filterMinTitleLength: document.getElementById("filterMinTitleLength"),
   filterPresetSelect: document.getElementById("filterPresetSelect"),
+  filterPresetsFile: document.getElementById("filterPresetsFile"),
+  importFilterPresetsBtn: document.getElementById("importFilterPresetsBtn"),
+  exportFilterPresetsBtn: document.getElementById("exportFilterPresetsBtn"),
   loadFilterPresetBtn: document.getElementById("loadFilterPresetBtn"),
   saveFilterPresetBtn: document.getElementById("saveFilterPresetBtn"),
   deleteFilterPresetBtn: document.getElementById("deleteFilterPresetBtn"),
@@ -749,6 +753,60 @@ function deleteFilterPreset() {
   refreshFilterPresetSelect();
   setStatus(elements.filterPresetStatus, `Deleted "${preset.name}".`);
   persistSessionSnapshot();
+}
+
+async function importFilterPresetsJson() {
+  setStatus(elements.filterPresetStatus, "");
+  const file = elements.filterPresetsFile?.files?.[0];
+  if (!file) return;
+
+  try {
+    const raw = await file.text();
+    const imported = parseFilterPresets(raw);
+    if (imported.length === 0) {
+      throw new Error("No valid filter presets found in JSON.");
+    }
+
+    state.filterPresets = mergeFilterPresets(state.filterPresets, imported);
+    writeFilterPresets(state.filterPresets);
+    refreshFilterPresetSelect();
+    persistSessionSnapshot();
+    setStatus(
+      elements.filterPresetStatus,
+      `Imported ${imported.length} preset(s).`,
+    );
+  } catch (err) {
+    setStatus(
+      elements.filterPresetStatus,
+      getErrorMessage(err, "Failed to import filter presets."),
+      "error",
+    );
+  } finally {
+    if (elements.filterPresetsFile) {
+      elements.filterPresetsFile.value = "";
+    }
+  }
+}
+
+function exportFilterPresetsJson() {
+  setStatus(elements.filterPresetStatus, "");
+  if (!Array.isArray(state.filterPresets) || state.filterPresets.length === 0) {
+    setStatus(
+      elements.filterPresetStatus,
+      "Save at least one filter preset first.",
+      "error",
+    );
+    return;
+  }
+
+  downloadFile(
+    "feed-jarvis-filter-presets.json",
+    `${serializeFilterPresets(state.filterPresets)}\n`,
+  );
+  setStatus(
+    elements.filterPresetStatus,
+    `Exported ${state.filterPresets.length} preset(s).`,
+  );
 }
 
 function refreshFeedSetSelect() {
@@ -2203,6 +2261,17 @@ function wireEvents() {
   );
   elements.saveFilterPresetBtn?.addEventListener("click", saveFilterPreset);
   elements.deleteFilterPresetBtn?.addEventListener("click", deleteFilterPreset);
+  elements.importFilterPresetsBtn?.addEventListener("click", () => {
+    setStatus(elements.filterPresetStatus, "");
+    elements.filterPresetsFile?.click();
+  });
+  elements.filterPresetsFile?.addEventListener("change", () => {
+    importFilterPresetsJson();
+  });
+  elements.exportFilterPresetsBtn?.addEventListener(
+    "click",
+    exportFilterPresetsJson,
+  );
   elements.rulePresetSelect?.addEventListener("change", () => {
     refreshRulePresetSelect();
     persistSessionSnapshot();

@@ -11,6 +11,7 @@
 - CLI: add `--diagnostics-json` for machine-readable `--dry-run` diagnostics output (stdout JSON for CI/pipeline ingestion).
 - Studio UI: add persona-card search/filter and click-to-select workflow for large persona packs.
 - Studio UI: add Step 4 agent-feed persona-name filter for faster timeline triage on large feeds.
+- Studio UI: add Step 1 filter-preset import/export JSON actions for cross-machine setup reuse.
 - Testing: add CLI regression coverage for `EPIPE` output piping behavior across `text/json/jsonl/csv` formats.
 - Testing: add session persistence edge-case coverage for invalid snapshots, stale keys, and partial snapshot payloads.
 - Studio UI: add local-only Step 1 filter presets (save/load/delete) for include/exclude/min-title triage settings.

@@ -65,6 +65,17 @@
   - `npm run typecheck` -> pass.
   - `npm run build` -> pass.
   - `npx vitest run test/agentFeedSearch.test.ts test/studioPrefs.test.ts` -> pass.
+- Commit 4 goal: Add Step 1 filter-preset import/export JSON for cross-machine setup reuse.
+- Implementation:
+  - Added deterministic `mergeFilterPresets` helper in `web/filterPresets.js`.
+  - Added Step 1 Import/Export JSON controls for filter presets in Studio.
+  - Wired import parsing, merge/upsert behavior, persistence, and user status feedback.
+  - Added regression coverage for merge semantics in `test/filterPresets.test.ts`.
+- Verification evidence:
+  - `npm run lint` -> pass.
+  - `npm run typecheck` -> pass.
+  - `npm run build` -> pass.
+  - `npx vitest run test/filterPresets.test.ts` -> pass.
 
 ## Session Notes (2026-02-17 | Global Cycle 23 Session 1)
 - Goal clarification checkpoint:
