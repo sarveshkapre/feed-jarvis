@@ -145,4 +145,5 @@ Tip: write posts to a file with `--out posts.txt` or `--format jsonl` for one JS
 ## Docs
 - `PROJECT.md` (commands), `PLAN.md`, `CHANGELOG.md`
 - Extra notes: `docs/` (security, roadmap, release)
+- World-state snapshot: `docs/WORLD_STATE_2026-02-17.md`
 - Release guardrail command: `npm run release:check` (includes `npm pack --dry-run` artifact validation for `dist/cli.js`)

@@ -131,6 +131,22 @@
   - `npm run typecheck` -> pass.
   - `npm run build` -> pass.
   - `npx vitest run test/step1Ingestion.test.ts` -> pass.
+- Commit 10 goal: Apply a current world-state scan into persona/feed strategy assets.
+- Implementation:
+  - Added `personas/world_signal_editor.md` for cross-domain high-signal synthesis.
+  - Added `docs/WORLD_STATE_2026-02-17.md` summarizing dated global themes and product implications.
+  - Updated README/docs pointers and changelog.
+- World-state sources scanned (untrusted web, checked 2026-02-17):
+  - AP peace-talks coverage: https://apnews.com/article/russia-ukraine-war-peace-talks-f067dbef910f8f4fbe73116f0972045e
+  - IMF tariffs analysis: https://www.imf.org/en/Blogs/Articles/2026/02/16/how-us-tariffs-and-countermeasures-could-affect-economies-worldwide
+  - IEA gas market report: https://www.iea.org/reports/gas-market-report-q1-2026
+  - UN climate record heat update: https://news.un.org/en/story/2026/01/1169166
+  - AP H5N1 cats update: https://apnews.com/article/bird-flu-cats-h5n1-f9fbfce1555fca17586f84d500cf08cc
+- Verification evidence:
+  - `npm run lint` -> pass.
+  - `npm run typecheck` -> pass.
+  - `npm run build` -> pass.
+  - `npx vitest run test/personas.test.ts` -> pass.
 
 ## Session Notes (2026-02-17 | Global Cycle 23 Session 1)
 - Goal clarification checkpoint:
